@@ -179,11 +179,11 @@ const ProfileDetail = () => {
             setLoading(true);
 
             console.log(form);
-            setDebugging(form);
-
+            
             const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/userdetail`, form);
-
+            
             const result = await res.data;
+            setDebugging(result);
 
             if(result.ok){
                 setLoading(false);
@@ -195,7 +195,7 @@ const ProfileDetail = () => {
 
         } catch (err) {
             console.log("Error:", err)
-            setError(`Error from here: ${err}` );
+            setError(`Error from here: ${err.message}` );
         } finally{
             setLoading(false);
         }
@@ -248,8 +248,7 @@ const ProfileDetail = () => {
             <div className=' gap-y-3'>
                 {error && (
                     <div className="bg-rose-600 text-white p-2 rounded-lg shadow-lg">
-                        First check Debugging: {JSON.stringify(Debugging)}
-                        `${import.meta.env.VITE_API_URL}/user/userdetail`<br />
+                        First check Debugging: {JSON.stringify(Debugging)}<br />
                         {error}
                     </div>
                 )}
