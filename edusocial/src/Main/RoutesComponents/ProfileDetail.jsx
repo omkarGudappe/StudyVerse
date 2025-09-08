@@ -43,6 +43,7 @@ const ProfileDetail = () => {
 
     const [popoverTimeouts, setPopoverTimeouts] = useState({});
     const Navigate = useNavigate();
+    const [Debugging, setDebugging] = useState();
 
     useEffect(() => {
         Object.entries(showPopovers).forEach(([field, isVisible]) => {
@@ -178,6 +179,7 @@ const ProfileDetail = () => {
             setLoading(true);
 
             console.log(form);
+            setDebugging(form);
 
             const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/userdetail`, form);
 
@@ -246,6 +248,7 @@ const ProfileDetail = () => {
             <div className=' gap-y-3'>
                 {error && (
                     <div className="bg-rose-600 text-white p-2 rounded-lg shadow-lg">
+                        First check Debugging: {JSON.stringify(Debugging)}
                         {error}
                     </div>
                 )}
