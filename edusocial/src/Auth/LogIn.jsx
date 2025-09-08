@@ -144,12 +144,12 @@ const LogIn = () => {
 
   return (
     <>
-      <div className="flex justify-center items-center flex-col lg:flex-row gap-x-50 h-screen bg-neutral-900">
-        <div className="h-1/4 w-1/3 flex items-center justify-center flex-col">
-          <div className="overflow-hidden flex items-center justify-center h-160">
-            <img src="/LOGO/StudyVerseLogo2.png" className="h-80 w-full " alt="LOGO" />
+      <div className="flex justify-center items-center flex-col lg:flex-row lg:px-10 gap-x-50 h-screen bg-neutral-900">
+        <div className="h-auto w-auto flex items-center justify-center gap-0 flex-col">
+          <div className="overflow-hidden flex items-center justify-center h-auto  ">
+            <img src="/LOGO/StudyVerseLogo2.png" className="h-40 w-60 lg:h-60 lg:w-80" alt="LOGO" />
           </div>
-          <p className="text-white text-center">.
+          <p className="text-white text-center">
             Welcome to StudyVerse, your go-to platform for all your educational needs.
           </p>
         </div>
