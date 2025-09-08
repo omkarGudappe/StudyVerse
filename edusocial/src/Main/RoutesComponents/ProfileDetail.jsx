@@ -249,6 +249,7 @@ const ProfileDetail = () => {
                 {error && (
                     <div className="bg-rose-600 text-white p-2 rounded-lg shadow-lg">
                         First check Debugging: {JSON.stringify(Debugging)}
+                        `${import.meta.env.VITE_API_URL}/user/userdetail`<br />
                         {error}
                     </div>
                 )}
