@@ -19,16 +19,18 @@ const LogIn = () => {
   const [JustSignIn , setJustSignedIn] = useState(false);
   const Navigate = useNavigate();
   const [ConformPassword, setConformPassword] = useState(null);
+  const [CheckIsJustSignInByGoogle , setCheckIsJustSignInByGoogle] = useState(false);
   const InputOtpRef = useRef([]);
 
-    useEffect(() => {
+  useEffect(() => {
       const unsubscribe = auth.onAuthStateChanged((user) => {
-        if (user && !JustSignIn) {
-          Navigate("/home");
-        }
+          if (user && !CheckIsJustSignInByGoogle) {
+              // Only auto-navigate if it's NOT a new Google sign-in
+              Navigate("/home");
+          }
       });
       return () => unsubscribe();
-  }, [Navigate , JustSignIn]);
+  }, [Navigate, CheckIsJustSignInByGoogle]);
 
 
   const handleSubmit = async () => {
@@ -116,6 +118,7 @@ const LogIn = () => {
           setOTP(new Array(6).fill(""));
           setLoading(false);
           setJustSignedIn(true);
+          setCheckIsJustSignInByGoogle(false);
           Navigate("/fillprofile");
         }else{
           throw new Error(data.error || "Failed to create user");
@@ -133,14 +136,22 @@ const LogIn = () => {
     }
   } 
 
-  useEffect(() => {
-    if (error?.length > 0) {
-      const timer = setTimeout(() => {
-        setError((prev) => prev.slice(1));
-      }, 9000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+  // useEffect(() => {
+  //   if (error?.length > 0) {
+  //     const timer = setTimeout(() => {
+  //       setError((prev) => prev.slice(1));
+  //     }, 9000);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [error]);
+
+  // useEffect(() => {
+  //   console.log(CheckIsJustSignInByGoogle);
+  // }, [CheckIsJustSignInByGoogle])
+
+  const handleData =(data) => {
+    setCheckIsJustSignInByGoogle(data);
+  }
 
   return (
     <>
@@ -154,7 +165,7 @@ const LogIn = () => {
           </p>
         </div>
         <div className="flex justify-center items-center flex-col gap-5">
-        <GoogleProvider/>
+        <GoogleProvider isJustSignIn={handleData}/>
           <div className="border-2 border-neutral-800 h-auto py-5 w-auto px-5 flex justify-center items-center flex-col gap-5">
             <h1 className="text-white text-2xl font-bold">
               {IsLogin ? "Login" : "SignIn"}
