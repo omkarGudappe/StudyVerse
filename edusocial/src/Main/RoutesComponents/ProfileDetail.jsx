@@ -188,7 +188,7 @@ const ProfileDetail = () => {
                 console.log("Response Data:", result.user);
                 Navigate('/profileBio');
             }else{
-                throw new Error(result.message || "Failed to create user");
+                setError(result.message || "Failed to create user");
             }
 
         } catch (err) {
