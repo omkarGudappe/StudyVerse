@@ -193,7 +193,7 @@ const ProfileDetail = () => {
 
         } catch (err) {
             console.log("Error:", err)
-            setError(`Error from here: ${err.message}` );
+            setError(`Error from here: ${err}` );
         } finally{
             setLoading(false);
         }
