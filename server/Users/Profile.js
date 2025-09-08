@@ -14,12 +14,12 @@ Router.post('/userdetail' , upload.none(), async (req , res) => {
 
     // Validate the received data
     if (!firstname || !lastname || !dob || !gender || !education || !Uid || !FUid) {
-        return res.status(400).json({ message: "All fields are required" });
+        return res.json({ ok:false, message: "All fields are required" });
     }
 
     await User.findOne({ firebaseUid: FUid }).then((existingUser) => {
         if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+            return res.json({ ok:false, message: "User already exists" });
         }
     });
 
@@ -41,10 +41,10 @@ Router.post('/userdetail' , upload.none(), async (req , res) => {
 
         await user.save();
 
-        res.status(201).json({ message: "User created successfully", user });
+        res.json({ ok: true, message: "User created successfully", user });
     } catch (error) {
         console.error("Error creating user:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.json({ ok: false, message: error.message || "Internal server error" });
     }
 })
 
