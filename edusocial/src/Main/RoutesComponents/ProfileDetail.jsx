@@ -26,6 +26,7 @@ const ProfileDetail = () => {
 
     const Id = auth.currentUser.uid;
     const [Loading , setLoading] = useState(false);
+    const [error, setError] = useState("");
     
     const [showPopovers, setShowPopovers] = useState({
         FirstName: false,
@@ -147,7 +148,6 @@ const ProfileDetail = () => {
         if (!validateForm()) {
             return;
         }
-        
         try {
             const form = new FormData();
             form.append("firstname", formData.FirstName);
@@ -191,6 +191,7 @@ const ProfileDetail = () => {
 
         } catch (err) {
             console.log("Error:", err)
+            setError(err.response?.data?.message || err.message );
         } finally{
             setLoading(false);
         }
@@ -239,7 +240,14 @@ const ProfileDetail = () => {
     }
 
     return (
-        <div className='bg-neutral-900 text-white h-screen flex items-center justify-center px-3'>
+        <div className='bg-neutral-900 text-white h-screen flex flex-col items-center justify-center px-3'>
+            <div className=' gap-y-3'>
+                {error && (
+                    <div className="bg-rose-600 text-white p-2 rounded-lg shadow-lg">
+                        {error}
+                    </div>
+                )}
+            </div>
             <div className='border-white border rounded-xl shadow-2xl shadow-gray-800 h-auto w-auto py-5 max-w-md'>
                 <h1 className='text-2xl text-center mb-2'>User Profile</h1>
                 <div className='flex items-center justify-center flex-col gap-y-3 p-6 h-auto'>
