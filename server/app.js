@@ -10,28 +10,36 @@ const http = require('http');
 const { Server } = require('socket.io');
 const server = http.createServer(app);
 
+app.use(cors({
+  origin: [
+    'https://study-verse-rose.vercel.app',
+    'http://localhost:5173'
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
 const io = new Server(server, {
-    cors: {
-        origin: "http://localhost:5173",
-        methods: ["GET", "POST"],
-        credentials: true
-    },
-    pingTimeout: 60000,
-    pingInterval: 25000,
-    connectionStateRecovery: {
-        maxDisconnectionDuration: 2 * 60 * 1000,
-        skipMiddlewares: true,
-    },
-    allowEIO3: true,
+  cors: {
+    origin: [
+      'https://study-verse-rose.vercel.app',
+      'http://localhost:5173'
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: true,
+  },
+  allowEIO3: true,
 });
 
 require('./SocketConnection/Socket')(io);
 
-app.use(cors({
-  origin: 'https://study-verse-rose.vercel.app',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  credentials: true
-}));
+
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use('/api/Auth' , Verify);
