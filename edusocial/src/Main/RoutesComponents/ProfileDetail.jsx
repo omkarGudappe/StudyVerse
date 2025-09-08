@@ -179,11 +179,11 @@ const ProfileDetail = () => {
             setLoading(true);
 
             console.log(form);
-            
+            setDebugging({ result: form , EduLevel, Education, Id});
+
             const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/userdetail`, form);
-            
+            setDebugging({ ...Debugging, res });
             const result = await res.data;
-            setDebugging(result);
 
             if(result.ok){
                 setLoading(false);
