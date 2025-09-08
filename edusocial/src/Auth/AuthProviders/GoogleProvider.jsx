@@ -146,12 +146,12 @@ const GoogleProvider = ({ onSuccess, onError }) => {
         <div className=''>
           <div className='Border position-absolute top-50 start-50 translate-middle'>
             <div className='p-5'>
-              <button onClick={handleGoogleSignIn} className="flex bg-neutral-800 p-2 cursor-pointer rounded-5 px-24">
+              <button onClick={handleGoogleSignIn} className="flex bg-neutral-800 p-2 items-center justify-center cursor-pointer rounded-5 px-24">
                 {Loading ? (
                   <span className="mr-2">Loading...</span>
                 ) : (
                   <>
-                    <FcGoogle style={{ fontSize: '20px' }} className='mr-2.5' />
+                    <FcGoogle className='mr-2.5 font-bold text-2xl lg:text-3xl xl:text-3xl ' />
                     Sign in with Google
                   </>
                 )}
