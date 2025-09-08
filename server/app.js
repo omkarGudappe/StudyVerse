@@ -28,7 +28,7 @@ const io = new Server(server, {
 require('./SocketConnection/Socket')(io);
 
 app.use(cors({
-  origin: 'https://study-verse-rose.vercel.app',
+  origin: 'http://localhost:5173',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true
 }));

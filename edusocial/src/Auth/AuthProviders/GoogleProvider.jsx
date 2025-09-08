@@ -61,66 +61,64 @@
 
 // export default GoogleProvider
 
-
-
-
-import React , { useState , useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { FcGoogle } from 'react-icons/fc';
-import { auth , googleProvider } from './FirebaseSDK';
+import { auth, googleProvider } from './FirebaseSDK';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 
-const GoogleProvider = ({ onSuccess, onError }) => {
-    const [Loading , setLoading] = useState(false);
+const GoogleProvider = ({ onSuccess, onError, isJustSignIn }) => {
+    const [Loading, setLoading] = useState(false);
     const Navigate = useNavigate();
-    const [JustSignIn , setJustSignedIn] = useState(false);
-
+    const [JustSignIn, setJustSignedIn] = useState(false);
 
     useEffect(() => {
-      const FetchBackend = async () => {
-        if (JustSignIn) {
-          try {
-       const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/google-signin`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-               uid: auth.currentUser.uid,
-              }),
-            });
-            const data = await response.json();
-            if (data.exist) {
-              console.log(data.exist);
-              Navigate('/home');
-            } else {
-              console.log(data.exist);
-              Navigate('/fillprofile');
+        const FetchBackend = async () => {
+            if (JustSignIn && auth.currentUser) {
+                try {
+                    const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/google-signin`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            uid: auth.currentUser.uid,
+                        }),
+                    });
+                    
+                    const data = await response.json();
+                    console.log("Backend response:", data);
+                    
+                    if (data.exist === true) {
+                        isJustSignIn(false); // Tell parent this is NOT a new Google sign-in
+                        Navigate('/home');
+                    } else {
+                        isJustSignIn(true); // Tell parent this IS a new Google sign-in
+                        Navigate('/fillprofile');
+                    }
+                } catch (error) {
+                    console.log("Error checking user:", error.message);
+                    onError && onError({ error: error.message });
+                    // Fallback navigation
+                    Navigate('/fillprofile');
+                }
             }
-          } catch (error) {
-            console.log(error.message);
-            onError && onError({ error: error.message });
-          }
-        }
-      };
-      FetchBackend();
-      if (JustSignIn && auth.currentUser) {
-        console.log("auth" , auth.currentUser.uid);
-      }
-    }, [JustSignIn]);
-
+        };
+        
+        FetchBackend();
+    }, [JustSignIn, Navigate, onError, isJustSignIn]);
 
     const handleGoogleSignIn = async (e) => {
-      e.preventDefault();
-      if (Loading) return;
-        try{
+        e.preventDefault();
+        if (Loading) return;
+        try {
             setLoading(true);
-            const result = await signInWithPopup(auth , googleProvider);
+            const result = await signInWithPopup(auth, googleProvider);
             const credential = GoogleAuthProvider.credentialFromResult(result);
             const token = credential.accessToken;
             const user = result.user;
 
-            if(onSuccess){
+            if (onSuccess) {
                 onSuccess({
                     user,
                     token,
@@ -128,9 +126,8 @@ const GoogleProvider = ({ onSuccess, onError }) => {
                 })
             }
             setJustSignedIn(true);
-            // Navigate('/home');
-        }catch(err){
-            if(onError){
+        } catch (err) {
+            if (onError) {
                 onError({
                     error: err.message,
                     provider: 'google',
@@ -141,26 +138,26 @@ const GoogleProvider = ({ onSuccess, onError }) => {
         }
     }
 
-  return (
-    <>
-        <div className=''>
-          <div className='Border position-absolute top-50 start-50 translate-middle'>
-            <div className='p-5'>
-              <button onClick={handleGoogleSignIn} className="flex bg-neutral-800 p-2 items-center justify-center cursor-pointer rounded-5 px-24">
-                {Loading ? (
-                  <span className="mr-2">Loading...</span>
-                ) : (
-                  <>
-                    <FcGoogle className='mr-2.5 font-bold text-2xl lg:text-3xl xl:text-3xl ' />
-                    Sign in with Google
-                  </>
-                )}
-              </button>
+    return (
+        <>
+            <div className=''>
+                <div className='Border position-absolute top-50 start-50 translate-middle'>
+                    <div className='p-5'>
+                        <button onClick={handleGoogleSignIn} className="flex bg-neutral-800 p-2 items-center justify-center cursor-pointer rounded-5 px-24">
+                            {Loading ? (
+                                <span className="mr-2">Loading...</span>
+                            ) : (
+                                <>
+                                    <FcGoogle className='mr-2.5 font-bold text-2xl lg:text-3xl xl:text-3xl ' />
+                                    Sign in with Google
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
-    </>
-  )
+        </>
+    )
 }
 
 export default GoogleProvider
