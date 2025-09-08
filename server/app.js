@@ -46,7 +46,8 @@ app.use('/api/Auth' , Verify);
 app.use('/api/user', Profile);
 app.use('/api/posts', Posts);
 
+const port = process.env.PORT || 4000
 connectDB();
-server.listen(4000 , () => {
-    console.log(`Server is Running on the http://localhost:4000`);
+server.listen(port, () => {
+    console.log(`Server is Running on the http://localhost:${port}`);
 })
