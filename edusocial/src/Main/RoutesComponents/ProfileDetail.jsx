@@ -183,10 +183,12 @@ const ProfileDetail = () => {
 
             const result = await res.data;
 
-            if(result.user){
+            if(result.ok){
                 setLoading(false);
                 console.log("Response Data:", result.user);
                 Navigate('/profileBio');
+            }else{
+                throw new Error(result.message || "Failed to create user");
             }
 
         } catch (err) {
