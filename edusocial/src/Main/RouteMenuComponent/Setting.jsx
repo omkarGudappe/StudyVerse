@@ -111,10 +111,7 @@ const Setting = () => {
             }
             formDataToSend.append("education", educationString);
 
-            const response = await axios.put(
-                `${import.meta.env.VITE_API_URL}/user/profile/update/${userId}`,
-                formDataToSend,
-                {
+            const response = await axios.put(`${import.meta.env.VITE_API_URL}/user/profile/update/${userId}`,formDataToSend,{
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
