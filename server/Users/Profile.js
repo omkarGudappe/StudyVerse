@@ -191,15 +191,9 @@ Router.get('/search', async (req, res) => {
     }
 });
 
-Router.post('/profiledetail/update/:userId' , async (req, res) => {
+Router.post('/profiledetail' , async (req, res) => {
     try{
-        const { userId } = req.params;
-
-        if(userId) {
-           return res.json({ok: true, message:"User ID found"})
-        }else {
-            return res.json({ok: false, message: "user Id not found"});
-        }
+        return res.json({ok: true, message:"User ID found"})
     }catch(err){
         return res.json({ok:false, message: err.message});
     }
