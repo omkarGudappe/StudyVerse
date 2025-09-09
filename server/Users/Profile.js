@@ -232,14 +232,11 @@ Router.get('/:Uid/notifications', async (req, res) => {
   }
 });
 
-Router.post('/profile/update/:userId', async (req, res) => {
-    const { userId } = req.params;
+Router.post('/profile/update', async (req, res) => {
     // const { firstName, lastName, description, heading, gender, dob, education } = req.body;
     const { firstName } = req.body;
 
-    if (!userId) {
-        return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
-    }else {
+    if(firstName) {
         return res.json({exist: `Got a UserId ${firstName}`});
     }
 
