@@ -113,17 +113,8 @@ const Setting = () => {
 
             console.log(`${import.meta.env.VITE_API_URL}/OtherUser/update/${userId}`, formDataToSend);
 
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/OtherUser/update`, formData.firstName);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/OtherUser/update`);
 
-            console.log("My res",response);
-
-            // if (response.data.ok) {
-            //     setSuccessMessage("Profile updated successfully!");
-            //     setProfileData(response.data.user);
-            //     console.log(response.data);
-            // } else {
-            //     setError(response.data.message || "Failed to update profile");
-            // }
             if(response.data.exist){
                 setError(response.data.exist);
             }
