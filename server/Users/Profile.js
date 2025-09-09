@@ -139,6 +139,8 @@ Router.put('/profile/update/:userId', upload.single('image'), async (req, res) =
         return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
     }
 
+    console.log(userId);
+
     try {
         let updateData = {
             firstName,
