@@ -125,10 +125,10 @@ const Setting = () => {
             //     setError(response.data.message || "Failed to update profile");
             // }
             if(response.data.exist){
-                setError(response.exist);
+                setError(response.data.exist);
             }
         } catch (err) {
-            setError(err.response?.data?.message || "Error updating profile");
+            setError(err.response?.data?.message || err.message);
         } finally {
             setLoading(false);
         }
