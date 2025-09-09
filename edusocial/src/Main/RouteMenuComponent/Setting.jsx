@@ -111,13 +111,15 @@ const Setting = () => {
             }
             formDataToSend.append("education", educationString);
 
-            console.log(`${import.meta.env.VITE_API_URL}/OtherUser/update/${userId}`, formDataToSend);
+            console.log(`${import.meta.env.VITE_API_URL}/user/profiledetail/update/${userId}`)
 
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts`);
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/profiledetail/update/${userId}`);
 
-            if(response.data.posts){
-                console.log(response.data.posts);
+            const data = res.data;
+            if(data.ok){
+                console.log(data.message);
             }
+
         } catch (err) {
             setError(err.response?.data?.message || err.message);
         } finally {
