@@ -113,7 +113,7 @@ const Setting = () => {
 
             console.log(`${import.meta.env.VITE_API_URL}/OtherUser/update/${userId}`, formDataToSend);
 
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/user/update`, formData.firstName);
+            const response = await axios.post(`${import.meta.env.VITE_API_URL}/OtherUser/update`, formData.firstName);
 
             console.log("My res",response);
 
