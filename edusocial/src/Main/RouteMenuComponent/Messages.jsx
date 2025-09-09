@@ -114,7 +114,7 @@ useEffect(() => {
 
   // Cleanup
   return () => {
-    off(messagesRef); // ✅ Correct way
+    off(messagesRef);
   };
 }, [otherUser, ProfileData, isSending]);
 
