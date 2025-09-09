@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios';
 import { auth } from '../../Auth/AuthProviders/FirebaseSDK';
@@ -7,14 +7,16 @@ const Post = ({ ModelCloseClicked }) => {
     const [Selected, setSelected] = useState(false);
     const [preview, setPreview] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
-    const [Loading , setLoading] = useState(false);
-    const [Percent , setPercent] = useState(0);
+    const [Loading, setLoading] = useState(false);
+    const [Percent, setPercent] = useState(0);
     const [page, setPage] = useState(0);
+    const [uploadStatus, setUploadStatus] = useState('idle'); // 'idle', 'uploading', 'success', 'error'
     const [PostDetail, setPostDetail] = useState({
-        heading:"",
+        heading: "",
         descreption: "",
-        image:"",
+        image: "",
     })
+    const cancelRequest = useRef(null);
 
     const variants = {
         enter: (direction) => ({
@@ -33,39 +35,17 @@ const Post = ({ ModelCloseClicked }) => {
 
     const [direction, setDirection] = useState(0);
 
-    // const handleFileChange = (e) => {
-    // if (e.target.name === 'image') {
-    //     const selectedFile = e.target.files[0];
-    //     if (!selectedFile) return;
-    //     // Accept only image, video, pdf
-    //     if (
-    //     !selectedFile.type.startsWith("image/") &&
-    //     !selectedFile.type.startsWith("video/") &&
-    //     selectedFile.type !== "application/pdf"
-    //     ) {
-    //     alert("Only images, videos, or PDFs are allowed.");
-    //     return;
-    //     }
-    //     setSelected(selectedFile);
-    //     const url = URL.createObjectURL(selectedFile);
-    //     setPreview(url);
-    //     setPostDetail((prev) => ({ ...prev, [e.target.name]: selectedFile }));
-    // } else {
-    //     setPostDetail((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-    // }
-    // };
-
     const handleFileChange = (e) => {
         if (e.target.name === 'image') {
             const selectedFile = e.target.files[0];
             if (!selectedFile) return;
             if (
-            !selectedFile.type.startsWith("image/") &&
-            !selectedFile.type.startsWith("video/") &&
-            selectedFile.type !== "application/pdf"
+                !selectedFile.type.startsWith("image/") &&
+                !selectedFile.type.startsWith("video/") &&
+                selectedFile.type !== "application/pdf"
             ) {
-            alert("Only images, videos, or PDFs are allowed.");
-            return;
+                alert("Only images, videos, or PDFs are allowed.");
+                return;
             }
             setSelected(selectedFile);
             setPreview(URL.createObjectURL(selectedFile));
@@ -73,7 +53,7 @@ const Post = ({ ModelCloseClicked }) => {
         } else {
             setPostDetail((prev) => ({ ...prev, [e.target.name]: e.target.value }));
         }
-        };
+    };
 
     const handleDragOver = (e) => {
         e.preventDefault();
@@ -91,7 +71,7 @@ const Post = ({ ModelCloseClicked }) => {
         
         const files = e.dataTransfer.files;
         if (files.length > 0) {
-            handleFileChange({ target: { files: [files[0]] } });
+            handleFileChange({ target: { name: 'image', files: [files[0]] } });
         }
     }
 
@@ -102,36 +82,65 @@ const Post = ({ ModelCloseClicked }) => {
         form.append('description', PostDetail.descreption);
         form.append('image', PostDetail.image);
         setLoading(true);
+        setUploadStatus('uploading');
+        setPercent(0);
 
-        try{
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}` , form , {
-                headers: {"Content-Type": "multipart/form-data"},
+        try {
+            // Create a cancel token for the request
+            cancelRequest.current = axios.CancelToken.source();
+            
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
+                headers: { "Content-Type": "multipart/form-data" },
+                cancelToken: cancelRequest.current.token,
                 onUploadProgress: (progressEvent) => {
-                    const percent = Math.round(
-                        (progressEvent.loaded * 100) / progressEvent.total
-                    );
-                    setPercent(percent);
+                    if (progressEvent.total) {
+                        // Calculate progress more accurately
+                        const percent = Math.round(
+                            (progressEvent.loaded * 100) / progressEvent.total
+                        );
+                        setPercent(percent);
+                    }
                 }
             });
 
             const result = await res.data;
-            if(result) {
+            if (result) {
                 console.log("Post created successfully:", result.newPost);
-            }else{
+                setUploadStatus('success');
+                // Close modal after a brief success display
+                setTimeout(() => {
+                    ModelCloseClicked(false);
+                }, 1500);
+            } else {
                 throw new Error(result.message);
             }
-            setPercent(0);
-        }catch(err){
-            console.error("Error submitting post:" , err);
-            setLoading(false);
-            setPercent(0);
-        }finally{
+        } catch (err) {
+            if (axios.isCancel(err)) {
+                console.log("Upload cancelled:", err.message);
+                setUploadStatus('idle');
+            } else {
+                console.error("Error submitting post:", err);
+                setUploadStatus('error');
+            }
             setLoading(false);
         }
+    }
 
+    const handleCancelUpload = () => {
+        if (cancelRequest.current) {
+            cancelRequest.current.cancel("Upload cancelled by user");
+        }
+        setUploadStatus('idle');
+        setLoading(false);
+        setPercent(0);
     }
 
     const handleCancel = () => {
+        // Cancel any ongoing upload
+        if (uploadStatus === 'uploading' && cancelRequest.current) {
+            cancelRequest.current.cancel("Upload cancelled by user");
+        }
+        
         setSelected(false);
         setPostDetail({
             heading: "",
@@ -139,8 +148,9 @@ const Post = ({ ModelCloseClicked }) => {
             image: "",
         });
         setSelected(false);
-
         setPreview(null);
+        setUploadStatus('idle');
+        setPercent(0);
         ModelCloseClicked(false);
     }
 
@@ -160,6 +170,7 @@ const Post = ({ ModelCloseClicked }) => {
                     className='absolute top-4 right-4 z-10 p-2 bg-neutral-700/80 hover:bg-neutral-600 rounded-full transition-colors'
                     onClick={() => ModelCloseClicked(false)}
                     aria-label="Close modal"
+                    disabled={uploadStatus === 'uploading'}
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" 
                         width="24" height="24" fill="none" stroke="currentColor" 
@@ -267,7 +278,7 @@ const Post = ({ ModelCloseClicked }) => {
                                             <div>
                                                 <h3 className="text-xl font-medium text-white mb-2">Select Notes or Lesson</h3>
                                                 <p className="text-neutral-400">Click to browse or drag and drop your file here</p>
-                                                <p className="text-xs text-neutral-500 mt-2">Supports images, videos, PDFs, and other documents</p>
+                                                <p className="text-xs text-neutral-500 mt-2">Supports images, videos, PDFs and other documents</p>
                                             </div>
                                         </div>
                                         <input 
@@ -313,11 +324,61 @@ const Post = ({ ModelCloseClicked }) => {
                             className="p-6 flex flex-col"
                         >
                             <h2 className="text-2xl font-bold text-white mb-6 text-center">Additional Details</h2>
+                            
+                            {/* Upload Progress Bar - Only shown when uploading */}
+                            {uploadStatus === 'uploading' && (
+                                <div className="mb-6 bg-neutral-900 p-4 rounded-lg">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-white text-sm font-medium">Uploading...</span>
+                                        <span className="text-amber-500 text-sm font-bold">{Percent}%</span>
+                                    </div>
+                                    <div className="w-full bg-neutral-700 rounded-full h-2.5">
+                                        <div 
+                                            className="bg-amber-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                                            style={{ width: `${Percent}%` }}
+                                        ></div>
+                                    </div>
+                                    <p className="text-neutral-400 text-xs mt-2">
+                                        Please wait while your file is being uploaded. Do not close this window.
+                                    </p>
+                                    <button 
+                                        className="mt-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded transition-colors"
+                                        onClick={handleCancelUpload}
+                                    >
+                                        Cancel Upload
+                                    </button>
+                                </div>
+                            )}
+                            
+                            {/* Success Message */}
+                            {uploadStatus === 'success' && (
+                                <div className="mb-6 bg-green-900/30 p-4 rounded-lg border border-green-700">
+                                    <div className="flex items-center">
+                                        <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                        <span className="text-green-400 text-sm">Upload completed successfully!</span>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Error Message */}
+                            {uploadStatus === 'error' && (
+                                <div className="mb-6 bg-red-900/30 p-4 rounded-lg border border-red-700">
+                                    <div className="flex items-center">
+                                        <svg className="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                        <span className="text-red-400 text-sm">Upload failed. Please try again.</span>
+                                    </div>
+                                </div>
+                            )}
+                            
                             <div className="text-white mb-6">
                                 <p className="mb-4">Please provide additional information about your content:</p>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-neutral-300 mb-1">Hading</label>
+                                        <label className="block text-sm font-medium text-neutral-300 mb-1">Heading</label>
                                         <input 
                                             type="text" 
                                             className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
@@ -325,6 +386,7 @@ const Post = ({ ModelCloseClicked }) => {
                                             value={PostDetail.heading}
                                             name='heading'
                                             onChange={(e)=>handleFileChange(e)}
+                                            disabled={uploadStatus === 'uploading'}
                                         />
                                     </div>
                                     <div>
@@ -336,26 +398,18 @@ const Post = ({ ModelCloseClicked }) => {
                                             name='descreption'
                                             value={PostDetail.descreption}
                                             onChange={(e) => handleFileChange(e)}
+                                            disabled={uploadStatus === 'uploading'}
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                           <div className='border-t border-neutral-700 mt-auto'>
-                                {Percent > 0 && (
-                                  <div className="w-full bg-gray-200 rounded-full mt-2">
-                                      <div
-                                          className="bg-amber-600 text-xs leading-none py-1 text-center text-white rounded-full"
-                                          style={{ width: `${Percent}%` }}
-                                      >
-                                          {Percent}%
-                                      </div>
-                                  </div>
-                                )}
-                                <div className='flex flex-col sm:flex-row gap-3 justify-between items-center pt-4 '>
+                            <div className='border-t border-neutral-700 mt-auto pt-4'>
+                                <div className='flex flex-col sm:flex-row gap-3 justify-between items-center'>
                                     <button 
                                         className='px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-full transition-colors w-full sm:w-auto flex items-center justify-center gap-2'
                                         onClick={() => navigateTo(0)}
+                                        disabled={uploadStatus === 'uploading'}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -364,10 +418,11 @@ const Post = ({ ModelCloseClicked }) => {
                                     </button>
                                     <div className="flex flex-col sm:flex-row gap-3">
                                         <button 
-                                            className='px-6 py-3 bg-amber-600 active:scale-95 hover:bg-amber-500 text-black font-semibold rounded-full transition-colors w-full sm:w-auto flex items-center justify-center gap-2'
+                                            className='px-6 py-3 bg-amber-600 active:scale-95 hover:bg-amber-500 text-black font-semibold rounded-full transition-colors w-full sm:w-auto flex items-center justify-center gap-2 disabled:bg-amber-800 disabled:cursor-not-allowed'
                                             onClick={handleSubmit}
+                                            disabled={uploadStatus === 'uploading' || uploadStatus === 'success' || !PostDetail.heading}
                                         >
-                                            {Loading ? (
+                                            {uploadStatus === 'uploading' ? (
                                                 <div className="flex items-center justify-center">
                                                     <svg
                                                         className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -389,19 +444,20 @@ const Post = ({ ModelCloseClicked }) => {
                                                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                                                         ></path>
                                                     </svg>
-                                                Posting...
+                                                    Uploading...
                                                 </div>
-                                            ) : "Post"}
+                                            ) : uploadStatus === 'success' ? 'Posted!' : 'Post'}
                                         </button>
                                         <button 
                                             className='px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-full transition-colors w-full sm:w-auto'
                                             onClick={handleCancel}
+                                            disabled={uploadStatus === 'uploading'}
                                         >
                                             Cancel
                                         </button>
                                     </div>
                                 </div>
-                           </div>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
