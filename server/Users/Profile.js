@@ -131,9 +131,9 @@ Router.get('/profile/:FUid' , async (req , res) => {
     }
 })
 
-Router.put('/profile/update/:userId', upload.single('image'), async (req, res) => {
+Router.put('/profile/update/:userId', async (req, res) => {
     const { userId } = req.params;
-    const { firstName, lastName, description, heading, gender, dob, education } = req.body;
+    // const { firstName, lastName, description, heading, gender, dob, education } = req.body;
 
     if (!userId) {
         return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
