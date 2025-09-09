@@ -48,13 +48,13 @@ app.use('/api/user', Profile);
 app.use('/api/posts', Posts);
 app.use('/api/OtherUser', OtherUser)
 
-app.get('/api' , (req, res) => {
-  try{
-    return res.json({ok: true, exist:"message is exist"});
-  }catch(err){
-    return res.json({ok:false, exist: err.message});
-  }
-})
+// app.get('/api' , (req, res) => {
+//   try{
+//     return res.json({ok: true, exist:"message is exist"});
+//   }catch(err){
+//     return res.json({ok:false, exist: err.message});
+//   }
+// })
 
 const port = process.env.PORT || 4000
 connectDB();
