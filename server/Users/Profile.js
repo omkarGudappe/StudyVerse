@@ -191,13 +191,62 @@ Router.get('/search', async (req, res) => {
     }
 });
 
-Router.get('/profiledetail' , async (req, res) => {
-    try{
-        return res.json({ok: true, message:"User ID found"})
-    }catch(err){
-        return res.json({ok:false, message: err.message});
+Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => {
+    const { FUid } = req.params;
+    const { firstName, lastName, description, heading, gender, dob, education } = req.body;
+
+    if (!FUid) {
+        return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
     }
-})
+
+    try {
+        let updateData = {
+            firstName,
+            lastName,
+            dob,
+            gender,
+            education,
+            "UserProfile.description": description,
+            "UserProfile.heading": heading,
+        };
+
+        // If a file is uploaded, add avatar data to update
+        if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "studyverse/profiles",
+            });
+
+            updateData["UserProfile.avatar"] = {
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+            };
+        }
+
+        const updatedProfile = await User.findOneAndUpdate(
+            { firebaseUid: FUid },
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedProfile) {
+            return res.status(404).json({ message: "User not found", code: "USER_NOT_FOUND" });
+        }
+
+        res.json({ 
+            ok: true, 
+            message: "Profile updated successfully", 
+            user: updatedProfile 
+        });
+
+    } catch (err) {
+        console.error("Error updating profile:", err);
+        res.status(500).json({ 
+            ok: false,
+            message: "Internal server error", 
+            code: "INTERNAL_SERVER_ERROR" 
+        });
+    }
+});
 
 Router.get('/:Uid/notifications', async (req, res) => {
   try {
