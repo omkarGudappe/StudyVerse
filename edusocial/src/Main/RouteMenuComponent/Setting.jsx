@@ -117,14 +117,14 @@ const Setting = () => {
 
             console.log(response);
 
-            if (response.data.ok) {
-                setSuccessMessage("Profile updated successfully!");
-                setProfileData(response.data.user);
-                console.log(response.data);
-            } else {
-                setError(response.data.message || "Failed to update profile");
-            }
-            if(response.exist){
+            // if (response.data.ok) {
+            //     setSuccessMessage("Profile updated successfully!");
+            //     setProfileData(response.data.user);
+            //     console.log(response.data);
+            // } else {
+            //     setError(response.data.message || "Failed to update profile");
+            // }
+            if(response.data.exist){
                 setError(response.exist);
             }
         } catch (err) {
