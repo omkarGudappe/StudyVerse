@@ -98,7 +98,7 @@ const Setting = () => {
             }
 
             if (formData.profileImage) {
-                formDataToSend.append("profileImage", formData.profileImage);
+                formDataToSend.append("image", formData.profileImage);
             }
 
             // Prepare education string

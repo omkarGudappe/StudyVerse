@@ -681,7 +681,7 @@ const Menu = () => {
   const moreMenuItems = [
     mainMenuItems.find(item => item.id === "search"),
     desktopOnlyItems.find(item => item.id === "lessons"),
-    desktopOnlyItems.find(item => item.id === "setting")
+    desktopOnlyItems.find(item => item.id === "settings")
   ].filter(Boolean);
 
   const LargScreen = mainMenuItems.filter((item) => item.id !== 'contactMessage')

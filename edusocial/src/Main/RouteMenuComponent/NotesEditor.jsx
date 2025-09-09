@@ -1031,14 +1031,14 @@ const NotesEditor = () => {
 
           {/* History */}
           <ToolbarButton
-            onClick={() => editor.chain().focus().undo().run()}
+            // onClick={() => editor.chain().focus().undo().run()}
             title="Undo"
           >
             <FaUndo />
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().redo().run()}
+            // onClick={() => editor.chain().focus().redo().run()}
             title="Redo"
           >
             <FaRedo />
