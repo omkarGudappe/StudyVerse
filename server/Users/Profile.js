@@ -131,7 +131,7 @@ Router.get('/profile/:FUid' , async (req , res) => {
     }
 })
 
-Router.put('/profile/:FUid' , upload.single('image'), async (req, res) => {
+Router.put('/profile/update/:FUid' , upload.single('image'), async (req, res) => {
     const { FUid } = req.params;
     const { firstName, lastName, description, heading, gender, dob, education } = req.body;
 
