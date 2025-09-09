@@ -684,6 +684,11 @@ const Menu = () => {
     desktopOnlyItems.find(item => item.id === "settings")
   ].filter(Boolean);
 
+  const getRoutePath = (itemId) => {
+    const nonRouteItems = ["upload", "search", "notification", "messages"];
+    return nonRouteItems.includes(itemId) ? "#" : `/${itemId}`;
+  };
+
   const LargScreen = mainMenuItems.filter((item) => item.id !== 'contactMessage')
 
   return (
@@ -727,7 +732,7 @@ const Menu = () => {
             {LargScreen.map((item) => (
               <Link
                 key={item?.id}
-                to={item?.id !== "upload" ? item?.id !== "search" ? item?.id !== "notification" ? item?.id !== 'messages' ? `/${item?.id}` : '#' : "#" : "#" : '#'}
+                to={getRoutePath(item.id)}
                 onClick={() => handleMenuItemClick(item.id, item.action)}
                 className={`flex items-center  gap-4 p-4 rounded-xl transition-all duration-300 ${
                   activeBtn === item.id
