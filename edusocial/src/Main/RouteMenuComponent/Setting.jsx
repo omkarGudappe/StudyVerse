@@ -113,10 +113,10 @@ const Setting = () => {
 
             console.log(`${import.meta.env.VITE_API_URL}/OtherUser/update/${userId}`, formDataToSend);
 
-            const response = await axios.get(`${import.meta.env.VITE_API_URL}/OtherUser/update`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts`);
 
-            if(response.data.exist){
-                setError(response.data.exist);
+            if(response.data.posts){
+                console.log(response.data.posts);
             }
         } catch (err) {
             setError(err.response?.data?.message || err.message);

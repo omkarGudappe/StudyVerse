@@ -26,7 +26,7 @@ Router.get('/:userName' , async (req, res) => {
 
 Router.get('/update', async (req, res) => {
     // const { firstName, lastName, description, heading, gender, dob, education } = req.body;
-        return res.json({exist: `Got a UserId ${firstName}`});
+        return res.json({exist: `Got a UserId`});
 
 });
 
