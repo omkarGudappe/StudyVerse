@@ -131,15 +131,15 @@ Router.get('/profile/:FUid' , async (req , res) => {
     }
 })
 
-Router.put('/profile/update/:userId', upload.single('image'), async (req, res) => {
-    const { userId } = req.params;
+Router.put('/profile/update/:username', upload.single('image'), async (req, res) => {
+    const { username } = req.params;
     const { firstName, lastName, description, heading, gender, dob, education } = req.body;
 
-    if (!userId) {
+    if (!username) {
         return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
     }
 
-    console.log(userId);
+    console.log(username);
 
     try {
         let updateData = {
@@ -164,7 +164,7 @@ Router.put('/profile/update/:userId', upload.single('image'), async (req, res) =
         }
 
         const updatedProfile = await User.findOneAndUpdate(
-            { firebaseUid: userId },
+            { username: username },
             updateData,
             { new: true }
         );
