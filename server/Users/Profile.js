@@ -131,7 +131,7 @@ Router.get('/profile/:FUid' , async (req , res) => {
     }
 })
 
-Router.put('/profile/update/:userId', async (req, res) => {
+Router.post('/profile/update/:userId', async (req, res) => {
     const { userId } = req.params;
     // const { firstName, lastName, description, heading, gender, dob, education } = req.body;
 
