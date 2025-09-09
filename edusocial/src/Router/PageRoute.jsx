@@ -20,6 +20,7 @@ import UserProfile from "../Main/RouteMenuComponent/UserProfile";
 import CurrentUserContexProvider from "../Main/RouteMenuComponent/CurrentUserContexProvider";
 import Messages from "../Main/RouteMenuComponent/Messages";
 import MobileContact from "../Main/RouteMenuComponent/MobileContact";
+import Setting from "../Main/RouteMenuComponent/Setting";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -133,10 +134,10 @@ const PageRoute = () => {
               }
             />
             <Route
-              path="/setting"
+              path="/settings"
               element={
                 <MenuWrapper>
-                  {/* <Settings /> */}
+                  <Setting/>
                 </MenuWrapper>
               }
             />

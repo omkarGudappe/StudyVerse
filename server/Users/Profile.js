@@ -131,6 +131,51 @@ Router.get('/profile/:FUid' , async (req , res) => {
     }
 })
 
+Router.put('/profile/:FUid' , upload.single('image'), async (req, res) => {
+    const { FUid } = req.params;
+    const { firstName, lastName, description, heading, gender, dob, education } = req.body;
+
+    if (!FUid) {
+        return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
+    }
+
+    let avatarData = {};
+    try {
+
+        if(req.file){
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "studyverse/profiles",
+            })
+
+            avatarData = {
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+            }
+
+            const updatedProfile = await User.findOneAndUpdate(
+                { firebaseUid: FUid },
+                {
+                    firstName,
+                    lastName,
+                    dob,
+                    gender,
+                    education,
+                    "UserProfile.description": description,
+                    "UserProfile.heading": heading,
+                    "UserProfile.avatar": avatarData
+                },
+                { new: true }
+            );
+            
+            if (!updatedProfile) {
+                res.status(404).json({ message: "User not found", code: "USER_NOT_FOUND" });
+            }
+        }
+    }catch(err) {
+        res.status(500).json({ message: "Internal server error", code: "INTERNAL_SERVER_ERROR" });
+    }
+})
+
 Router.post('/posts/:Fid', upload.single('image'), async (req, res) => {
     try{
         const { Fid } = req.params;
