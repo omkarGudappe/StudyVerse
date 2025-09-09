@@ -232,7 +232,7 @@ Router.get('/:Uid/notifications', async (req, res) => {
   }
 });
 
-Router.post('/profile/update', async (req, res) => {
+Router.post('/update', async (req, res) => {
     // const { firstName, lastName, description, heading, gender, dob, education } = req.body;
     const { firstName } = req.body;
 
