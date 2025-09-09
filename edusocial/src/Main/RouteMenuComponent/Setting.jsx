@@ -79,7 +79,7 @@ const Setting = () => {
         setEducation(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = async (e) => {
+       const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError("");
@@ -98,9 +98,10 @@ const Setting = () => {
             }
 
             if (formData.profileImage) {
-                formDataToSend.append("image", formData.profileImage);
+                formDataToSend.append("profileImage", formData.profileImage);
             }
 
+            // Prepare education string
             let educationString = "";
             if (EduLevel === "school") {
                 educationString = `${Education.Year},${Education.institute}`;
@@ -111,15 +112,24 @@ const Setting = () => {
             }
             formDataToSend.append("education", educationString);
 
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/profiledetail`);
+            const response = await axios.put(
+                `${import.meta.env.VITE_API_URL}/user/profile/${userId}`,
+                formDataToSend,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
 
-            const data = res.data;
-            if(data.ok){
-                console.log(data.message);
+            if (response.data.ok) {
+                setSuccessMessage("Profile updated successfully!");
+                setProfileData(response.data.user);
+            } else {
+                setError(response.data.message || "Failed to update profile");
             }
-
         } catch (err) {
-            setError(err.response?.data?.message || err.message);
+            setError(err.response?.data?.message || "Error updating profile");
         } finally {
             setLoading(false);
         }
