@@ -111,9 +111,9 @@ const Setting = () => {
             }
             formDataToSend.append("education", educationString);
 
-            console.log(`${import.meta.env.VITE_API_URL}/user/profile/update/${FormData.username}`, formDataToSend);
+            console.log(`${import.meta.env.VITE_API_URL}/user/profile/update/${userId}`, formDataToSend);
 
-            const response = await axios.put(`${import.meta.env.VITE_API_URL}/user/profile/update/${ProfileData?.username}`,formDataToSend,{
+            const response = await axios.put(`${import.meta.env.VITE_API_URL}/user/profile/update/${userId}`,formDataToSend,{
                     headers: {
                         'Content-Type': 'multipart/form-data'
                     }
@@ -128,6 +128,9 @@ const Setting = () => {
                 console.log(response.data);
             } else {
                 setError(response.data.message || "Failed to update profile");
+            }
+            if(response.exist){
+                setError(response.exist);
             }
         } catch (err) {
             setError(err.response?.data?.message || "Error updating profile");
