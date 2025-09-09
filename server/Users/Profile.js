@@ -191,7 +191,7 @@ Router.get('/search', async (req, res) => {
     }
 });
 
-Router.post('/profiledetail' , async (req, res) => {
+Router.get('/profiledetail' , async (req, res) => {
     try{
         return res.json({ok: true, message:"User ID found"})
     }catch(err){
