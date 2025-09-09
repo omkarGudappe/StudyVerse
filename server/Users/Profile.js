@@ -131,7 +131,7 @@ Router.get('/profile/:FUid' , async (req , res) => {
     }
 })
 
-Router.put('/profile/update/:FUid' , upload.single('image'), async (req, res) => {
+Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => {
     const { FUid } = req.params;
     const { firstName, lastName, description, heading, gender, dob, education } = req.body;
 
@@ -139,42 +139,53 @@ Router.put('/profile/update/:FUid' , upload.single('image'), async (req, res) =>
         return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
     }
 
-    let avatarData = {};
     try {
+        let updateData = {
+            firstName,
+            lastName,
+            dob,
+            gender,
+            education,
+            "UserProfile.description": description,
+            "UserProfile.heading": heading,
+        };
 
-        if(req.file){
+        if (req.file) {
             const uploadResult = await cloudinary.uploader.upload(req.file.path, {
                 folder: "studyverse/profiles",
-            })
+            });
 
-            avatarData = {
+            updateData["UserProfile.avatar"] = {
                 url: uploadResult.secure_url,
                 publicId: uploadResult.public_id,
-            }
-
-            const updatedProfile = await User.findOneAndUpdate(
-                { firebaseUid: FUid },
-                {
-                    firstName,
-                    lastName,
-                    dob,
-                    gender,
-                    education,
-                    "UserProfile.description": description,
-                    "UserProfile.heading": heading,
-                    "UserProfile.avatar": avatarData
-                },
-                { new: true }
-            );
-            
-            if (!updatedProfile) {
-                res.status(404).json({ message: "User not found", code: "USER_NOT_FOUND" });
-            }
+            };
         }
-    }catch(err) {
-        res.status(500).json({ message: "Internal server error", code: "INTERNAL_SERVER_ERROR" });
+
+        const updatedProfile = await User.findOneAndUpdate(
+            { firebaseUid: FUid },
+            updateData,
+            { new: true }
+        );
+
+        if (!updatedProfile) {
+            return res.status(404).json({ message: "User not found", code: "USER_NOT_FOUND" });
+        }
+
+        res.json({ 
+            ok: true, 
+            message: "Profile updated successfully", 
+            user: updatedProfile 
+        });
+
+    } catch (err) {
+        console.error("Error updating profile:", err);
+        res.status(500).json({ 
+            ok: false,
+            message: "Internal server error", 
+            code: "INTERNAL_SERVER_ERROR" 
+        });
     }
-})
+});
 
 Router.post('/posts/:Fid', upload.single('image'), async (req, res) => {
     try{
