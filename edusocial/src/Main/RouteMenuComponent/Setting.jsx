@@ -111,7 +111,7 @@ const Setting = () => {
             }
             formDataToSend.append("education", educationString);
 
-            console.log(`${import.meta.env.VITE_API_URL}/user/update/${userId}`, formDataToSend);
+            console.log(`${import.meta.env.VITE_API_URL}/OtherUser/update/${userId}`, formDataToSend);
 
             const response = await axios.post(`${import.meta.env.VITE_API_URL}/user/update`, formData.firstName);
 

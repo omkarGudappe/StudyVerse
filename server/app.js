@@ -6,6 +6,7 @@ const cors = require('cors');
 const connectDB = require('./Db/connectdb');
 const Profile = require('./Users/Profile');
 const Posts = require('./Users/UserPosts');
+const OtherUser = require('./Users/OtherUser')
 const http = require('http');
 const { Server } = require('socket.io');
 const server = http.createServer(app);
@@ -45,6 +46,7 @@ app.use(express.urlencoded({extended: true}));
 app.use('/api/Auth' , Verify);
 app.use('/api/user', Profile);
 app.use('/api/posts', Posts);
+app.use('/api/OtherUser', OtherUser)
 
 const port = process.env.PORT || 4000
 connectDB();
