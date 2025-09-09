@@ -111,6 +111,8 @@ const Setting = () => {
             }
             formDataToSend.append("education", educationString);
 
+            console.log(`${import.meta.env.VITE_API_URL}/user/profile/update/${userId}`, formDataToSend);
+
             const response = await axios.put(`${import.meta.env.VITE_API_URL}/user/profile/update/${userId}`,formDataToSend,{
                     headers: {
                         'Content-Type': 'multipart/form-data'
@@ -118,9 +120,12 @@ const Setting = () => {
                 }
             );
 
+            console.log(response);
+
             if (response.data.ok) {
                 setSuccessMessage("Profile updated successfully!");
                 setProfileData(response.data.user);
+                console.log(response.data);
             } else {
                 setError(response.data.message || "Failed to update profile");
             }
