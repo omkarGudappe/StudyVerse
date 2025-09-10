@@ -435,6 +435,7 @@ import Search from "./RouteMenuComponent/Search";
 import { UserDataContextExport } from "../Main/RouteMenuComponent/CurrentUserContexProvider";
 import Notification from "./RouteMenuComponent/Notification";
 import MessageContact from "./RouteMenuComponent/MessageContact";
+import UsersNotes from "./RouteMenuComponent/UsersNotes";
 
 const Menu = () => {
   const [activeBtn, setActiveBtn] = useState("home");
@@ -445,6 +446,7 @@ const Menu = () => {
   const [MessageContactClick, setMessageContactClick] = useState(false);
   const [IsMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [OpenUserNotes, setOpenUserNotes] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -590,6 +592,7 @@ const Menu = () => {
           <path d="M8 15h6" />
         </svg>
       ),
+      action: () => setOpenUserNotes(!OpenUserNotes),
     },
     {
       id: "settings",
@@ -630,7 +633,7 @@ const Menu = () => {
   ].filter(Boolean);
 
   const getRoutePath = (itemId) => {
-    const nonRouteItems = ["upload", "search", "notification" , "messages"];
+    const nonRouteItems = ["upload", "search", "notification" , "messages" , "notes"];
     return nonRouteItems.includes(itemId) ? "#" : `/${itemId}`;
   };
 
@@ -641,15 +644,16 @@ const Menu = () => {
       <Search searchClicked={searchClicked} onClose={() => setSearchClicked(!searchClicked)} />
       <Notification open={NotificationOpen} onClose={() => setOpenNotification(!NotificationOpen)} ProfileData={ProfileData} />
       <MessageContact open={MessageContactClick} onClose={() => setMessageContactClick(false)} />
+      <UsersNotes open={OpenUserNotes} onClose={() => setOpenUserNotes(!OpenUserNotes)} ProfileData={ProfileData} />
 
       <motion.div 
         className="hidden z-30 md:flex h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-neutral-700 sticky top-0 flex-col"
-        animate={{ width: searchClicked ? 80 : NotificationOpen ? 80 : MessageContactClick ? 80 : 320 }}
+        animate={{ width: searchClicked ? 80 : NotificationOpen ? 80 : MessageContactClick ? 80 : OpenUserNotes ? 80 : 320 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
         <motion.div
           className="flex items-center p-6 border-b border-neutral-700"
-          animate={{ justifyContent: searchClicked ? "center" : NotificationOpen ? "center" : MessageContactClick ? "center" : "flex-start" }}
+          animate={{ justifyContent: searchClicked ? "center" : NotificationOpen ? "center" : MessageContactClick ? "center" : OpenUserNotes ? "center" : "flex-start" }}
           transition={{ duration: 0.2 }}
         >
           <img
@@ -658,7 +662,7 @@ const Menu = () => {
             className="w-12 h-12"
           />
           <AnimatePresence>
-            {!searchClicked && !NotificationOpen && !MessageContactClick && (
+            {!searchClicked && !NotificationOpen && !MessageContactClick && !OpenUserNotes && (
               <motion.h1 
                 className="text-white text-2xl font-bold ml-3 bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text"
                 initial={{ opacity: 0, width: 0 }}
@@ -683,13 +687,13 @@ const Menu = () => {
                   activeBtn === item.id
                     ? "bg-purple-600/20 border border-purple-500/30 text-purple-400 shadow-lg"
                     : "text-neutral-300 hover:bg-neutral-700/50 hover:text-white"
-                } ${searchClicked || NotificationOpen || MessageContactClick ? 'justify-center' :  ''}`}
+                } ${searchClicked || NotificationOpen || MessageContactClick || OpenUserNotes ? 'justify-center' :  ''}`}
               >
-                <div className={`${searchClicked || NotificationOpen || MessageContactClick ? "w-10 h-5 text-center" : "w-6 h-6 text-center"} flex items-center justify-center ${activeBtn === item.id ? "text-purple-400" : "text-neutral-400"}`}>
-                  <span className={`${searchClicked || NotificationOpen || MessageContactClick ? "w-6 text-center" : 'w-7 text-center'}`}>{item.icon}</span>
+                <div className={`${searchClicked || NotificationOpen || MessageContactClick || OpenUserNotes ? "w-10 h-5 text-center" : "w-6 h-6 text-center"} flex items-center justify-center ${activeBtn === item.id ? "text-purple-400" : "text-neutral-400"}`}>
+                  <span className={`${searchClicked || NotificationOpen || MessageContactClick || OpenUserNotes ? "w-6 text-center" : 'w-7 text-center'}`}>{item.icon}</span>
                 </div>
                 <AnimatePresence>
-                  {!searchClicked && !NotificationOpen && !MessageContactClick && (
+                  {!searchClicked && !NotificationOpen && !MessageContactClick && !OpenUserNotes && (
                     <motion.span 
                       className="font-medium"
                       initial={{ opacity: 0, width: 0 }}
@@ -711,19 +715,19 @@ const Menu = () => {
             {desktopOnlyItems.map((item) => (
               <Link
                 key={item.id}
-                to={`/${item.id}`}
-                onClick={() => setActiveBtn(item.id)}
+                to={getRoutePath(item.id)}
+                onClick={() => handleMenuItemClick(item.id, item.action)}
                 className={`flex items-center  gap-4 p-4 rounded-xl transition-all duration-300 ${
                   activeBtn === item.id
                     ? "bg-purple-600/20 border border-purple-500/30 text-purple-400 shadow-lg"
                     : "text-neutral-300 hover:bg-neutral-700/50 hover:text-white"
-                } ${searchClicked ? 'justify-center' : ''}`}
+                } ${searchClicked || OpenUserNotes ? 'justify-center' : ''}`}
               >
                 <div className={`${searchClicked ? "w-10 h-5 text-center" : "w-6 h-6 text-center"} flex items-center justify-center ${activeBtn === item.id ? "text-purple-400" : "text-neutral-400"}`}>
                   <span className={`${searchClicked ? "w-6 text-center" : 'w-7 text-center'}`}>{item.icon}</span>
                 </div>
                 <AnimatePresence>
-                  {!searchClicked && !NotificationOpen && !MessageContactClick && (
+                  {!searchClicked && !NotificationOpen && !MessageContactClick && !OpenUserNotes && (
                     <motion.span 
                       className="font-medium"
                       initial={{ opacity: 0, width: 0 }}

@@ -10,7 +10,7 @@ const NotesTitle = ({ open, onClose , editor }) => {
   const [IsLoading, setIsLoading] = useState(false);
   const Navigate = useNavigate();
   const { setNotes, setLoading } = StoreNotes();
-  const { ProfileData } = UserDataContextExport();
+  const { ProfileData , FirebaseUid } = UserDataContextExport();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -22,7 +22,7 @@ const NotesTitle = ({ open, onClose , editor }) => {
     //   setTitle('');
     //   onClose();
     // }
-    const userId = auth.currentUser?.uid || ProfileData?.Uid || ProfileData?.firebaseUid
+    const userId = FirebaseUid || auth.currentUser?.uid || ProfileData?.Uid || ProfileData?.firebaseUid
     const NoteId = title +"_"+ Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const content = editor.getJSON();
     console.log("Form data", title, userId, NoteId, content);
@@ -30,7 +30,7 @@ const NotesTitle = ({ open, onClose , editor }) => {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/Notes/usernotes`,{ title, NoteId, uid:userId, content } );
         if(res.data.ok){
             setNotes({ title, id: NoteId });
-            Navigate('/createNotes');
+            onClose();
         }else {
             console.log(res.data.message);
             setLoading(false);
