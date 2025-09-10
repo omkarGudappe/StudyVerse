@@ -20,7 +20,7 @@ import UserProfile from "../Main/RouteMenuComponent/UserProfile";
 import CurrentUserContexProvider from "../Main/RouteMenuComponent/CurrentUserContexProvider";
 import Messages from "../Main/RouteMenuComponent/Messages";
 import MobileContact from "../Main/RouteMenuComponent/MobileContact";
-import Setting from "../Main/RouteMenuComponent/Setting";
+import Setting from "../Main/RouteMenuComponent/Settings/Setting";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();

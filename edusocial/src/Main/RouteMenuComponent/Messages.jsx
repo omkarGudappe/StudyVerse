@@ -73,52 +73,6 @@ const Messages = () => {
     fetchOtherUser();
   }, [userName, ProfileData]);
 
-// useEffect(() => {
-//   if (!otherUser || !ProfileData) return;
-
-//   // Reset messages when switching users
-//   setMessages([]);
-//   setIsLoading(true);
-
-//   const chatId = getChatId(ProfileData._id, otherUser._id);
-//   const messagesRef = query(
-//     ref(database, `chats/${chatId}/messages`),
-//     orderByChild("timestamp"),
-//     limitToLast(100)
-//   );
-
-//   const listener = onValue(
-//     messagesRef,
-//     (snapshot) => {
-//       const messagesData = [];
-//       snapshot.forEach((childSnapshot) => {
-//         messagesData.push({
-//           id: childSnapshot.key,
-//           ...childSnapshot.val(),
-//         });
-//       });
-
-//       messagesData.sort((a, b) => a.timestamp - b.timestamp);
-//       setMessages(messagesData);
-//       setIsLoading(false);
-
-//       setTimeout(() => {
-//         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//       }, 100);
-//     },
-//     (error) => {
-//       console.error("Error fetching messages:", error);
-//       setIsLoading(false);
-//     }
-//   );
-
-//   // Cleanup
-//   return () => {
-//     off(messagesRef);
-//   };
-// }, [otherUser, ProfileData, isSending]);
-
-
 useEffect(() => {
   if (!otherUser || !ProfileData) return;
 
@@ -144,8 +98,7 @@ useEffect(() => {
         });
       });
 
-      // FIX: Sort in descending order (newest first)
-      messagesData.sort((a, b) => b.timestamp - a.timestamp);
+      messagesData.sort((a, b) => a.timestamp - b.timestamp);
       setMessages(messagesData);
       setIsLoading(false);
 
@@ -164,6 +117,53 @@ useEffect(() => {
     off(messagesRef);
   };
 }, [otherUser, ProfileData, isSending]);
+
+
+// useEffect(() => {
+//   if (!otherUser || !ProfileData) return;
+
+//   // Reset messages when switching users
+//   setMessages([]);
+//   setIsLoading(true);
+
+//   const chatId = getChatId(ProfileData._id, otherUser._id);
+//   const messagesRef = query(
+//     ref(database, `chats/${chatId}/messages`),
+//     orderByChild("timestamp"),
+//     limitToLast(100)
+//   );
+
+//   const listener = onValue(
+//     messagesRef,
+//     (snapshot) => {
+//       const messagesData = [];
+//       snapshot.forEach((childSnapshot) => {
+//         messagesData.push({
+//           id: childSnapshot.key,
+//           ...childSnapshot.val(),
+//         });
+//       });
+
+//       // FIX: Sort in descending order (newest first)
+//       messagesData.sort((a, b) => b.timestamp - a.timestamp);
+//       setMessages(messagesData);
+//       setIsLoading(false);
+
+//       setTimeout(() => {
+//         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+//       }, 100);
+//     },
+//     (error) => {
+//       console.error("Error fetching messages:", error);
+//       setIsLoading(false);
+//     }
+//   );
+
+//   // Cleanup
+//   return () => {
+//     off(messagesRef);
+//   };
+// }, [otherUser, ProfileData, isSending]);
 
 
   useEffect(() => {

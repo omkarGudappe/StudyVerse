@@ -45,7 +45,8 @@
     "react-router-dom": "^7.8.2",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.12",
-    "tippy.js": "^6.3.7"
+    "tippy.js": "^6.3.7",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
