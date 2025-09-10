@@ -25,15 +25,36 @@ Router.get('/:userName' , async (req, res) => {
     }
 })
 
+Router.put('/update/:Id' , async(req, res) => {
+    const { Id } = req.params;
+    const { content } = req.body;
+
+    if(!Id) {
+        return res.status(404).json({ message: " Missing requirment" })
+    }
+
+    try{
+        await Notes.findByIdAndUpdate(
+            Id,
+            { content },
+            {new: true}
+        );
+        res.json({ok: true})
+
+    }catch(err) {
+        res.status(500).json({message: err.message});
+    }
+})
+
 Router.post('/usernotes' , async (req , res) =>{
-    const { title , NoteId , uid } = req.body;
+    const { title , NoteId , uid, content } = req.body;
 
     if(!title || !NoteId || !uid){
         return res.status(404).json({ message:`Missing requirements ${title} , ${NoteId} , ${uid}`});
     }
     
     try{
-        const FindUser = await User.findOne({ uid });
+        const FindUser = await User.findOne({ firebaseUid: uid });
 
         if(!FindUser) {
             return res.status(404).json({message:"User Not Found"});
@@ -43,7 +64,7 @@ Router.post('/usernotes' , async (req , res) =>{
             title,
             NoteId,
             author: FindUser._id,
-            content: "",
+            content: content,
         })
 
         if(NewNote) {
@@ -52,7 +73,24 @@ Router.post('/usernotes' , async (req , res) =>{
     }catch(err){
         return res.status(500).json({ message: err.message });
     }
+})
 
+Router.get('/usernotes/:ID', async (req, res) => {
+    const { ID } = req.params;
+
+    try{
+       const notes = await Notes.find({ author: ID });
+
+        if(!notes){
+            return res.status(404).json({message: "User Not Found"});
+        }
+
+        return res.json({ok: true, message: "Notes Found" , notes});
+
+    }catch(err){
+        res.status(500).json({message: err.message});
+        console.log(err.message);
+    }
 })
 
 module.exports = Router

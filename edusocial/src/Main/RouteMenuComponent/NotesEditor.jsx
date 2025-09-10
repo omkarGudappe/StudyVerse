@@ -23,6 +23,7 @@ import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
 import Suggestion from "@tiptap/suggestion";
 import NotesTitle from "./SmallComponents/NotesTitle";
+import axios from 'axios';
 import {
   FaBold,
   FaItalic,
@@ -426,7 +427,7 @@ const CustomTable = Table.extend({
   },
 });
 
-const NotesEditor = () => {
+const NotesEditor = ({content , Id}) => {
   const [color, setColor] = useState("#ffffff");
   const [bgColor, setBgColor] = useState("#fffd88");
   const [fontSize, setFontSize] = useState("16px");
@@ -456,6 +457,7 @@ const NotesEditor = () => {
   const editorRef = useRef(null);
   const { notes, isLoading } = StoreNotes();
   const [OpenNotesTitleModel, setOpenNotesTitleModel] = useState(false);
+  const [EditorContentData, setEditorContentData] = useState(content || null);
   
   // Update date every minute
   useEffect(() => {
@@ -486,10 +488,10 @@ const ResizableImage = Image.extend({
     return {
       ...this.parent?.(),
       width: {
-        default: '100%',
+        default: 'auto',
         parseHTML: element => {
-          const width = element.getAttribute('width') || element.style.width;
-          return width || '100%';
+          const width = element.getAttribute('width') || "auto";
+          return width || 'auto';
         },
         renderHTML: attributes => {
           return {
@@ -771,12 +773,33 @@ const ResizableImage = Image.extend({
       setShowTableControls(inTable);
       
       // Auto-save after 2 seconds of inactivity
-      clearTimeout(window.autoSaveTimeout);
-      window.autoSaveTimeout = setTimeout(() => {
-        setSavedStatus("saving");
-        // Simulate saving
-        setTimeout(() => setSavedStatus("saved"), 500);
-      }, 2000);
+      if(Id) {
+       clearTimeout(window.autoSaveTimeout);
+       window.autoSaveTimeout = setTimeout(async () => {
+        try {
+          setSavedStatus("saving");
+          const jsonContent = editor.getJSON();
+
+          const res = await axios.put(`${import.meta.env.VITE_API_URL}/Notes/update/${Id}`, {
+            content: jsonContent,
+          });
+
+          if(res.data.ok){
+            setSavedStatus("saved");
+          }
+        } catch (err) {
+          console.error(err.response.data.message ,"Auto-save error:", err.message);
+          setSavedStatus("error");
+        }
+      }, 4000);
+      } else {
+        clearTimeout(window.autoSaveTimeout);
+        window.autoSaveTimeout = setTimeout(() => {
+          setSavedStatus("saving");
+          // Simulate saving
+          setTimeout(() => setSavedStatus("saved"), 500);
+        }, 2000);
+      }
     },
     editorProps: {
       attributes: {
@@ -785,6 +808,20 @@ const ResizableImage = Image.extend({
       },
     },
   });
+
+  useEffect(() => {
+    if(!content) return;
+    if(content){
+      console.log("Content here",content)
+      editor.commands.setContent(content)
+    }
+  } , [editor ,content , Id])
+
+  useEffect(() => {
+    if(Id){
+
+    }
+  })
 
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
@@ -847,7 +884,7 @@ const ResizableImage = Image.extend({
       editor.chain().focus().insertTable({ 
         rows: tableRows, 
         cols: tableCols, 
-        withHeaderRow: tableHeader 
+        withHeaderRow: tableHeader
       }).run();
       setShowTableModal(false);
     }
@@ -1726,7 +1763,7 @@ const ResizableImage = Image.extend({
       )}
 
       {/* Notes Title Modal */}
-      {OpenNotesTitleModel && (
+      {OpenNotesTitleModel && !Id && (
         <NotesTitle  open={setOpenNotesTitleModel} onClose={() => setOpenNotesTitleModel(!OpenNotesTitleModel)} editor={editor} />
       )}
     </div>

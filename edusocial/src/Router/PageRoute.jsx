@@ -21,6 +21,7 @@ import CurrentUserContexProvider from "../Main/RouteMenuComponent/CurrentUserCon
 import Messages from "../Main/RouteMenuComponent/Messages";
 import MobileContact from "../Main/RouteMenuComponent/MobileContact";
 import Setting from "../Main/RouteMenuComponent/Settings/Setting";
+import UpdateUserNotes from "../Main/RouteMenuComponent/Panels/UpdateUserNotes";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -102,10 +103,10 @@ const PageRoute = () => {
               }
             />
             <Route
-              path="/notes"
+              path="/notes/:Id"
               element={
                 <MenuWrapper>
-                  {/* <Notes /> */}
+                  <UpdateUserNotes/>
                 </MenuWrapper>
               }
             />
