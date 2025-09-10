@@ -255,3 +255,78 @@ body{
   height: 0;
   pointer-events: none;
 }
+
+
+
+.custom-table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.custom-table, .table-cell, .table-header {
+  border: 1px solid #718096 !important;
+}
+
+.table-header {
+  background-color: #4a5568;
+  font-weight: bold;
+  text-align: center;
+}
+
+.table-cell {
+  padding: 8px;
+}
+
+
+
+  .image-resize-container {
+    position: relative;
+    display: inline-block;
+    max-width: 100%;
+    margin: 0.5rem 0;
+  }
+  
+  .resizable-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+  
+  .image-resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background: #9333ea;
+    color: white;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    cursor: nwse-resize;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .image-resize-container:hover .image-resize-handle {
+    opacity: 1;
+  }
+  
+  .embedded-image {
+    border-radius: 4px;
+    transition: box-shadow 0.2s ease;
+  }
+  
+  .embedded-image:hover {
+    box-shadow: 0 0 0 2px #9333ea;
+  }
+  
+  .math-element {
+    background: #2d2d2d;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    overflow-x: auto;
+  }

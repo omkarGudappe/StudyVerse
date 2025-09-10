@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { UserDataContextExport } from './CurrentUserContexProvider'
-import { auth } from '../../Auth/AuthProviders/FirebaseSDK';
+import { UserDataContextExport } from '../CurrentUserContexProvider'
+import { auth } from '../../../Auth/AuthProviders/FirebaseSDK';
 
 const Setting = () => {
     const { ProfileData, setProfileData } = UserDataContextExport();
