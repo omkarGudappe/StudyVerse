@@ -17,6 +17,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 import { FaSmile } from "react-icons/fa";
+import { serverTimestamp } from "firebase/database";
 
 const Messages = () => {
   const { userName } = useParams();
@@ -191,7 +192,7 @@ const sendMessage = async () => {
     senderId: senderMongoId,
     senderUid: senderFirebaseUid,
     text: newMessage.trim(),
-    timestamp: Date.now()
+    timestamp: serverTimestamp()
   };
 
   // 1. Ensure chat metadata exists
@@ -203,7 +204,7 @@ const sendMessage = async () => {
         [otherFirebaseUid]: true,
       },
       lastMessage: newMessage.trim(),
-      updatedAt: Date.now(),
+      updatedAt: serverTimestamp(),
     });
     console.log("✅ Chat metadata created/updated");
   } catch (err) {
@@ -229,7 +230,7 @@ const sendMessage = async () => {
       otherUserFirebaseUid: otherFirebaseUid,
       otherUserMongoId: otherUser._id,
       lastMessage: newMessage.trim(),
-      timestamp: Date.now(),
+      timestamp: serverTimestamp(),
     });
     console.log("✅ Sender userChat updated");
   } catch (err) {
@@ -243,7 +244,7 @@ const sendMessage = async () => {
       otherUserFirebaseUid: senderFirebaseUid,
       otherUserMongoId: senderMongoId,
       lastMessage: newMessage.trim(),
-      timestamp: Date.now(),
+      timestamp:serverTimestamp(),
     });
     console.log("✅ Recipient userChat updated");
   } catch (err) {

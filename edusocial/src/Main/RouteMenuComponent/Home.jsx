@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import Lenis from "@studio-freight/lenis";
 
 const StudyVerseMain = () => {
   const [posts, setPosts] = useState([]);
@@ -9,6 +10,76 @@ const StudyVerseMain = () => {
   const [activePost, setActivePost] = useState(null);
   const videoRefs = useRef({});
   const observer = useRef(null);
+
+ useEffect(() => {
+  console.log("Lenis init 🚀");
+
+  const lenis = new Lenis({
+    duration: 1.2,
+    smoothWheel: true,
+    smoothTouch: true,
+    touchMultiplier: 1.5,
+    wheelMultiplier: 1.2,
+    gestureOrientation: 'vertical',
+  });
+
+  function raf(time) {
+    lenis.raf(time);
+    requestAnimationFrame(raf);
+  }
+
+  requestAnimationFrame(raf);
+
+  lenis.on("scroll", ({ scroll, limit, velocity, direction, progress }) => {
+    console.log("Lenis Scroll:", scroll, "/", limit);
+    
+    if (observer.current) {
+      observer.current.disconnect();
+      
+      Object.values(videoRefs.current).forEach(video => {
+        if (video) {
+          observer.current.observe(video);
+        }
+      });
+    }
+  });
+
+  return () => {
+    lenis.destroy();
+  };
+}, []);
+
+observer.current = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      const videoId = entry.target.dataset.videoId;
+      const videoElement = videoRefs.current[videoId];
+      
+      if (videoElement) {
+        if (entry.isIntersecting) {
+          // Video is in viewport - play it
+          setActivePost(videoId);
+          // Mute the video for autoplay to work
+          videoElement.muted = true;
+          videoElement.play().catch(error => {
+            console.log('Autoplay prevented:', error);
+          });
+        } else {
+          // Video is out of viewport - pause it
+          if (activePost === videoId) {
+            setActivePost(null);
+          }
+          videoElement.pause();
+        }
+      }
+    });
+  },
+  {
+    threshold: 0.6, 
+    rootMargin: '0px 0px -10% 0px'
+  }
+);
+
 
   const fetchPosts = async () => {
     try {
@@ -208,7 +279,7 @@ const StudyVerseMain = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white py-8">
+    <div className="lenis min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="text-center mb-12">
