@@ -605,6 +605,21 @@ const Menu = () => {
     }
   ];
 
+  const OnlyMobileMenu = [
+    {
+      id:"notes",
+      label: "My Notes",
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="5" y="3" width="14" height="18" rx="2" />
+          <path d="M12 3v6l2-1 2 1V3" />
+          <path d="M8 11h8" />
+          <path d="M8 15h6" />
+        </svg>
+      ),
+    }
+  ]
+
   const handleMenuItemClick = (itemId, action) => {
     setActiveBtn(itemId);
     if (action) {
@@ -629,13 +644,24 @@ const Menu = () => {
   const moreMenuItems = [
     mainMenuItems.find(item => item.id === "search"),
     desktopOnlyItems.find(item => item.id === "lessons"),
-    desktopOnlyItems.find(item => item.id === "settings")
+    desktopOnlyItems.find(item => item.id === "settings"),
+    OnlyMobileMenu.find(item => item.id === 'notes'),
   ].filter(Boolean);
 
   const getRoutePath = (itemId) => {
     const nonRouteItems = ["upload", "search", "notification" , "messages" , "notes"];
     return nonRouteItems.includes(itemId) ? "#" : `/${itemId}`;
   };
+
+  const IsShowOrNot = () => {
+     const path = location.pathname.substring(1);
+    const current = ["settings" , "notes", "profile" , "search", "createNotes" , "notification", "profile" , "messages" , "contactMessage"];
+
+    const Check = current.includes(path);
+    if(Check){
+      return "hidden"
+    }
+  }
 
   const LargScreen = mainMenuItems.filter((item) => item.id !== 'contactMessage')
 
@@ -644,7 +670,7 @@ const Menu = () => {
       <Search searchClicked={searchClicked} onClose={() => setSearchClicked(!searchClicked)} />
       <Notification open={NotificationOpen} onClose={() => setOpenNotification(!NotificationOpen)} ProfileData={ProfileData} />
       <MessageContact open={MessageContactClick} onClose={() => setMessageContactClick(false)} />
-      <UsersNotes open={OpenUserNotes} onClose={() => setOpenUserNotes(!OpenUserNotes)} ProfileData={ProfileData} />
+      <UsersNotes open={OpenUserNotes} onClose={() => setOpenUserNotes(!OpenUserNotes)} ProfileData={ProfileData} from="desktop" />
 
       <motion.div 
         className="hidden z-30 md:flex h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-neutral-700 sticky top-0 flex-col"
@@ -749,7 +775,7 @@ const Menu = () => {
         <div className="fixed top-4 right-4 z-40">
           <button
             onClick={() => setOpenNotification(!NotificationOpen)}
-            className={`p-2 rounded-full bg-neutral-800/80 backdrop-blur-sm text-neutral-300 hover:text-white transition-colors ${activeBtn === 'createNotes'  ? 'hidden' : activeBtn === 'profile' ? 'hidden' : activeBtn === 'contactMessage' ? 'hidden' : searchClicked ? 'hidden' : 'block'}`}
+            className={`p-2 rounded-full bg-neutral-800/80 backdrop-blur-sm z-20 text-neutral-300 hover:text-white transition-colors ${IsShowOrNot()}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24"
                 fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" 
@@ -764,7 +790,7 @@ const Menu = () => {
         <div className="fixed right-4 bottom-20 z-40">
           <button
             onClick={() => setShowPost(true)}
-            className={`p-4 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105 ${activeBtn === 'createNotes'  ? 'hidden' : activeBtn === 'profile' ? 'hidden'  : 'block'}`}
+            className={`p-4 rounded-full bg-gradient-to-r from-purple-600 to-amber-500 text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105 ${IsShowOrNot()} `}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -817,7 +843,7 @@ const Menu = () => {
                 animate={{ x: 0 }}
                 exit={{ x: "-100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed top-1/4 left-2 right-0 z-50 w-20 bg-neutral-900 rounded-3xl border-t border-neutral-700 p-4"
+                className="fixed top-1/7 left-2 right-0 z-50 w-20 bg-neutral-900 rounded-3xl border-t border-neutral-700 p-4"
               >
                 <div className="flex justify-center mb-2">
                   <div className="w-12 h-1 bg-neutral-700 rounded-full"></div>

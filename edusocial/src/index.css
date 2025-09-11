@@ -1,4 +1,4 @@
-@import "tailwindcss";
+/* @import "tailwindcss";
 
 body{
     background-color: rgb(33, 33, 33); 
@@ -13,37 +13,34 @@ body{
   line-height: 1.6;
 }
 
-/* Headings */
 .ProseMirror h1 {
-  font-size: 2rem;    /* 32px */
+  font-size: 2rem; 
   font-weight: 700;
   margin: 0.75em 0 0.5em;
 }
 
 .ProseMirror h2 {
-  font-size: 1.5rem;  /* 24px */
+  font-size: 1.5rem; 
   font-weight: 600;
   margin: 0.75em 0 0.5em;
 }
 
 .ProseMirror h3 {
-  font-size: 1.25rem; /* 20px */
+  font-size: 1.25rem;
   font-weight: 600;
   margin: 0.5em 0 0.25em;
 }
 
-/* Paragraphs */
 .ProseMirror p {
   margin: 0.5em 0;
 }
 
-/* Ordered Lists */
 .ProseMirror ol {
   list-style-type: decimal;
   list-style-position: inside;
   margin: 0.5em 0;
   padding-left: 1.2em;
-  color: #d8b4fe; /* purple-300 for numbers */
+  color: #d8b4fe;
 }
 
 .ProseMirror ol li {
@@ -51,13 +48,12 @@ body{
   display: list-item;
 }
 
-/* Unordered Lists */
 .ProseMirror ul {
   list-style-type: disc;
   list-style-position: inside;
   margin: 0.5em 0;
   padding-left: 1.2em;
-  color: #93c5fd; /* blue-300 for bullets */
+  color: #93c5fd; 
 }
 
 .ProseMirror ul li {
@@ -65,28 +61,25 @@ body{
   display: list-item;
 }
 
-/* Blockquote */
 .ProseMirror blockquote {
-  border-left: 3px solid #6b7280; /* gray-500 */
+  border-left: 3px solid #6b7280;
   margin: 0.75em 0;
   padding-left: 1em;
-  color: #d1d5db; /* gray-300 */
+  color: #d1d5db;
   font-style: italic;
 }
 
-/* Code Block */
 .ProseMirror pre {
-  background: #1f2937; /* gray-800 */
-  color: #fbbf24;      /* amber-400 */
+  background: #1f2937; 
+  color: #fbbf24;
   padding: 0.75rem;
   border-radius: 0.5rem;
   font-family: "Fira Code", monospace;
   overflow-x: auto;
 }
 
-/* Inline Code */
 .ProseMirror code {
-  background: #374151; /* gray-700 */
+  background: #374151;
   color: #fbbf24;
   padding: 0.1rem 0.3rem;
   border-radius: 0.25rem;
@@ -98,18 +91,6 @@ body{
   margin: 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-/* Table Styling */
 .custom-table {
   border-collapse: collapse;
   margin: 1rem 0;
@@ -135,7 +116,6 @@ body{
   background-color: #3f4756;
 }
 
-/* Math Equation Styling */
 .math-element {
   padding: 1rem;
   margin: 1rem 0;
@@ -144,7 +124,6 @@ body{
   overflow-x: auto;
 }
 
-/* Image Styling */
 .embedded-image {
   max-width: 100%;
   height: auto;
@@ -152,7 +131,6 @@ body{
   border-radius: 0.375rem;
 }
 
-/* Link Styling */
 .ProseMirror a {
   color: #9f7aea;
   text-decoration: underline;
@@ -162,7 +140,6 @@ body{
   color: #b794f4;
 }
 
-/* Code Block Styling */
 .ProseMirror pre {
   background: #2d3748;
   border-radius: 0.5rem;
@@ -188,7 +165,6 @@ body{
   padding: 0.2rem 0.4rem;
 }
 
-/* Collapsible Section Styling */
 .ProseMirror details {
   margin: 1rem 0;
   padding: 0.5rem 1rem;
@@ -206,7 +182,6 @@ body{
   margin-bottom: 0.5rem;
 }
 
-/* Task List Styling */
 .ProseMirror ul[data-type="taskList"] {
   list-style: none;
   padding: 0;
@@ -239,7 +214,6 @@ body{
   text-decoration: line-through;
 }
 
-/* Blockquote Styling */
 .ProseMirror blockquote {
   border-left: 4px solid #9f7aea;
   margin: 1.5rem 0;
@@ -247,7 +221,6 @@ body{
   font-style: italic;
 }
 
-/* Placeholder Styling */
 .ProseMirror p.is-editor-empty:first-child::before {
   color: #718096;
   content: attr(data-placeholder);
@@ -275,6 +248,13 @@ body{
 
 .table-cell {
   padding: 8px;
+}
+
+
+.ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 
@@ -329,4 +309,527 @@ body{
     border-radius: 4px;
     margin: 0.5rem 0;
     overflow-x: auto;
+  } */
+
+
+
+  @import "tailwindcss";
+
+body {
+  background-color: rgb(33, 33, 33);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Smooth transitions for all interactive elements */
+/* * {
+  transition: all 0.2s ease-in-out;
+} */
+
+.ProseMirror {
+  min-height: 200px;
+  padding: 1.5rem;
+  outline: none;
+  color: #f3f4f6;
+  font-size: 1rem;
+  line-height: 1.6;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 12px;
+  border: 1px solid #404040;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  margin: 1rem 0;
+}
+
+/* Headings with gradient text */
+.ProseMirror h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 1em 0 0.5em;
+  background: white;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ProseMirror h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0.875em 0 0.375em;
+  color: #d8b4fe;
+  border-bottom: 2px solid #6b46c1;
+  padding-bottom: 0.25em;
+}
+
+.ProseMirror h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0.75em 0 0.25em;
+  color: #a78bfa;
+}
+
+/* Paragraphs with better spacing */
+.ProseMirror p {
+  margin: 0.75em 0;
+  line-height: 1.8;
+  text-align: justify;
+}
+
+/* Enhanced Lists */
+.ProseMirror ol {
+  list-style-type: decimal;
+  margin: 1em 0;
+  padding-left: 2em;
+  color: #d8b4fe;
+  background: rgba(159, 122, 234, 0.1);
+  border-radius: 8px;
+  padding: 1em 1em 1em 2.5em;
+}
+
+.ProseMirror ol li {
+  margin: 0.5em 0;
+  padding: 0.25em 0;
+  position: relative;
+}
+
+.ProseMirror ul {
+  list-style-type: disc;
+  margin: 1em 0;
+  padding-left: 2em;
+  color: #93c5fd;
+  background: rgba(147, 197, 253, 0.1);
+  border-radius: 8px;
+  padding: 1em 1em 1em 2.5em;
+}
+
+.ProseMirror ul li {
+  margin: 0.5em 0;
+  padding: 0.25em 0;
+  position: relative;
+}
+
+/* Beautiful Blockquote */
+.ProseMirror blockquote {
+  border-left: 4px solid #9f7aea;
+  margin: 1rem 0;
+  padding: 0.1rem 1rem;
+  background: linear-gradient(135deg, rgba(159, 122, 234, 0.1) 0%, rgba(107, 70, 193, 0.1) 100%);
+  border-radius: 0 12px 12px 0;
+  font-style: italic;
+  position: relative;
+  overflow: hidden;
+}
+
+.ProseMirror blockquote::before {
+  content: '"';
+  position: absolute;
+  top: -20px;
+  left: 10px;
+  font-size: 4rem;
+  color: rgba(159, 122, 234, 0.2);
+  font-family: Georgia, serif;
+}
+
+/* Enhanced Code Blocks */
+.ProseMirror pre {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  color: #fbbf24;
+  padding: 1.5rem;
+  border-radius: 12px;
+  font-family: 'Fira Code', 'Monaco', 'Cascadia Code', monospace;
+  overflow-x: auto;
+  border: 1px solid #4a5568;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  margin: 1.5rem 0;
+}
+
+.ProseMirror pre code {
+  background: none;
+  color: inherit;
+  font-size: 0.9rem;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.ProseMirror code {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+  color: #fbbf24;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+  border: 1px solid #6b7280;
+}
+
+.custom-table {
+  border-collapse: collapse !important;
+  margin: 2rem 0;
+  width: 100%;
+  overflow: hidden;
+  table-layout: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border: 2px solid #4a5568 !important;
+}
+
+.custom-table td, .custom-table th {
+  border: 1px solid #718096 !important;
+  text-align: center;
+  padding: 0.3rem;
+  padding-inline: 1rem;
+  position: relative;
+  min-width: 100px;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+}
+
+.custom-table th {
+  background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%);
+  font-weight: 600;
+  text-align: center;
+  color: white;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+  width: 4rem;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #718096 !important;
+}
+
+.custom-table tr:hover td {
+  background: rgba(159, 122, 234, 0.1);
+}
+
+.custom-table .selectedCell {
+  background: rgba(159, 122, 234, 0.2) !important;
+  box-shadow: 0 0 0 2px #9f7aea;
+  outline: none;
+}
+
+/* Fix for table header and cell specific styles */
+.table-header {
+  background: linear-gradient(135deg, #6b46c1 0%, #553c9a 100%) !important;
+  font-weight: bold;
+  text-align: center;
+  padding: 0.3rem;
+  padding-inline: 1rem;
+  color: white !important;
+  border: 1px solid #718096 !important;
+  border-bottom: 2px solid #718096 !important;
+}
+
+.table-cell {
+  padding-inline: 1rem !important;
+  border: 1px solid #718096 !important;
+  background: transparent;
+}
+
+/* Ensure table borders are visible in the editor */
+.ProseMirror .custom-table,
+.ProseMirror .custom-table td,
+.ProseMirror .custom-table th {
+  border: 1px solid #718096 !important;
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Remove any conflicting styles that might hide borders */
+.ProseMirror table {
+  border-collapse: collapse !important;
+  text-align: center;
+  border-spacing: 0 !important;
+}
+
+.ProseMirror td,
+.ProseMirror th {
+  border: 1px solid #718096 !important;
+  vertical-align: middle;
+  text-align: center;
+
+}
+
+/* Math Equation Styling Enhancement */
+.math-element {
+  padding: 1.5rem;
+  margin: 2rem 0;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border-radius: 12px;
+  overflow-x: auto;
+  border: 1px solid #4a5568;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-family: 'KaTeX_Math', 'Times New Roman', serif;
+}
+
+/* Enhanced Image Styling */
+.image-resize-container {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  margin: 2rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s ease;
+}
+
+.image-resize-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(159, 122, 234, 0.3);
+}
+
+.resizable-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 12px;
+}
+
+.image-resize-handle {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  cursor: nwse-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.image-resize-container:hover .image-resize-handle {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.image-resize-handle:hover {
+  transform: scale(1.2) !important;
+  background: linear-gradient(135deg, #b794f4 0%, #805ad5 100%);
+}
+
+/* Link Styling Enhancement */
+.ProseMirror a {
+  color: #9f7aea;
+  text-decoration: none;
+  background: linear-gradient(135deg, rgba(159, 122, 234, 0.1) 0%, rgba(107, 70, 193, 0.1) 100%);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  border-bottom: 2px solid #9f7aea;
+  transition: all 0.2s ease;
+}
+
+.ProseMirror a:hover {
+  color: #b794f4;
+  background: linear-gradient(135deg, rgba(159, 122, 234, 0.2) 0%, rgba(107, 70, 193, 0.2) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(159, 122, 234, 0.3);
+}
+
+/* Task List Styling Enhancement */
+.ProseMirror ul[data-type="taskList"] {
+  list-style: none;
+  padding: 0;
+  background: rgba(159, 122, 234, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  display: flex;
+  align-items: center;
+  margin: 0.75rem 0;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.ProseMirror ul[data-type="taskList"] li:hover {
+  background: rgba(159, 122, 234, 0.1);
+}
+
+.ProseMirror ul[data-type="taskList"] li > label {
+  flex: 0 0 auto;
+  margin-right: 1rem;
+  user-select: none;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"] {
+  cursor: pointer;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 4px;
+  border: 2px solid #9f7aea;
+  background: #2d3748;
+  transition: all 0.2s ease;
+}
+
+.ProseMirror ul[data-type="taskList"] input[type="checkbox"]:checked {
+  background: #9f7aea;
+  border-color: #9f7aea;
+}
+
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  opacity: 0.7;
+  text-decoration: line-through;
+  color: #a0aec0;
+}
+
+/* Collapsible Section Styling Enhancement */
+.ProseMirror details {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(159, 122, 234, 0.1) 0%, rgba(107, 70, 193, 0.1) 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(159, 122, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.ProseMirror details:hover {
+  border-color: #9f7aea;
+  box-shadow: 0 4px 20px rgba(159, 122, 234, 0.2);
+}
+
+.ProseMirror summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.5rem 0;
+  color: #d8b4fe;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ProseMirror summary::before {
+  content: '▶';
+  font-size: 0.8rem;
+  transition: transform 0.3s ease;
+}
+
+.ProseMirror details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.ProseMirror details[open] summary {
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(159, 122, 234, 0.3);
+  padding-bottom: 1rem;
+}
+
+/* Placeholder styling */
+.ProseMirror p.is-editor-empty:first-child::before {
+  color: #718096;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+/* Selection styling */
+.ProseMirror ::selection {
+  background: rgba(159, 122, 234, 0.3);
+  color: white;
+}
+
+.ProseMirror ::-moz-selection {
+  background: rgba(159, 122, 234, 0.3);
+  color: white;
+}
+
+/* Focus outline */
+.ProseMirror:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.5);
+  border-color: #9f7aea;
+}
+
+/* Custom scrollbar for the editor */
+.ProseMirror::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ProseMirror::-webkit-scrollbar-track {
+  background: #2d2d2d;
+  border-radius: 4px;
+}
+
+.ProseMirror::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #9f7aea 0%, #6b46c1 100%);
+  border-radius: 4px;
+}
+
+.ProseMirror::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #b794f4 0%, #805ad5 100%);
+}
+
+/* Animation for new content */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ProseMirror > * {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@media (max-width: 768px) {
+  .ProseMirror {
+    padding: 1rem;
+    font-size: 0.95rem;
+  }
+  
+  .ProseMirror h1 {
+    font-size: 2rem;
+  }
+  
+  .ProseMirror h2 {
+    font-size: 1.5rem;
+  }
+  
+  .ProseMirror h3 {
+    font-size: 1.25rem;
+  }
+  
+  .custom-table {
+    font-size: 0.9rem;
+  }
+  
+  .custom-table td, .custom-table th {
+    padding: 0.5rem;
+  }
+}
+
+/* Print styles */
+@media print {
+  .ProseMirror {
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  
+  .ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+    color: black !important;
+    background: none !important;
+    -webkit-text-fill-color: black !important;
+  }
+  
+  .custom-table {
+    box-shadow: none !important;
+    background: white !important;
+  }
+}

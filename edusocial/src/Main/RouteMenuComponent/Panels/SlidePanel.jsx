@@ -8,24 +8,25 @@ const SlidePanel = ({
   children, 
   headerContent,
   showCloseButton = true,
+  from,
   width = "max-w-md",
-  className = ""
+  className = "z-50"
 }) => {
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className={`fixed inset-0  ${title === 'Messages' ? '' : 'bg-black/50 backdrop-blur-sm'} z-20`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          className={`fixed inset-0  ${title === 'Messages' ? '' : 'bg-black/50 backdrop-blur-sm'} z-50`}
+          initial={from === 'mobile' ? {} : { opacity: 0 }}
+          animate={from === 'mobile' ? {} : { opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={title === 'Messages' ? null : onClose}
         >
           <motion.div
             className={`absolute top-0 md:left-20 left-0 h-screen bg-neutral-900 border-l border-neutral-700 shadow-2xl w-full ${width} overflow-hidden ${className}`}
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
+            initial={from === 'mobile' ? {} : { x: "-100%" }}
+            animate={from === 'mobile' ? {} : { x: 0 }}
+            exit={from === 'mobile' ? {} : { x: "-100%" }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -36,7 +37,7 @@ const SlidePanel = ({
                   <h2 className="text-2xl font-bold text-white">{title}</h2>
                   {headerContent}
                 </div>
-                {showCloseButton && (
+                {showCloseButton && from !== 'mobile' && (
                   <button
                     onClick={onClose}
                     className="p-2 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-800"

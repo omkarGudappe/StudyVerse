@@ -22,6 +22,9 @@ import Messages from "../Main/RouteMenuComponent/Messages";
 import MobileContact from "../Main/RouteMenuComponent/MobileContact";
 import Setting from "../Main/RouteMenuComponent/Settings/Setting";
 import UpdateUserNotes from "../Main/RouteMenuComponent/Panels/UpdateUserNotes";
+import MobileUserNotes from "../Main/RouteMenuComponent/MobileUserNotes";
+import SettingePage from "../Main/RouteMenuComponent/Settings/SettingePage";
+import ProfileUpdate from '../Main/RouteMenuComponent/Settings/ProfileUpdate';
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -111,6 +114,14 @@ const PageRoute = () => {
               }
             />
             <Route
+              path='/notes'
+              element={
+                <MenuWrapper>
+                  <MobileUserNotes/>
+                </MenuWrapper>
+              }
+            />
+            <Route
               path="/upload"
               element={
                 <MenuWrapper>
@@ -138,7 +149,7 @@ const PageRoute = () => {
               path="/settings"
               element={
                 <MenuWrapper>
-                  <Setting/>
+                  <SettingePage/>
                 </MenuWrapper>
               }
             />
@@ -147,6 +158,14 @@ const PageRoute = () => {
               element={
                 <MenuWrapper>
                   <Notes />
+                </MenuWrapper>
+              }
+            />
+            <Route
+              path="/setting/update-profile"
+              element={
+                <MenuWrapper>
+                  <ProfileUpdate/>
                 </MenuWrapper>
               }
             />

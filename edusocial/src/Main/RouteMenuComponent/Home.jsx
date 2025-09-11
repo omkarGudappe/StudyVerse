@@ -10,25 +10,25 @@ const StudyVerseMain = () => {
   const videoRefs = useRef({});
   const observer = useRef(null);
 
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts`);
-        
-        if (response.data.ok) {
-          setPosts(response.data.posts.reverse());
-        } else {
-          throw new Error(response.data.message);
-        }
-      } catch (err) {
-        console.error('Error fetching posts:', err);
-        setError('Failed to load posts. Please try again later.');
-      } finally {
-        setLoading(false);
+  const fetchPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts`);
+      
+      if (response.data.ok) {
+        setPosts(response.data.posts.reverse());
+      } else {
+        throw new Error(response.data.message);
       }
-    };
-    
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      setError('Failed to load posts. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {    
     fetchPosts();
   }, []);
 
@@ -170,8 +170,10 @@ const StudyVerseMain = () => {
         <div className="flex flex-col items-center">
           <div className="relative">
             <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-amber-400 rounded-full animate-pulse"></div>
+            <div className="absolute top-8 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-amber-400 rounded-full animate-pulse">
+                <img src="/LOGO/StudyVerseIcon.png" alt="Loading" />
+              </div>
             </div>
           </div>
           <p className="text-lg font-medium mt-4 bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent">
@@ -195,7 +197,7 @@ const StudyVerseMain = () => {
           <h2 className="text-2xl font-bold mb-4 text-white">Oops! Something went wrong</h2>
           <p className="text-neutral-300 mb-6">{error}</p>
           <button 
-            onClick={() => window.location.reload()} 
+            onClick={() => fetchPosts()} 
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 rounded-full hover:from-purple-500 hover:to-amber-400 transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-purple-500/30 font-medium"
           >
             Try Again
@@ -211,9 +213,10 @@ const StudyVerseMain = () => {
         {/* Header Section */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl mb-6 shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            {/* <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-            </svg>
+            </svg> */}
+            <img src='/LOGO/StudyVerseIcon.png' alt="" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent mb-4">
             StudyVerse Community

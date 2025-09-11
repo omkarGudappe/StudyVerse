@@ -2,9 +2,9 @@ import React from 'react'
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
-const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , title}) => {
+const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , title, onClose}) => {
   return (
-<div className="p-6">
+      <div className="p-6">
         {isLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
@@ -38,6 +38,7 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
                 >
                 <Link
                   to={`/${title}/${encodeURIComponent(user?.username)}`}
+                  onClick={onClose}
                   className="cursor-pointer flex items-center w-full gap-4 bg-neutral-800 rounded-xl hover:bg-neutral-750 transition-all duration-200"
                 >
                   <div className="relative">
