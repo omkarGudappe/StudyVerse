@@ -131,7 +131,7 @@ const UserProfile = () => {
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-6 w-6 md:h-7 md:w-7 text-purple-400"
                     viewBox="0 0 24 24"
-                    fill="none"
+                    fill="none" 
                     stroke="currentColor"
                     strokeWidth="1.2"
                     strokeLinecap="round"
@@ -176,7 +176,7 @@ const UserProfile = () => {
           </div>
         </div>
 
-        <div className="bg-neutral-900 p-6 rounded-2xl max-h-70 shadow-lg">
+        <div className="relative bg-neutral-900 p-6 rounded-2xl h-auto md:max-h-90 shadow-lg">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-32 h-32 md:w-36 md:h-36 flex-shrink-0">
               <img
@@ -190,12 +190,12 @@ const UserProfile = () => {
             </div>
             <div className="flex-1 text-center md:text-left">
               <div className="mb-4">
-                <div className="flex justify-between items-center">
+                <div className="flex justify-center md:justify-start items-center">
                   <h1 className="text-2xl md:text-3xl font-bold">
                     {UserProfileData?.firstName || "User"}{" "}
                     {UserProfileData?.lastName || "Name"}
                   </h1>
-                  <div className="px-5 w-auto">
+                  <div className="px-5 w-auto absolute top-5 right-0">
                     {!CheackPeer ?(<button
                       onClick={handleSocketConnection}
                       className="p-2 px-5 bg-blue-600 cursor-pointer active:scale-95 text-center w-full rounded-2xl"

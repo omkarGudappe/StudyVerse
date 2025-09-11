@@ -673,7 +673,7 @@ const Menu = () => {
       <UsersNotes open={OpenUserNotes} onClose={() => setOpenUserNotes(!OpenUserNotes)} ProfileData={ProfileData} from="desktop" />
 
       <motion.div 
-        className="hidden z-30 md:flex h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-neutral-700 sticky top-0 flex-col"
+        className="hidden z-50 md:flex h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-neutral-700 sticky top-0 flex-col"
         animate={{ width: searchClicked ? 80 : NotificationOpen ? 80 : MessageContactClick ? 80 : OpenUserNotes ? 80 : 320 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
