@@ -1,12 +1,13 @@
 import React from 'react'
 import SlidePanel from './SlidePanel';
 
-const UserNotesPanel = ({ open, onClose, Notes = [], children}) => {
+const UserNotesPanel = ({ open, onClose, Notes = [], from , children}) => {
   return (
     <SlidePanel
         open={open}
         onClose={onClose}
         title="My Notes"
+        from = {from}
         headerContent={
             Notes.length > 0 && (
             <span className="bg-purple-600 text-white text-sm px-2 py-1 rounded-full">

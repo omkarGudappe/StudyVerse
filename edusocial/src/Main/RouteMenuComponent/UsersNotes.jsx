@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom';
 
-const UsersNotes = ({ open, onClose, ProfileData }) => {
+const UsersNotes = ({ open, onClose, ProfileData , from }) => {
     const [Notes, setNotes] = useState([]);
     const [error, setError] = useState(null);
     const [Loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ const UsersNotes = ({ open, onClose, ProfileData }) => {
             }
         }
         FetchNotes();
-    }, [open, ProfileData?._id]);
+    }, []);
 
     const handleDeleteNote = async (noteId) => {
         if (!window.confirm("Are you sure you want to delete this note?")) return;
@@ -177,6 +177,7 @@ const UsersNotes = ({ open, onClose, ProfileData }) => {
             open={open}
             onClose={onClose}
             Notes={Notes}
+            from={from}
         >
             <div className="p-6">
                 {/* Header */}

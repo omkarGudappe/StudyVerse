@@ -90,8 +90,8 @@ import {
 import { 
   TbMathFunction, 
   TbLetterCaseToggle,
-  // TbColumnInsert,
-  // TbRowInsert,
+  TbColumnInsertRight ,
+  TbRowInsertBottom,
   TbTableExport,
   TbTableImport
 } from "react-icons/tb";
@@ -331,81 +331,282 @@ const CustomTable = Table.extend({
   addCommands() {
     return {
       ...this.parent?.(),
-      addColumnBefore: () => ({ chain }) => {
+      addColumnBefore: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            const { selection } = tr;
-            const { $from, $to } = selection;
-            const selectedCell = $from.nodeAfter;
+          .command(({ tr }) => {
+            const { selection } = state;
+            const { $from } = selection;
             
-            if (selectedCell) {
-              if (dispatch) {
-                const pos = $from.pos;
-                tr.insert(pos + 1, selectedCell.type.create(selectedCell.attrs, selectedCell.content));
+            // Find the table node
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'table') {
+                const tablePos = $from.before(depth);
+                const table = node;
+                
+                // Get current column index
+                const colIndex = $from.index(depth);
+                
+                // Create a new column
+                const newCols = [];
+                for (let i = 0; i < table.content.content.length; i++) {
+                  const row = table.content.content[i];
+                  const newCells = [];
+                  
+                  // Copy all cells, inserting new cell at colIndex
+                  for (let j = 0; j < row.content.content.length; j++) {
+                    if (j === colIndex) {
+                      // Insert empty cell
+                      const cellType = row.content.content[j].type;
+                      newCells.push(cellType.createAndFill());
+                    }
+                    newCells.push(row.content.content[j]);
+                  }
+                  
+                  newCols.push(row.type.create(row.attrs, newCells));
+                }
+                
+                const newTable = table.type.create(table.attrs, newCols);
+                if (dispatch) {
+                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
+                }
+                return true;
               }
             }
-            return true;
+            return false;
           })
           .run();
       },
-      addColumnAfter: () => ({ chain }) => {
+      addColumnAfter: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            const { selection } = tr;
-            const { $from, $to } = selection;
-            const selectedCell = $from.nodeAfter;
+          .command(({ tr }) => {
+            const { selection } = state;
+            const { $from } = selection;
             
-            if (selectedCell) {
-              if (dispatch) {
-                const pos = $to.pos;
-                tr.insert(pos, selectedCell.type.create(selectedCell.attrs, selectedCell.content));
+            // Find the table node
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'table') {
+                const tablePos = $from.before(depth);
+                const table = node;
+                
+                // Get current column index
+                const colIndex = $from.index(depth);
+                
+                // Create a new column
+                const newCols = [];
+                for (let i = 0; i < table.content.content.length; i++) {
+                  const row = table.content.content[i];
+                  const newCells = [];
+                  
+                  // Copy all cells, inserting new cell after colIndex
+                  for (let j = 0; j < row.content.content.length; j++) {
+                    newCells.push(row.content.content[j]);
+                    if (j === colIndex) {
+                      // Insert empty cell after current column
+                      const cellType = row.content.content[j].type;
+                      newCells.push(cellType.createAndFill());
+                    }
+                  }
+                  
+                  newCols.push(row.type.create(row.attrs, newCells));
+                }
+                
+                const newTable = table.type.create(table.attrs, newCols);
+                if (dispatch) {
+                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
+                }
+                return true;
               }
             }
-            return true;
+            return false;
           })
           .run();
       },
-      deleteColumn: () => ({ chain }) => {
+      deleteColumn: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            const { selection } = tr;
-            const { $from, $to } = selection;
+          .command(({ tr }) => {
+            const { selection } = state;
+            const { $from } = selection;
             
-            if (dispatch) {
-              tr.delete($from.pos, $to.pos);
+            // Find the table node
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'table') {
+                const tablePos = $from.before(depth);
+                const table = node;
+                
+                // Get current column index
+                const colIndex = $from.index(depth);
+                
+                // Don't delete if it's the only column
+                if (table.firstChild.content.content.length <= 1) {
+                  return false;
+                }
+                
+                // Create a new table without the column
+                const newCols = [];
+                for (let i = 0; i < table.content.content.length; i++) {
+                  const row = table.content.content[i];
+                  const newCells = [];
+                  
+                  // Copy all cells except the one at colIndex
+                  for (let j = 0; j < row.content.content.length; j++) {
+                    if (j !== colIndex) {
+                      newCells.push(row.content.content[j]);
+                    }
+                  }
+                  
+                  newCols.push(row.type.create(row.attrs, newCells));
+                }
+                
+                const newTable = table.type.create(table.attrs, newCols);
+                if (dispatch) {
+                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
+                }
+                return true;
+              }
             }
-            return true;
+            return false;
           })
           .run();
       },
-      addRowBefore: () => ({ chain }) => {
+      addRowBefore: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            // Implementation for adding row before
-            return true;
+          .command(({ tr }) => {
+            const { selection } = state;
+            const { $from } = selection;
+            
+            // Find the table node
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'table') {
+                const tablePos = $from.before(depth);
+                const table = node;
+                
+                // Get current row index
+                const rowIndex = $from.index(depth - 1);
+                
+                // Create a new row with empty cells
+                const firstRow = table.firstChild;
+                const newCells = [];
+                for (let i = 0; i < firstRow.content.content.length; i++) {
+                  const cellType = firstRow.content.content[i].type;
+                  newCells.push(cellType.createAndFill());
+                }
+                
+                const newRow = firstRow.type.create(firstRow.attrs, newCells);
+                
+                // Insert the new row
+                const newRows = [];
+                for (let i = 0; i < table.content.content.length; i++) {
+                  if (i === rowIndex) {
+                    newRows.push(newRow);
+                  }
+                  newRows.push(table.content.content[i]);
+                }
+                
+                const newTable = table.type.create(table.attrs, newRows);
+                if (dispatch) {
+                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
+                }
+                return true;
+              }
+            }
+            return false;
           })
           .run();
       },
-      addRowAfter: () => ({ chain }) => {
+      addRowAfter: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            // Implementation for adding row after
-            return true;
+          .command(({ tr }) => {
+            const { selection } = state;
+            const { $from } = selection;
+            
+            // Find the table node
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'table') {
+                const tablePos = $from.before(depth);
+                const table = node;
+                
+                // Get current row index
+                const rowIndex = $from.index(depth - 1);
+                
+                // Create a new row with empty cells
+                const firstRow = table.firstChild;
+                const newCells = [];
+                for (let i = 0; i < firstRow.content.content.length; i++) {
+                  const cellType = firstRow.content.content[i].type;
+                  newCells.push(cellType.createAndFill());
+                }
+                
+                const newRow = firstRow.type.create(firstRow.attrs, newCells);
+                
+                // Insert the new row
+                const newRows = [];
+                for (let i = 0; i < table.content.content.length; i++) {
+                  newRows.push(table.content.content[i]);
+                  if (i === rowIndex) {
+                    newRows.push(newRow);
+                  }
+                }
+                
+                const newTable = table.type.create(table.attrs, newRows);
+                if (dispatch) {
+                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
+                }
+                return true;
+              }
+            }
+            return false;
           })
           .run();
       },
-      deleteRow: () => ({ chain }) => {
+      deleteRow: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            // Implementation for deleting row
-            return true;
+          .command(({ tr }) => {
+            const { selection } = state;
+            const { $from } = selection;
+            
+            // Find the table node
+            for (let depth = $from.depth; depth > 0; depth--) {
+              const node = $from.node(depth);
+              if (node.type.name === 'table') {
+                const tablePos = $from.before(depth);
+                const table = node;
+                
+                // Get current row index
+                const rowIndex = $from.index(depth - 1);
+                
+                // Don't delete if it's the only row
+                if (table.content.content.length <= 1) {
+                  return false;
+                }
+                
+                // Create a new table without the row
+                const newRows = [];
+                for (let i = 0; i < table.content.content.length; i++) {
+                  if (i !== rowIndex) {
+                    newRows.push(table.content.content[i]);
+                  }
+                }
+                
+                const newTable = table.type.create(table.attrs, newRows);
+                if (dispatch) {
+                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
+                }
+                return true;
+              }
+            }
+            return false;
           })
           .run();
       },
-      deleteTable: () => ({ chain }) => {
+      deleteTable: () => ({ chain, state, dispatch }) => {
         return chain()
-          .command(({ tr, dispatch }) => {
-            const { selection } = tr;
+          .command(({ tr }) => {
+            const { selection } = state;
             const { $from } = selection;
             
             for (let depth = $from.depth; depth > 0; depth--) {
@@ -483,41 +684,24 @@ const NotesEditor = ({content , Id}) => {
   // Custom Image extension with resizing
 const ResizableImage = Image.extend({
   name: 'resizableImage',
-  
+
   addAttributes() {
     return {
       ...this.parent?.(),
       width: {
-        default: 'auto',
-        parseHTML: element => {
-          const width = element.getAttribute('width') || "auto";
-          return width || 'auto';
-        },
+        default: null,
+        parseHTML: element => element.style.width || null,
         renderHTML: attributes => {
-          return {
-            width: attributes.width,
-            style: `width: ${attributes.width}; max-width: 100%; height: auto;`,
-          };
+          if (!attributes.width) return {};
+          return { style: `width: ${attributes.width}; max-width: 100%; height: auto;` };
         },
       },
       height: {
-        default: 'auto',
-        parseHTML: element => {
-          const height = element.getAttribute('height') || element.style.height;
-          return height || 'auto';
-        },
-        renderHTML: attributes => {
-          return {
-            height: attributes.height,
-            style: `height: ${attributes.height};`,
-          };
-        },
-      },
-      style: {
         default: null,
-        parseHTML: element => element.getAttribute('style'),
+        parseHTML: element => element.style.height || null,
         renderHTML: attributes => {
-          return attributes.style ? { style: attributes.style } : {};
+          if (!attributes.height) return {};
+          return { style: `height: ${attributes.height};` };
         },
       },
     };
@@ -527,90 +711,76 @@ const ResizableImage = Image.extend({
     return ({ node, getPos, editor }) => {
       const dom = document.createElement('div');
       dom.className = 'image-resize-container';
-      
-      const img = document.createElement('img');
-      img.src = node.attrs.src;
-      img.alt = node.attrs.alt || '';
-      img.style.width = node.attrs.width || '100%';
-      img.style.height = node.attrs.height || 'auto';
-      img.style.maxWidth = '100%';
-      img.className = 'resizable-image';
-      
-      // Add resize handles
-      const resizeHandle = document.createElement('div');
-      resizeHandle.className = 'image-resize-handle';
-      resizeHandle.innerHTML = '↔';
-      resizeHandle.style.position = 'absolute';
-      resizeHandle.style.right = '0';
-      resizeHandle.style.bottom = '0';
-      resizeHandle.style.background = '#9333ea';
-      resizeHandle.style.color = 'white';
-      resizeHandle.style.width = '16px';
-      resizeHandle.style.height = '16px';
-      resizeHandle.style.borderRadius = '4px';
-      resizeHandle.style.cursor = 'nwse-resize';
-      resizeHandle.style.display = 'flex';
-      resizeHandle.style.alignItems = 'center';
-      resizeHandle.style.justifyContent = 'center';
-      resizeHandle.style.fontSize = '12px';
-      
-      dom.appendChild(img);
-      dom.appendChild(resizeHandle);
       dom.style.position = 'relative';
       dom.style.display = 'inline-block';
       dom.style.maxWidth = '100%';
-      
-      // Resize functionality
-      let startX, startWidth, startHeight;
-      
-      const onMouseMove = (e) => {
+
+      const img = document.createElement('img');
+      img.src = node.attrs.src;
+      img.alt = node.attrs.alt || '';
+      img.style.width = node.attrs.width || 'auto';
+      img.style.height = node.attrs.height || 'auto';
+      img.style.maxWidth = '100%';
+      img.className = 'resizable-image';
+
+      // resize handle
+      const handle = document.createElement('div');
+      handle.className = 'image-resize-handle';
+      handle.innerHTML = '↔';
+      Object.assign(handle.style, {
+        position: 'absolute',
+        right: '0',
+        bottom: '0',
+        background: '#9333ea',
+        color: 'white',
+        width: '16px',
+        height: '16px',
+        borderRadius: '4px',
+        cursor: 'nwse-resize',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+      });
+
+      dom.appendChild(img);
+      dom.appendChild(handle);
+
+      // resize logic
+      let startX, startWidth;
+      const onMouseMove = e => {
         const dx = e.clientX - startX;
         const newWidth = Math.max(50, startWidth + dx);
         img.style.width = `${newWidth}px`;
-        img.style.height = 'auto';
       };
-      
+
       const onMouseUp = () => {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
-        
-        // Update the node attributes
+
+        // update node attrs in editor
         if (typeof getPos === 'function') {
-          const transaction = editor.view.state.tr.setNodeMarkup(getPos(), undefined, {
+          const tr = editor.view.state.tr.setNodeMarkup(getPos(), undefined, {
             ...node.attrs,
             width: img.style.width,
-            height: img.style.height,
           });
-          editor.view.dispatch(transaction);
+          editor.view.dispatch(tr);
         }
       };
-      
-      resizeHandle.addEventListener('mousedown', (e) => {
+
+      handle.addEventListener('mousedown', e => {
         e.preventDefault();
         startX = e.clientX;
         startWidth = parseInt(img.style.width) || img.offsetWidth;
-        startHeight = parseInt(img.style.height) || img.offsetHeight;
-        
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
       });
-      
-      return {
-        dom,
-        contentDOM: img,
-        update: (updatedNode) => {
-          if (updatedNode.attrs.src !== node.attrs.src) {
-            img.src = updatedNode.attrs.src;
-          }
-          if (updatedNode.attrs.alt !== node.attrs.alt) {
-            img.alt = updatedNode.attrs.alt || '';
-          }
-          return true;
-        },
-      };
+
+      return { dom };
     };
   },
 });
+
 
   const editor = useEditor({
     extensions: [
@@ -1026,24 +1196,33 @@ const ResizableImage = Image.extend({
   return (
     <div className={`min-h-screen overflow-x-hidden mb-15 lg:mb-0 bg-neutral-900 text-white ${isFullscreen ? "fixed inset-0 z-50" : ""}`} ref={editorRef}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-b border-purple-700 px-6 py-3 flex justify-between items-center">
-        <div>
+      <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-b border-purple-700 px-4 py-3 flex justify-between items-center">
+        <div className="flex flex-col gap-5">
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FaStickyNote className="text-yellow-300" /> StudyVerse Notes
+            StudyVerse Notes
           </h1>
           <p className="text-purple-200 text-sm">Your personal digital notebook</p>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-purple-200">
-            {currentDate.toLocaleDateString()} {currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
+        <div className="flex flex-col items-center gap-4">
           <div className="flex gap-2">
             <button 
               onClick={toggleFullscreen}
               className="p-2 rounded-lg bg-purple-700 hover:bg-purple-600 transition-colors text-white"
               title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
             >
-              {isFullscreen ? <BiCollapseVertical /> : <BiExpandVertical />}
+              {isFullscreen ? (
+                  <div className="h-5 w-5 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="0 0 640 640">
+                      <path d="M520 288L376 288C362.7 288 352 277.3 352 264L352 120C352 110.3 357.8 101.5 366.8 97.8C375.8 94.1 386.1 96.2 393 103L433 143L506.4 69.6C510 66 514.9 64 520 64C525.1 64 530 66 533.7 69.7L570.4 106.4C574 110 576 114.9 576 120C576 125.1 574 130 570.3 133.7L497 207L537 247C543.9 253.9 545.9 264.2 542.2 273.2C538.5 282.2 529.7 288 520 288zM520 352C529.7 352 538.5 357.8 542.2 366.8C545.9 375.8 543.9 386.1 537 393L497 433L570.4 506.4C574 510 576.1 514.9 576.1 520.1C576.1 525.3 574.1 530.1 570.4 533.8L533.7 570.5C530 574 525.1 576 520 576C514.9 576 510 574 506.3 570.3L433 497L393 537C386.1 543.9 375.8 545.9 366.8 542.2C357.8 538.5 352 529.7 352 520L352 376C352 362.7 362.7 352 376 352L520 352zM264 352C277.3 352 288 362.7 288 376L288 520C288 529.7 282.2 538.5 273.2 542.2C264.2 545.9 253.9 543.9 247 537L207 497L133.6 570.4C130 574 125.1 576 120 576C114.9 576 110 574 106.3 570.3L69.7 533.7C66 530 64 525.1 64 520C64 514.9 66 510 69.7 506.3L143 433L103 393C96.1 386.1 94.1 375.8 97.8 366.8C101.5 357.8 110.3 352 120 352L264 352zM120 288C110.3 288 101.5 282.2 97.8 273.2C94.1 264.2 96.2 253.9 103 247L143 207L69.7 133.7C66 130 64 125.1 64 120C64 114.9 66 110 69.7 106.3L106.3 69.7C110 66 114.9 64 120 64C125.1 64 130 66 133.7 69.7L207 143L247 103C253.9 96.1 264.2 94.1 273.2 97.8C282.2 101.5 288 110.3 288 120L288 264C288 277.3 277.3 288 264 288L120 288z"/>
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="h-5 w-5 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="0 0 640 640">
+                      <path d="M264 96L120 96C106.7 96 96 106.7 96 120L96 264C96 273.7 101.8 282.5 110.8 286.2C119.8 289.9 130.1 287.8 137 281L177 241L256 320L177 399L137 359C130.1 352.1 119.8 350.1 110.8 353.8C101.8 357.5 96 366.3 96 376L96 520C96 533.3 106.7 544 120 544L264 544C273.7 544 282.5 538.2 286.2 529.2C289.9 520.2 287.9 509.9 281 503L241 463L320 384L399 463L359 503C352.1 509.9 350.1 520.2 353.8 529.2C357.5 538.2 366.3 544 376 544L520 544C533.3 544 544 533.3 544 520L544 376C544 366.3 538.2 357.5 529.2 353.8C520.2 350.1 509.9 352.1 503 359L463 399L384 320L463 241L503 281C509.9 287.9 520.2 289.9 529.2 286.2C538.2 282.5 544 273.7 544 264L544 120C544 106.7 533.3 96 520 96L376 96C366.3 96 357.5 101.8 353.8 110.8C350.1 119.8 352.2 130.1 359 137L399 177L320 256L241 177L281 137C287.9 130.1 289.9 119.8 286.2 110.8C282.5 101.8 273.7 96 264 96z"/>
+                    </svg>
+                  </div>
+                )}
             </button>
             <button 
               onClick={()=> setOpenNotesTitleModel(!OpenNotesTitleModel) }
@@ -1054,12 +1233,15 @@ const ResizableImage = Image.extend({
               Save
             </button>
           </div>
+          <span className="text-sm text-purple-200">
+            {currentDate.toLocaleDateString()} {currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
       </div>
 
       {/* Main Toolbar */}
       <div className="bg-neutral-800 border-b border-purple-700 px-4 py-2 sticky top-0 z-10">
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex lg:flex-wrap lg:overflow-x-hidden lg:overflow-y-hidden scroll-smooth scroll-mt-4 overflow-x-auto overflow-y-hidden items-center gap-2">
           {/* Document Actions */}
           <div className="flex items-center gap-2 mr-2 ">
             <ToolbarButton title="Save" onClick={() => setSavedStatus("saving")}>
@@ -1103,7 +1285,7 @@ const ResizableImage = Image.extend({
                 setFontFamily(e.target.value);
                 editor.chain().focus().setFontFamily(e.target.value).run();
               }}
-              className="bg-transparent border-0 text-white px-2 py-1 text-sm focus:outline-none"
+              className="border-0 bg-purple-700 text-white px-2 py-1 text-sm focus:outline-none"
             >
               <option value="Segoe UI">Segoe UI</option>
               <option value="Arial">Arial</option>
@@ -1126,7 +1308,7 @@ const ResizableImage = Image.extend({
                 setFontSize(e.target.value);
                 editor.chain().focus().setFontSize(e.target.value).run();
               }}
-              className="bg-transparent border-0 text-white px-2 py-1 text-sm focus:outline-none"
+              className="bg-purple-700 border-0 text-white px-2 py-1 text-sm focus:outline-none"
             >
               <option value="12px">12</option>
               <option value="14px">14</option>
@@ -1149,7 +1331,7 @@ const ResizableImage = Image.extend({
                 setLineHeight(e.target.value);
                 editor.chain().focus().setLineHeight(e.target.value).run();
               }}
-              className="bg-transparent border-0 text-white px-2 py-1 text-sm focus:outline-none"
+              className="bg-purple-700 border-0 text-white px-2 py-1 text-sm focus:outline-none"
             >
               <option value="1">1.0</option>
               <option value="1.2">1.2</option>
@@ -1225,7 +1407,7 @@ const ResizableImage = Image.extend({
             <ToolbarButton title="Text Case">
               <TbLetterCaseToggle />
             </ToolbarButton>
-            <div className="absolute left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <div className="absolute z-100 left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
               <button 
                 onClick={() => editor.chain().focus().setTextCase("uppercase").run()}
                 className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
@@ -1499,7 +1681,7 @@ const ResizableImage = Image.extend({
               <BsThreeDotsVertical />
             </ToolbarButton>
             {showMoreOptions && (
-              <div className="absolute left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg z-20">
+              <div className="absolute left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg z-60">
                 <button 
                   onClick={() => editor.chain().focus().toggleCollapsible().run()}
                   className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
@@ -1523,7 +1705,6 @@ const ResizableImage = Image.extend({
           </div>
         </div>
 
-        {/* Table Controls (shown when inside a table) */}
         {showTableControls && (
           <div className="flex items-center gap-2 mt-2 pt-2 border-t border-purple-700">
             <span className="text-sm text-purple-200">Table Tools:</span>
@@ -1531,13 +1712,13 @@ const ResizableImage = Image.extend({
               onClick={() => editor.chain().focus().addColumnBefore().run()}
               title="Add Column Before"
             >
-              {/* <TbColumnInsert /> */}
+              <TbColumnInsertRight  />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => editor.chain().focus().addColumnAfter().run()}
               title="Add Column After"
             >
-              {/* <TbColumnInsert className="rotate-180" /> */}
+              <TbColumnInsertRight  className="rotate-180" />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => editor.chain().focus().deleteColumn().run()}
@@ -1549,13 +1730,13 @@ const ResizableImage = Image.extend({
               onClick={() => editor.chain().focus().addRowBefore().run()}
               title="Add Row Before"
             >
-              {/* <TbRowInsert /> */}
+              <TbRowInsertBottom />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => editor.chain().focus().addRowAfter().run()}
               title="Add Row After"
             >
-              {/* <TbRowInsert className="rotate-180" /> */}
+              <TbRowInsertBottom className="rotate-180" />
             </ToolbarButton>
             <ToolbarButton
               onClick={() => editor.chain().focus().deleteRow().run()}
@@ -1574,7 +1755,7 @@ const ResizableImage = Image.extend({
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <EditorContent editor={editor} className="min-h-[70vh]" />
+        <EditorContent editor={editor} className="min-h-[70vh] text-wrap" />
       </div>
 
       {showLinkModal && (

@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react'
+import SlidePanel from '../Panels/SlidePanel'
+import SettingsContent from './SettingsContent'
 
-const Setting = () => {
+const Setting = ({open , onClose , ProfileData}) => {
 
     return (
-        <div>
-
-        </div>
+        <SlidePanel
+            open={open}
+            onClose={onClose}
+            title='Settings'
+        >
+            <SettingsContent/>
+        </SlidePanel>
     )
 }
 

@@ -149,7 +149,7 @@ const Notification = ({ open, onClose, ProfileData }) => {
             onClose={onClose} 
             notifications={notifications}
         >
-            <div className="p-6">
+            <div className="p-6 z-50">
                 {isLoading ? (
                     <NotificationSkeleton />
                 ) : error ? (

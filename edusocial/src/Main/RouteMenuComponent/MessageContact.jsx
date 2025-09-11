@@ -92,6 +92,7 @@ const MessageContact = ({ open, onClose }) => {
                 >
                 <Link 
                   to={`/messages/${encodeURIComponent(user?.username)}`}
+                  onClick={onClose}
                   className="cursor-pointer flex items-center w-full gap-4 bg-neutral-800 rounded-xl hover:bg-neutral-750 transition-all duration-200"
                 >
                   <div className="relative">
