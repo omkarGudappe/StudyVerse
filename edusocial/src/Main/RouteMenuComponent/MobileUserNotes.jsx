@@ -7,7 +7,7 @@ const MobileUserNotes = () => {
       const { ProfileData } = UserDataContextExport();
 
   return (
-    <div>
+    <div className='z-50'>
       <UsersNotes open={true} onClose={null} from="mobile" ProfileData={ProfileData} />
     </div>
   )

@@ -702,7 +702,7 @@ const Menu = () => {
           </AnimatePresence>
         </motion.div>
 
-        <div className="flex-1 overflow-y-auto py-6">
+        <div className="flex-1 lenis overflow-y-auto scroll-smooth scroll- py-6">
           <div className="space-y-2 px-4">
             {LargScreen.map((item) => (
               <Link
