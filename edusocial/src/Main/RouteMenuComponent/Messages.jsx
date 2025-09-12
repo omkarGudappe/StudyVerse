@@ -51,7 +51,6 @@ const Messages = () => {
     setShowEmojiPicker(false);
   };
 
-  // Get or create chat ID based on user IDs
   const getChatId = (userId1, userId2) => {
     return userId1 > userId2 ? `${userId1}_${userId2}` : `${userId2}_${userId1}`;
   };
@@ -77,7 +76,6 @@ const Messages = () => {
 useEffect(() => {
   if (!otherUser || !ProfileData) return;
 
-  // Reset messages when switching users
   setMessages([]);
   setIsLoading(true);
 
@@ -113,62 +111,12 @@ useEffect(() => {
     }
   );
 
-  // Cleanup
   return () => {
     off(messagesRef);
   };
 }, [otherUser, ProfileData, isSending]);
 
-
-// useEffect(() => {
-//   if (!otherUser || !ProfileData) return;
-
-//   // Reset messages when switching users
-//   setMessages([]);
-//   setIsLoading(true);
-
-//   const chatId = getChatId(ProfileData._id, otherUser._id);
-//   const messagesRef = query(
-//     ref(database, `chats/${chatId}/messages`),
-//     orderByChild("timestamp"),
-//     limitToLast(100)
-//   );
-
-//   const listener = onValue(
-//     messagesRef,
-//     (snapshot) => {
-//       const messagesData = [];
-//       snapshot.forEach((childSnapshot) => {
-//         messagesData.push({
-//           id: childSnapshot.key,
-//           ...childSnapshot.val(),
-//         });
-//       });
-
-//       // FIX: Sort in descending order (newest first)
-//       messagesData.sort((a, b) => b.timestamp - a.timestamp);
-//       setMessages(messagesData);
-//       setIsLoading(false);
-
-//       setTimeout(() => {
-//         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-//       }, 100);
-//     },
-//     (error) => {
-//       console.error("Error fetching messages:", error);
-//       setIsLoading(false);
-//     }
-//   );
-
-//   // Cleanup
-//   return () => {
-//     off(messagesRef);
-//   };
-// }, [otherUser, ProfileData, isSending]);
-
-
   useEffect(() => {
-    // Focus input once loading is complete
     if (!isLoading && !isFetchingUser) {
       inputRef.current?.focus();
     }
@@ -195,7 +143,6 @@ const sendMessage = async () => {
     timestamp: serverTimestamp()
   };
 
-  // 1. Ensure chat metadata exists
   try {
     const chatRef = ref(database, `chats/${chatId}`);
     await update(chatRef, {
@@ -212,7 +159,6 @@ const sendMessage = async () => {
     return;
   }
 
-  // 2. Add the new message
   try {
     const messagesRef = ref(database, `chats/${chatId}/messages`);
     const newMsgRef = push(messagesRef);
@@ -223,7 +169,6 @@ const sendMessage = async () => {
     return;
   }
 
-  // 3. Update userChats for sender
   try {
     const userChatRef = ref(database, `userChats/${senderFirebaseUid}/${chatId}`);
     await update(userChatRef, {
@@ -237,7 +182,6 @@ const sendMessage = async () => {
     console.error("❌ Failed to update sender userChat:", err);
   }
 
-  // 4. Update userChats for recipient
   try {
     const otherUserChatRef = ref(database, `userChats/${otherFirebaseUid}/${chatId}`);
     await update(otherUserChatRef, {
@@ -251,7 +195,6 @@ const sendMessage = async () => {
     console.error("❌ Failed to update recipient userChat:", err);
   }
 
-  // Reset input if everything went fine
   setNewMessage("");
   inputRef.current?.focus();
 };
@@ -283,7 +226,6 @@ const sendMessage = async () => {
     inputRef.current?.focus();
   };
 
-  // Show loading if still fetching user or messages
   if (isFetchingUser || !otherUser) {
     return (
       <div className="flex flex-col h-full bg-neutral-900 text-white items-center justify-center">
@@ -295,7 +237,6 @@ const sendMessage = async () => {
 
   return (
     <div className="flex flex-col h-full bg-neutral-900 text-white">
-      {/* Chat Header */}
       <div className="p-4 border-b border-neutral-700 bg-neutral-800/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -323,7 +264,6 @@ const sendMessage = async () => {
         </div>
       </div>
 
-      {/* Messages Container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-neutral-900 bg-gradient-to-b from-neutral-900/80 to-neutral-900">
         {isLoading ? (
           <div className="flex justify-center items-center h-32">
@@ -353,7 +293,6 @@ const sendMessage = async () => {
               Start Conversation
             </motion.button>
             
-            {/* Conversation starters */}
             <div className="mt-8 w-full max-w-md">
               <p className="text-neutral-500 text-sm mb-3">Try one of these conversation starters:</p>
               <div className="grid grid-cols-1 gap-2">
@@ -408,7 +347,7 @@ const sendMessage = async () => {
                 )}
                 
                 {!isOwnMessage && !showAvatar && (
-                  <div className="w-8"></div> // Spacer for consistent alignment
+                  <div className="w-8"></div>
                 )}
                 
                 <div className={`max-w-[70%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
@@ -435,7 +374,6 @@ const sendMessage = async () => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Message Input - Always show even when no messages */}
       <div className="p-4 border-t border-neutral-700 bg-neutral-800/50 backdrop-blur-sm sticky bottom-0">
         <div className="flex items-center gap-2">
           <div className="relative" ref={emojiPickerRef}>

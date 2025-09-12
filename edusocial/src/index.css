@@ -324,10 +324,10 @@ html, body {
   height: 100%;
 }
 
-.lenis {
+/* .lenis {
   height: auto;
   min-height: 100%;
-}
+} */
 
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
@@ -337,9 +337,9 @@ html, body {
   overscroll-behavior: contain;
 }
 
-.lenis.lenis-stopped {
+/* .lenis.lenis-stopped {
   overflow: hidden;
-}
+} */
 
 
 

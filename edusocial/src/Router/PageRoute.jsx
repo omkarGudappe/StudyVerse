@@ -25,6 +25,7 @@ import UpdateUserNotes from "../Main/RouteMenuComponent/Panels/UpdateUserNotes";
 import MobileUserNotes from "../Main/RouteMenuComponent/MobileUserNotes";
 import SettingePage from "../Main/RouteMenuComponent/Settings/SettingePage";
 import ProfileUpdate from '../Main/RouteMenuComponent/Settings/ProfileUpdate';
+import DeailyQuiz from '../Main/RouteMenuComponent/AIModel/DeailyQuiz'
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -134,6 +135,14 @@ const PageRoute = () => {
                element={
                 <MenuWrapper>
                   <MobileContact/>
+                </MenuWrapper>
+               }
+            />
+            <Route
+              path="/quiz"
+               element={
+                <MenuWrapper>
+                  <DeailyQuiz/>
                 </MenuWrapper>
                }
             />

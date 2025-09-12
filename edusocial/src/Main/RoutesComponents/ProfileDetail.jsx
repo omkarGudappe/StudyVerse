@@ -165,9 +165,9 @@ const ProfileDetail = () => {
 
             let educationString = "";
             if (EduLevel === "school") {
-                educationString = `${Education.Year},${Education.institute}`;
+                educationString = `${Education.Year},,${Education.institute}`;
             } else if (EduLevel === "11-12") {
-                educationString = `${Education.Year},${Education.Stream},${Education.institute}`;
+                educationString = `${Education.Year},,${Education.institute},${Education.Stream}`;
             } else if (EduLevel === "graduation") {
                 educationString = `${Education.Degree},${Education.Major},${Education.Year},${Education.institute}`;
             }
