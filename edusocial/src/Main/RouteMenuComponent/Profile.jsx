@@ -2,14 +2,16 @@ import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import { auth } from '../../Auth/AuthProviders/FirebaseSDK'
 import { Link } from 'react-router-dom';
+import { UserDataContextExport } from './CurrentUserContexProvider';
 
 const Profile = () => {
-  const [ProfileData, setProfileData] = useState(null);
+  const [UserProfileData, setUserProfileData] = useState(null);
   const [FirebaseUid, setFirebaseUid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [PeeredCount , setPeeredCount] = useState(0)
   const [MyPeeredCount , setMyPeeredCount] = useState(0);
+  const { ProfileData } = UserDataContextExport();
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -28,8 +30,12 @@ const Profile = () => {
     const FetchDataFromBackEnd = async () => {
       try {
         setLoading(true);
-        const FetchProfileData = await axios.get(`${import.meta.env.VITE_API_URL}/user/profile/${FirebaseUid}`);
-        setProfileData(FetchProfileData.data.userProfile);
+        if(ProfileData){
+          setUserProfileData(ProfileData);
+        }else{
+          const FetchUserProfileData = await axios.get(`${import.meta.env.VITE_API_URL}/user/profile/${FirebaseUid}`);
+          setUserProfileData(FetchUserProfileData.data.userProfile);
+        }
         setError(null);
       } catch (err) {
         console.log(err);
@@ -39,31 +45,14 @@ const Profile = () => {
       }
     };
     FetchDataFromBackEnd();
-  }, [FirebaseUid]);
-
-  // useEffect(() => {
-    // const GetQuizFromAI = async () => {
-    //   try {
-    //     const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/AI/generate-quiz` , {subject: '' , level: ''});
-
-    //     if(res.data.ok){
-    //       console.log("My response: ", res.data.quiz);
-    //     }else{
-    //       console.log("My err msg", res.data.message);
-    //     }
-    //   }catch(err){
-    //     console.log(err?.response?.data?.message || err.message);
-    //   }
-    // }
-    // GetQuizFromAI()
-  // }, [ProfileData])
+  }, [FirebaseUid , ProfileData]);
 
   useEffect(() => {
-    setPeeredCount(ProfileData?.connections.length);
-    setMyPeeredCount(ProfileData?.MyConnections.length);
-  }, [ProfileData])
+    setPeeredCount(UserProfileData?.connections.length);
+    setMyPeeredCount(UserProfileData?.MyConnections.length);
+  }, [UserProfileData])
 
-  const Education = ProfileData?.education?.split(',') || [];
+  const Education = UserProfileData?.education?.split(',') || [];
   console.log(Education);
 
   if (loading) {
@@ -135,7 +124,7 @@ const Profile = () => {
           
           <div className="space-y-4">
             <p className="text-gray-300 leading-relaxed">
-              {ProfileData?.UserProfile?.description || "No description available."}
+              {UserProfileData?.UserProfile?.description || "No description available."}
             </p>
             
             <div className="space-y-3 pt-4 border-t border-neutral-700">
@@ -174,7 +163,7 @@ const Profile = () => {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-32 h-32 md:w-36 md:h-36 flex-shrink-0">
               <img 
-                src={ProfileData?.UserProfile?.avatar?.url || "https://via.placeholder.com/150"} 
+                src={UserProfileData?.UserProfile?.avatar?.url || "https://via.placeholder.com/150"} 
                 alt="profile" 
                 className="rounded-full h-full w-full object-cover border-4 border-purple-700/30" 
               />
@@ -183,25 +172,17 @@ const Profile = () => {
               <div className="mb-4">
                 <div className='flex justify-center md:justify-start items-center'>
                   <h1 className="text-2xl md:text-3xl font-bold">
-                    {ProfileData?.firstName || "User"} {ProfileData?.lastName || "Name"}
+                    {UserProfileData?.firstName || "User"} {UserProfileData?.lastName || "Name"}
                   </h1>
-                  {/* <Link title='Update Profile' to='/setting/update-profile' className='absolute top-5 right-5 cursor-pointer'>
-                    <svg xmlns="http://www.w3.org/2000/svg" className='h-5' fill="#4c4c4c" viewBox="0 0 640 640"><path d="M416.9 85.2L372 130.1L509.9 268L554.8 223.1C568.4 209.6 576 191.2 576 172C576 152.8 568.4 134.4 554.8 120.9L519.1 85.2C505.6 71.6 487.2 64 468 64C448.8 64 430.4 71.6 416.9 85.2zM338.1 164L122.9 379.1C112.2 389.8 104.4 403.2 100.3 417.8L64.9 545.6C62.6 553.9 64.9 562.9 71.1 569C77.3 575.1 86.2 577.5 94.5 575.2L222.3 539.7C236.9 535.6 250.2 527.9 261 517.1L476 301.9L338.1 164z"/></svg>
-                  </Link>
-                  <Link to='/settings' title='Setting' className='h-5 w-5 absolute top-5 right-15'>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="#4c4c4c">
-                      <path d="M259.1 73.5C262.1 58.7 275.2 48 290.4 48L350.2 48C365.4 48 378.5 58.7 381.5 73.5L396 143.5C410.1 149.5 423.3 157.2 435.3 166.3L503.1 143.8C517.5 139 533.3 145 540.9 158.2L570.8 210C578.4 223.2 575.7 239.8 564.3 249.9L511 297.3C511.9 304.7 512.3 312.3 512.3 320C512.3 327.7 511.8 335.3 511 342.7L564.4 390.2C575.8 400.3 578.4 417 570.9 430.1L541 481.9C533.4 495 517.6 501.1 503.2 496.3L435.4 473.8C423.3 482.9 410.1 490.5 396.1 496.6L381.7 566.5C378.6 581.4 365.5 592 350.4 592L290.6 592C275.4 592 262.3 581.3 259.3 566.5L244.9 496.6C230.8 490.6 217.7 482.9 205.6 473.8L137.5 496.3C123.1 501.1 107.3 495.1 99.7 481.9L69.8 430.1C62.2 416.9 64.9 400.3 76.3 390.2L129.7 342.7C128.8 335.3 128.4 327.7 128.4 320C128.4 312.3 128.9 304.7 129.7 297.3L76.3 249.8C64.9 239.7 62.3 223 69.8 209.9L99.7 158.1C107.3 144.9 123.1 138.9 137.5 143.7L205.3 166.2C217.4 157.1 230.6 149.5 244.6 143.4L259.1 73.5zM320.3 400C364.5 399.8 400.2 363.9 400 319.7C399.8 275.5 363.9 239.8 319.7 240C275.5 240.2 239.8 276.1 240 320.3C240.2 364.5 276.1 400.2 320.3 400z"/>
-                    </svg>
-                  </Link> */}
                 </div>
                 <p className="text-purple-400 italic">
-                  {ProfileData?.username || "username"}
+                  {UserProfileData?.username || "username"}
                 </p>
                 <p className="text-gray-400">{Education[0] || ""} {Education[1] || ""}</p>
               </div>
               
               <p className="text-gray-300 mb-6 line-clamp-2">
-                {ProfileData?.UserProfile?.heading || "No heading available."}
+                {UserProfileData?.UserProfile?.heading || "No heading available."}
               </p>
               
               <div className="grid grid-cols-3 gap-4 border-t border-neutral-700 pt-4">
