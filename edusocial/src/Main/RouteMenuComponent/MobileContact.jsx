@@ -3,6 +3,9 @@ import MessageContact from './MessageContact'
 import SearchInput from './Panels/SearchInput'
 import SearchResult from './SmallComponents/SearchResult';
 import axios from 'axios';
+import { ref, query, orderByChild, onValue } from "firebase/database";
+import { database } from "../../Auth/AuthProviders/FirebaseSDK";
+import { UserDataContextExport } from "./CurrentUserContexProvider";
 
 const MobileContact = () => {
 
@@ -10,7 +13,8 @@ const MobileContact = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+  const [chats, setChats] = useState([]);
+  const { ProfileData } = UserDataContextExport();
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -43,6 +47,11 @@ const MobileContact = () => {
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
+
+  const FUID = ProfileData?.firebaseUid
+
+
+
 
     const handleSearchChange = (e) => setSearchTerm(e.target.value);
         const clearSearch = () => {

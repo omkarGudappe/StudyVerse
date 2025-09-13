@@ -292,6 +292,9 @@ observer.current = new IntersectionObserver(
           </nav>
         </div>
         <div className="text-center mb-12 md:mt-0 mt-25">
+          <div className="hidden md:inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl mb-6 shadow-lg">
+            <img src='/LOGO/StudyVerseIcon.png' alt="" />
+          </div>
           <h1 className="text-4xl mt-5 md:mt-0 md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent mb-4">
             StudyVerse Community
           </h1>

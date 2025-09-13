@@ -18,6 +18,7 @@ import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
 import { FaSmile } from "react-icons/fa";
 import { serverTimestamp } from "firebase/database";
+import Socket from '../../SocketConnection/Socket';
 
 const Messages = () => {
   const { userName } = useParams();
@@ -177,6 +178,9 @@ const sendMessage = async () => {
       lastMessage: newMessage.trim(),
       timestamp: serverTimestamp(),
     });
+    const User1 = ProfileData._id
+    const User2 = otherUser._id;   
+    Socket.emit("UsersChat", { user1: User1 , user2: User2 , chatId: chatId})
     console.log("✅ Sender userChat updated");
   } catch (err) {
     console.error("❌ Failed to update sender userChat:", err);
