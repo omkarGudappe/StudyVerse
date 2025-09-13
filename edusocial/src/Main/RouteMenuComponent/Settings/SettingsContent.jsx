@@ -122,7 +122,6 @@ const SettingsContent = () => {
                 h-full
             '>
               <div className='flex items-start gap-4'>
-                {/* Icon with gradient background */}
                 <div className={`
                     flex-shrink-0 w-12 h-12 rounded-xl
                     bg-gradient-to-r ${settings.color}
@@ -134,7 +133,6 @@ const SettingsContent = () => {
                   </div>
                 </div>
                 
-                {/* Content */}
                 <div className='flex-1 min-w-0'>
                   <h3 className='
                     text-white font-semibold text-lg
@@ -156,7 +154,6 @@ const SettingsContent = () => {
                   </p>
                 </div>
                 
-                {/* Arrow indicator */}
                 <div className='
                     flex-shrink-0 text-neutral-400
                     group-hover:text-white group-hover:translate-x-1

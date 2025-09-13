@@ -21,7 +21,17 @@ Router.post('/generate-quiz' , async (req, res) => {
            return res.status(404).json({message: "Somthing went Wrong"});
         }
 
-       const quizStore = quiz.map((q) => {
+        let questions = quiz;
+
+        if (!Array.isArray(questions) && questions.questions) {
+            questions = questions.questions;
+        }
+
+        if (!Array.isArray(questions)) {
+            throw new Error("Invalid quiz format from AI");
+        }
+
+       const quizStore = questions.map((q) => {
             let optionsArray = [];
             if (Array.isArray(q.options)) {
                 optionsArray = q.options;
