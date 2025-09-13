@@ -3,8 +3,6 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import MessagesPanel from './Panels/MessagesPanel';
-import { ref, query, orderByChild, onValue } from "firebase/database";
-import { database } from "../../Auth/AuthProviders/FirebaseSDK";
 import { UserDataContextExport } from "./CurrentUserContexProvider";
 import Socket from '../../SocketConnection/Socket';
 
