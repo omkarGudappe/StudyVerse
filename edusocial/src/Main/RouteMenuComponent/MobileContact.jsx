@@ -4,6 +4,9 @@ import SearchResult from './SmallComponents/SearchResult';
 import axios from 'axios';
 import { UserDataContextExport } from "./CurrentUserContexProvider";
 import Socket from '../../SocketConnection/Socket';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+
 
 const MobileContact = () => {
 
