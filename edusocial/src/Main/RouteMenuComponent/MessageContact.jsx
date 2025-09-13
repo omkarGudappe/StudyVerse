@@ -162,7 +162,7 @@ const MessageContact = ({ open, onClose }) => {
           </div>
         )}
       </div>
-      <div className='p-6'>
+      <div className='p-6 flex flex-col gap-3'>
         {Contact.map((user, index) => (
               <motion.div
                   key={user._id || index}

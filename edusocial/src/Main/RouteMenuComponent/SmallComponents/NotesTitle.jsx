@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import StoreNotes from '../../../StateManagement/StoreNotes';
+import { StoreNotes } from '../../../StateManagement/StoreNotes';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
 import { auth } from '../../../Auth/AuthProviders/FirebaseSDK';
 

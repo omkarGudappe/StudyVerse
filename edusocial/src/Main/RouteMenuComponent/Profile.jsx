@@ -48,8 +48,8 @@ const Profile = () => {
   }, [FirebaseUid , ProfileData]);
 
   useEffect(() => {
-    setPeeredCount(UserProfileData?.connections.length);
-    setMyPeeredCount(UserProfileData?.MyConnections.length);
+    setPeeredCount(UserProfileData?.connections?.length);
+    setMyPeeredCount(UserProfileData?.MyConnections?.length);
   }, [UserProfileData])
 
   const Education = UserProfileData?.education?.split(',') || [];

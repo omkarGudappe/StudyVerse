@@ -1,15 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Lenis from "@studio-freight/lenis";
+import { usePostsStore } from '../../StateManagement/StoreNotes';
+import Socket from '../../SocketConnection/Socket';
+
 
 const StudyVerseMain = () => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // const [posts, setPosts] = useState([]);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState(null);
   const [likedPosts, setLikedPosts] = useState(new Set());
   const [activePost, setActivePost] = useState(null);
   const videoRefs = useRef({});
   const observer = useRef(null);
+  const { posts, loading, error, fetchPosts, clearPosts } = usePostsStore();
 
  useEffect(() => {
   console.log("Lenis init 🚀");
@@ -81,27 +85,49 @@ observer.current = new IntersectionObserver(
 );
 
 
-  const fetchPosts = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts`);
+  // const fetchPosts = async () => {
+  //   try {
+  //     setLoading(true);
+  //     const response = await axios.get(`${import.meta.env.VITE_API_URL}/posts`);
       
-      if (response.data.ok) {
-        setPosts(response.data.posts.reverse());
-      } else {
-        throw new Error(response.data.message);
-      }
-    } catch (err) {
-      console.error('Error fetching posts:', err);
-      setError('Failed to load posts. Please try again later.');
-    } finally {
-      setLoading(false);
+  //     if (response.data.ok) {
+  //       setPosts(response.data.posts.reverse());
+  //     } else {
+  //       throw new Error(response.data.message);
+  //     }
+  //   } catch (err) {
+  //     console.error('Error fetching posts:', err);
+  //     setError('Failed to load posts. Please try again later.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {    
+  //   fetchPosts();
+  // }, []);
+
+  useEffect(() => {
+    fetchPosts();
+  }, [fetchPosts]);
+
+  useEffect(() => {
+  const handler = ({ Fetch }) => {
+    console.log("Fetch front", Fetch);
+    if (Fetch) {
+      clearPosts();
+      console.log("Fetch")
+      fetchPosts();
     }
   };
 
-  useEffect(() => {    
-    fetchPosts();
-  }, []);
+  Socket.on("FetchAgain", handler);
+
+  return () => {
+    Socket.off("FetchAgain", handler);
+  };
+}, []);
+
 
   // Set up Intersection Observer for video elements
   useEffect(() => {

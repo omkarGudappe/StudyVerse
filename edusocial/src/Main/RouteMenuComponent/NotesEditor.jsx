@@ -108,10 +108,9 @@ import {
 } from "react-icons/ai";
 import EmojiPicker from "emoji-picker-react";
 import "katex/dist/katex.min.css";
-import StoreNotes from "../../StateManagement/StoreNotes";
+import { StoreNotes } from "../../StateManagement/StoreNotes";
 import { LuCaseSensitive } from "react-icons/lu";
 
-// Custom Mention extension for @mentions
 const Mention = Node.create({
   name: 'mention',
   inline: true,

@@ -120,5 +120,13 @@ module.exports = function(io) {
       }
     })
 
+    socket.on("NewPostUploded", ({ upload }) => {
+      console.log("Check Upload",upload)
+      if(upload){
+        console.log("from the FetchAgin Socket Backend")
+        io.emit("FetchAgain", { Fetch: true });
+      }
+    })
+
   });
 };
