@@ -49,7 +49,7 @@ const Menu = () => {
     if(!ProfileData) return;
 
     if(ProfileData?.Uid){
-      Socket.emit("registerUser", ProfileData.Uid);
+      Socket.emit("registerUser", ProfileData?._id);
     }
     
   }, [ProfileData])

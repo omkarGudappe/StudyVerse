@@ -12,7 +12,7 @@ module.exports = function(io) {
         console.log(`User ${userId} connected with socket ${socket.id}`);
 
         try{
-          const GetNotificationLength = await User.findOne({ Uid:userId })
+          const GetNotificationLength = await User.findById({ userId })
           if(!GetNotificationLength){
             return console.log("User Not Found");
           }
@@ -32,9 +32,7 @@ module.exports = function(io) {
       }
     });
 
-    // Handle disconnection
     socket.on("disconnect", () => {
-      // Remove user from mapping when they disconnect
       for (let [userId, socketId] of userSocketMap.entries()) {
         if (socketId === socket.id) {
           userSocketMap.delete(userId);
@@ -46,7 +44,7 @@ module.exports = function(io) {
 
     socket.on("SendRequest", async ({Id , fromID}) => {
       try{
-        console.log("Hello");
+        console.log("Hello" , Id);
         if(!Id || !fromID){
           return console.log("Missing Requirment");
         }
@@ -56,13 +54,13 @@ module.exports = function(io) {
           {new: true},
         )
         try{
-          const GetNotificationLength = await User.findById({ Id })
+          const GetNotificationLength = await User.findOne({ _id: Id })
           if(!GetNotificationLength){
             return console.log("User Not Found");
           }
           const Length = GetNotificationLength.connectionRequests.length;
 
-          const acceptorSocketId = userSocketMap.get(userId);
+          const acceptorSocketId = userSocketMap.get(Id);
           if(Length > 0){
             console.log("getNotify");
             io.to(acceptorSocketId).emit("Length", { Length:Length })
@@ -97,6 +95,25 @@ module.exports = function(io) {
           },
           { new: true }
         )
+        
+        try{
+          const GetNotificationLength = await User.findById({ Id })
+          if(!GetNotificationLength){
+            return console.log("User Not Found");
+          }
+          const Length = GetNotificationLength.connectionRequests.length;
+
+          const acceptorSocketId = userSocketMap.get(Id);
+          if(Length > 0){
+            console.log("getNotify");
+            io.to(acceptorSocketId).emit("Length", { Length:Length })
+          }else{
+            console.log("No notification")
+            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
+          }
+        }catch(err){
+          console.log("getting error" , err.message);
+        }
 
         io.to(socket.id).emit("requestAccepted", { success: true, message: "Connection request accepted.", FromID: fromID });
         
@@ -113,7 +130,25 @@ module.exports = function(io) {
         Id,
         { $pull: { connectionRequests: fromID} }
       )
-        console.log("hello" , Id  )
+       try{
+        console.log(Id);
+          const GetNotificationLength = await User.findById({ Id })
+          if(!GetNotificationLength){
+            return console.log("User Not Found");
+          }
+          const Length = GetNotificationLength.connectionRequests.length;
+
+          const acceptorSocketId = userSocketMap.get(Id);
+          if(Length > 0){
+            console.log("getNotify");
+            io.to(acceptorSocketId).emit("Length", { Length:Length })
+          }else{
+            console.log("No notification")
+            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
+          }
+        }catch(err){
+          console.log("getting error" , err.message);
+        }
     })
 
     socket.on("UsersChat", async ({user1, user2, chatId}) => {

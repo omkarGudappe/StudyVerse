@@ -70,13 +70,13 @@ const Notification = ({ open, onClose, ProfileData }) => {
     };
 
     const handleAccept = (senderId) => {
-        const ID = ProfileData?._id || FirebaseUid;
+        const ID = ProfileData?._id ;
         setActiveActions(prev => ({ ...prev, [senderId]: 'accepting' }));
         Socket.emit("acceptRequest", { Id: ID, fromID: senderId });
     };
 
     const handleDecline = (senderId) => {
-        const ID = ProfileData?._id || FirebaseUid;
+        const ID = ProfileData?._id ;
         setActiveActions(prev => ({ ...prev, [senderId]: 'declining' }));
         Socket.emit("declineRequest", { Id: ID, fromID: senderId });
         

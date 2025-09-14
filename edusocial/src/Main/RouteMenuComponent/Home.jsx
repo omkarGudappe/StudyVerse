@@ -603,6 +603,7 @@ import axios from 'axios';
 import Lenis from "@studio-freight/lenis";
 import { usePostsStore } from '../../StateManagement/StoreNotes';
 import Socket from '../../SocketConnection/Socket';
+import { Link } from 'react-router-dom'
 
 const StudyVerseMain = () => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -613,6 +614,8 @@ const StudyVerseMain = () => {
   const observer = useRef(null);
   const searchRef = useRef(null);
   const { posts, loading, error, fetchPosts, clearPosts } = usePostsStore();
+  const [ClickedGroupBtn, setClickedGroupBtn] = useState({id : null , isOpen: false, username: null});
+  const [OpenBtnGroup , setOpenBtnGroup] = useState(false);
 
   // Lenis smooth scrolling setup
   useEffect(() => {
@@ -821,6 +824,14 @@ const StudyVerseMain = () => {
     }
   };
 
+  const handleOpneGroupBtn = (id , username) => {
+    setClickedGroupBtn({
+      id: id,
+      isOpen: true,
+      username: username,
+    })
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
@@ -949,24 +960,25 @@ const StudyVerseMain = () => {
                 className="bg-neutral-800/40 max-w-2xl mx-auto backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
               >
                 {/* Post Header */}
-                <div className="p-6 border-b border-neutral-700/30">
-                  <div className="flex items-center gap-4">
+                <div className="p-6 border-b border-neutral-700/30 relative ">
+                  <div className="flex items-center gap-4 ">
                     <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg">
-                        <img 
-                          src={post.author?.UserProfile?.avatar?.url} 
-                          alt={`${post.author?.firstName || ''} ${post.author?.lastName || ''}`} 
-                          className="object-cover h-full w-full"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                            e.target.nextSibling.style.display = 'flex';
-                          }}
-                        />
-                        <div className="hidden items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-amber-500 text-white font-semibold">
-                          {(post.author?.firstName?.[0] || 'U') + (post.author?.lastName?.[0] || '')}
-                        </div>
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-neutral-800"></div>
+                        <Link to={`/profile/${post?.author?.username}`}>
+                          <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg">
+                              <img 
+                                src={post.author?.UserProfile?.avatar?.url} 
+                                alt={`${post.author?.firstName || ''} ${post.author?.lastName || ''}`} 
+                                className="object-cover h-full w-full"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'flex';
+                                }}
+                              />
+                            <div className="hidden items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-amber-500 text-white font-semibold">
+                              {(post.author?.firstName?.[0] || 'U') + (post.author?.lastName?.[0] || '')}
+                            </div>
+                          </div>
+                        </Link>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-white truncate">
@@ -983,12 +995,21 @@ const StudyVerseMain = () => {
                         </span>
                       </p>
                     </div>
-                    <button className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-700/50 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                      </svg>
-                    </button>
+                      <button onClick={() =>{ handleOpneGroupBtn(post._id, post?.author?.username); setOpenBtnGroup(!OpenBtnGroup)}} className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-700/50 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                        </svg>
+                      </button>
                   </div>
+                    <div className=''>
+                      {OpenBtnGroup && ClickedGroupBtn.id === post?._id && (
+                        <div className='flex flex-col absolute right-2 bg-neutral-800 rounded-xl text-center'>
+                          <Link to={`/messages/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 rounded-tl-xl cursor-pointer rounded-tr-xl'>Message</Link>
+                          <Link to={`/profile/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 cursor-pointer'>Profile</Link>
+                          <Link to='#' className='hover:bg-blue-700 cursor-pointer bg-blue-600 w-full px-5 p-2 rounded-bl-xl rounded-br-xl'>Peer</Link>
+                        </div>
+                      )}
+                    </div>
                 </div>
 
                 {/* Post Content */}
