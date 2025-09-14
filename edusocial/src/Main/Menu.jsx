@@ -390,7 +390,7 @@ const Menu = () => {
               <path d="M8 17h8"/>
               <circle cx="12" cy="19" r="1.6"/>
             </svg>
-           { NotificationLength?.length > 0 && ( 
+           { NotificationLength > 0 && ( 
             <div className="absolute h-4 w-4 rounded-full bg-red-600 top-0 right-0 flex items-center justify-center">
               <span className="text-sm">{NotificationLength}</span>
             </div>)}
