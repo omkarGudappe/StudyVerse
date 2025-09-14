@@ -47,9 +47,10 @@ const Menu = () => {
 
   useEffect(() => {
     if(!ProfileData) return;
-
+    const Id = ProfileData?._id;
     if(ProfileData?.Uid){
-      Socket.emit("registerUser", ProfileData?._id);
+      console.log(Id);
+      Socket.emit("registerUser",{userId: Id});
     }
     
   }, [ProfileData])

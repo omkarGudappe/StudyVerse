@@ -16,8 +16,12 @@ const usePostsStore = create((set, get) => ({
   error: null,
   clearPosts: () => set({ posts: [] }),
 
-  fetchPosts: async () => {
-    if (get().posts.length > 0) return;
+  addPost: (newPost) => set((state) => ({
+    posts: [newPost, ...state.posts]
+  })),
+
+  fetchPosts: async (forceRefresh = false) => {
+    if (!forceRefresh && get().posts.length > 0) return;
 
     set({ loading: true, error: null });
     try {

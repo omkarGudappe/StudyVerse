@@ -24,7 +24,7 @@ const ProfileDetail = () => {
         Major: "",
     });
 
-    const Id = auth.currentUser.uid;
+    const Id = auth?.currentUser?.uid;
     const [Loading , setLoading] = useState(false);
     const [error, setError] = useState("");
     

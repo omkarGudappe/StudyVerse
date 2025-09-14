@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import axios from 'axios';
 import { auth } from '../../Auth/AuthProviders/FirebaseSDK';
 import Socket from '../../SocketConnection/Socket';
+import { usePostsStore } from '../../StateManagement/StoreNotes';
 
 const Post = ({ ModelCloseClicked }) => {
     const [Selected, setSelected] = useState(false);
@@ -20,6 +21,7 @@ const Post = ({ ModelCloseClicked }) => {
     })
     const [PostContent, setPostContent] = useState("");
     const cancelRequest = useRef(null);
+    const { addPost } = usePostsStore();
 
     const variants = {
         enter: (direction) => ({
@@ -165,9 +167,11 @@ const Post = ({ ModelCloseClicked }) => {
             });
 
             const result = await res.data;
-            if (result) {
+            if (result && result.newPost) {
                 setUploadStatus('success');
-                Socket.emit("NewPostUploded" , { upload: true })
+                console.log(result.newPost);
+                addPost(result.newPost);
+                Socket.emit("NewPostUploded", { upload: true });
                 setTimeout(() => {
                     ModelCloseClicked(false);
                 }, 1500);

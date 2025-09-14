@@ -1,33 +1,36 @@
 const User = require('../Db/User');
 const Chat = require('../Db/Chat');
+const Post = require('../Db/UserPost');
 
 const userSocketMap = new Map();
+
+const FetchConnectionRequiestDb = async(userId) => {
+    try{
+      const GetNotificationLength = await User.findById({ _id: userId })
+      if(!GetNotificationLength){
+        return console.log("User Not Found");
+      }
+      const Length = GetNotificationLength.connectionRequests.length;
+      return Length;
+
+    }catch(err){
+    console.log("getting error 1" , err.message);
+  }
+}
 
 module.exports = function(io) {
   io.on("connection", (socket) => {
 
-    socket.on("registerUser", async (userId) => {
+    socket.on("registerUser", async ({userId}) => {
       if (userId) {
         userSocketMap.set(userId, socket.id);
         console.log(`User ${userId} connected with socket ${socket.id}`);
+         const Length = await FetchConnectionRequiestDb(userId);
 
-        try{
-          const GetNotificationLength = await User.findById({ userId })
-          if(!GetNotificationLength){
-            return console.log("User Not Found");
-          }
-          const Length = GetNotificationLength.connectionRequests.length;
-
-          const acceptorSocketId = userSocketMap.get(userId);
-          if(Length > 0){
-            console.log("getNotify");
-            io.to(acceptorSocketId).emit("Length", { Length:Length })  
-          }else{
-            console.log("No notification")
-            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
-          }
-        }catch(err){
-          console.log("getting error" , err.message);
+        const acceptorSocketId = userSocketMap.get(userId);
+        if(Length > 0){
+          console.log("getNotify");
+          io.to(acceptorSocketId).emit("Length", { Length:Length })  
         }
       }
     });
@@ -53,23 +56,12 @@ module.exports = function(io) {
           { $addToSet: { connectionRequests: fromID } },
           {new: true},
         )
-        try{
-          const GetNotificationLength = await User.findOne({ _id: Id })
-          if(!GetNotificationLength){
-            return console.log("User Not Found");
-          }
-          const Length = GetNotificationLength.connectionRequests.length;
+        const Length = await FetchConnectionRequiestDb(Id);
 
-          const acceptorSocketId = userSocketMap.get(Id);
-          if(Length > 0){
-            console.log("getNotify");
-            io.to(acceptorSocketId).emit("Length", { Length:Length })
-          }else{
-            console.log("No notification")
-            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
-          }
-        }catch(err){
-          console.log("getting error" , err.message);
+        const acceptorSocketId = userSocketMap.get(Id);
+        if(Length > 0){
+          console.log("getNotify");
+          io.to(acceptorSocketId).emit("Length", { Length:Length })  
         }
       }catch(err){
         console.error("Somthing Error: ", err.message);
@@ -96,27 +88,14 @@ module.exports = function(io) {
           { new: true }
         )
         
-        try{
-          const GetNotificationLength = await User.findById({ Id })
-          if(!GetNotificationLength){
-            return console.log("User Not Found");
-          }
-          const Length = GetNotificationLength.connectionRequests.length;
+        const Length = await FetchConnectionRequiestDb(Id);
 
-          const acceptorSocketId = userSocketMap.get(Id);
-          if(Length > 0){
-            console.log("getNotify");
-            io.to(acceptorSocketId).emit("Length", { Length:Length })
-          }else{
-            console.log("No notification")
-            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
-          }
-        }catch(err){
-          console.log("getting error" , err.message);
+        const acceptorSocketId = userSocketMap.get(Id);
+        if(Length > 0){
+          console.log("getNotify");
+          io.to(acceptorSocketId).emit("Length", { Length:Length })  
         }
-
         io.to(socket.id).emit("requestAccepted", { success: true, message: "Connection request accepted.", FromID: fromID });
-        
       }catch(err) {
         console.error("Error accepting request:", err.message);
       }
@@ -132,7 +111,7 @@ module.exports = function(io) {
       )
        try{
         console.log(Id);
-          const GetNotificationLength = await User.findById({ Id })
+          const GetNotificationLength = await User.findById({ _id: Id })
           if(!GetNotificationLength){
             return console.log("User Not Found");
           }
@@ -142,9 +121,6 @@ module.exports = function(io) {
           if(Length > 0){
             console.log("getNotify");
             io.to(acceptorSocketId).emit("Length", { Length:Length })
-          }else{
-            console.log("No notification")
-            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
           }
         }catch(err){
           console.log("getting error" , err.message);
@@ -156,7 +132,6 @@ module.exports = function(io) {
         console.log("Missing");
         return io.to(socket.id).emit("error", { ok: false, message: "Missing requirement" });
       }
-      console.log("hello")
       try {
         await Chat.updateOne(
           { User1: user1, "OtherUser.User2": { $ne: user2 } },
@@ -195,7 +170,6 @@ module.exports = function(io) {
       if(!ID){
        return io.to(socket.id).emit("IdNotFound", {message: "Id Missing"})
       }
-      console.log("working")
       try{
         const Users = await Chat.findOne({ User1: ID }).populate({
           path: "OtherUser.User2", 
@@ -204,7 +178,6 @@ module.exports = function(io) {
         if(!Users){
           return io.to(socket.id).emit("UserNotFound" , {message: "User is not exist"})
         }
-        console.log("chaeking")
         socket.emit("ContactUsers" , { User: Users.OtherUser});
       }catch(err){
         console.log(err.message);
@@ -219,5 +192,33 @@ module.exports = function(io) {
       }
     })
 
+    socket.on("Handle-user-like", async ({postId , userId}) => {
+      if(!postId || !userId){
+        return;
+      }
+      try{
+        await Post.findByIdAndUpdate(
+          postId,
+          {$addToSet : {likes: userId}},
+          { new: true },
+          { upsert: true }
+        )
+
+        const Id = userSocketMap.get(userId);
+        io.to(Id).emit()
+
+      }catch(err){
+        console.log(err.message);
+      }
+    })
+
+    socket.on("NewPostUploded", ({ upload }) => {
+      console.log("Check Upload", upload);
+      if(upload){
+        console.log("from the FetchAgin Socket Backend");
+        // Emit to all clients EXCEPT the sender
+        socket.broadcast.emit("FetchAgain", { Fetch: true });
+      }
+    });
   });
 };

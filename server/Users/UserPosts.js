@@ -9,7 +9,10 @@ Router.get('/', async (req, res) => {
         const AllPosts = await Posts.find().populate({
             path: 'author',
             select: 'firstName lastName UserProfile.avatar username'
-        });
+        }).populate({
+            path: 'likes',
+            select: 'Uid username',
+        })
         res.json({ ok: true, posts: AllPosts });
     } catch (error) {
         res.status(500).json({ ok: false, message: error.message });
