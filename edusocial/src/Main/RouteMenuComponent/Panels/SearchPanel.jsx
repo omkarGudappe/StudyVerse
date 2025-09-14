@@ -13,7 +13,7 @@ const SearchPanel = ({ open, onClose, searchTerm, onSearchChange, onClearSearch,
       
       <SearchInput searchTerm={searchTerm} onSearchChange={onSearchChange} onClearSearch={onClearSearch} open={open}/>
 
-      <div className="h-[calc(100vh-200px)] overflow-y-auto">
+      <div className="h-[calc(100vh-200px)] lenis overflow-y-auto">
         {children}
       </div>
     </SlidePanel>

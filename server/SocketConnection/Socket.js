@@ -1,8 +1,48 @@
 const User = require('../Db/User');
 const Chat = require('../Db/Chat');
 
+const userSocketMap = new Map();
+
 module.exports = function(io) {
   io.on("connection", (socket) => {
+
+    socket.on("registerUser", async (userId) => {
+      if (userId) {
+        userSocketMap.set(userId, socket.id);
+        console.log(`User ${userId} connected with socket ${socket.id}`);
+
+        try{
+          const GetNotificationLength = await User.findOne({ Uid:userId })
+          if(!GetNotificationLength){
+            return console.log("User Not Found");
+          }
+          const Length = GetNotificationLength.connectionRequests.length;
+
+          const acceptorSocketId = userSocketMap.get(userId);
+          if(Length > 0){
+            console.log("getNotify");
+            io.to(acceptorSocketId).emit("Length", { Length:Length })  
+          }else{
+            console.log("No notification")
+            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
+          }
+        }catch(err){
+          console.log("getting error" , err.message);
+        }
+      }
+    });
+
+    // Handle disconnection
+    socket.on("disconnect", () => {
+      // Remove user from mapping when they disconnect
+      for (let [userId, socketId] of userSocketMap.entries()) {
+        if (socketId === socket.id) {
+          userSocketMap.delete(userId);
+          console.log(`User ${userId} disconnected`);
+          break;
+        }
+      }
+    });
 
     socket.on("SendRequest", async ({Id , fromID}) => {
       try{
@@ -15,8 +55,24 @@ module.exports = function(io) {
           { $addToSet: { connectionRequests: fromID } },
           {new: true},
         )
+        try{
+          const GetNotificationLength = await User.findById({ Id })
+          if(!GetNotificationLength){
+            return console.log("User Not Found");
+          }
+          const Length = GetNotificationLength.connectionRequests.length;
 
-        
+          const acceptorSocketId = userSocketMap.get(userId);
+          if(Length > 0){
+            console.log("getNotify");
+            io.to(acceptorSocketId).emit("Length", { Length:Length })
+          }else{
+            console.log("No notification")
+            io.to(acceptorSocketId).emit("Length" , { Length: 0 });
+          }
+        }catch(err){
+          console.log("getting error" , err.message);
+        }
       }catch(err){
         console.error("Somthing Error: ", err.message);
       }
@@ -29,7 +85,7 @@ module.exports = function(io) {
           return console.log("Missing Requirment");
         }
 
-        await User.findByIdAndUpdate(
+         await User.findByIdAndUpdate(
           fromID,
           { $addToSet: { MyConnections: Id },}
         )

@@ -264,7 +264,6 @@ Router.get('/:Uid/notifications', async (req, res) => {
       return res.status(404).json({ ok: false, message: "User not found" });
     }
 
-    // Transform connectionRequests into notification objects
     const notifications = user.connectionRequests.map(reqUser => ({
       _id: reqUser._id,
       type: "peer_request",
@@ -281,7 +280,7 @@ Router.get('/:Uid/notifications', async (req, res) => {
 
     return res.status(200).json({
       ok: true,
-      notifications // Make sure this is plural
+      notifications
     });
   } catch (err) {
     console.error("Error fetching notifications:", err);

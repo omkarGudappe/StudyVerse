@@ -51,7 +51,6 @@ const SlidePanel = ({
               </div>
             </div>
 
-            {/* Content */}
             {children}
           </motion.div>
         </motion.div>

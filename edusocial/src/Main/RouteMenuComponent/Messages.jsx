@@ -322,9 +322,9 @@ const sendMessage = async () => {
             const isOwnMessage = msg.senderId === ProfileData._id;
             const showAvatar = !isOwnMessage && !isConsecutiveMessage(msg, messages[index - 1]);
             const showTimestamp = index === messages.length - 1 || 
-                                 (messages[index + 1] && 
-                                 (messages[index + 1].senderId !== msg.senderId || 
-                                 (messages[index + 1].timestamp - msg.timestamp) > 300000));
+              (messages[index + 1] && 
+              (messages[index + 1].senderId !== msg.senderId || 
+              (messages[index + 1].timestamp - msg.timestamp) > 300000));
 
             return (
               <motion.div
@@ -378,7 +378,7 @@ const sendMessage = async () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-neutral-700 bg-neutral-800/50 backdrop-blur-sm sticky bottom-0">
+      <div className="p-4 border-t border-neutral-700 bg-neutral-800/50 backdrop-blur-sm md:sticky absolute w-full md:bottom-0 bottom-17">
         <div className="flex items-center gap-2">
           <div className="relative" ref={emojiPickerRef}>
             <button
