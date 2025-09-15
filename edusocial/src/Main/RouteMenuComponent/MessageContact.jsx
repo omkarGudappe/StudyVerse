@@ -152,15 +152,15 @@ const MessageContact = ({ open, onClose }) => {
         )}
       </div>
       <div className='p-6 flex flex-col gap-3'>
-        <p className='text-neutral-400 text-sm'>Contact Peers</p>
+        {Contact.length > 0 && <p className='text-neutral-400 text-sm'>Contact Peers</p>}
         {Contact.map((user, index) => (
-              <motion.div
-                  key={user._id || index}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="cursor-pointer flex items-center gap-4 p-4 bg-neutral-800 rounded-xl hover:bg-neutral-750 transition-all duration-200 group"
-                >
+          <motion.div
+          key={user._id || index}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+          className="cursor-pointer flex items-center gap-4 p-4 bg-neutral-800 rounded-xl hover:bg-neutral-750 transition-all duration-200 group"
+          >
                 <Link 
                   to={`/messages/${encodeURIComponent(user?.User2?.username)}`}
                   onClick={onClose}

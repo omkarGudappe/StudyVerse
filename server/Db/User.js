@@ -55,6 +55,13 @@ const UserSchema = new mongoose.Schema({
     connectionRequests: [
         { type: mongoose.Schema.Types.ObjectId, ref: "User" }
     ],
+    notification: [
+       {
+        user:  { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        Type: { type: String },
+        whichPost: { type: mongoose.Schema.Types.ObjectId, ref: "Posts" },
+       }
+    ],
     Uid:{type:String, unique:true},
     firebaseUid:{type:String, unique:true}
 

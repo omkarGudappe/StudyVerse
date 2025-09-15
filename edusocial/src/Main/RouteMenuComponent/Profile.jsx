@@ -3,6 +3,7 @@ import axios from 'axios';
 import { auth } from '../../Auth/AuthProviders/FirebaseSDK'
 import { Link } from 'react-router-dom';
 import { UserDataContextExport } from './CurrentUserContexProvider';
+import UserPosts from './Panels/UserPosts';
 
 const Profile = () => {
   const [UserProfileData, setUserProfileData] = useState(null);
@@ -12,6 +13,7 @@ const Profile = () => {
   const [PeeredCount , setPeeredCount] = useState(0)
   const [MyPeeredCount , setMyPeeredCount] = useState(0);
   const { ProfileData } = UserDataContextExport();
+  const [NotesLength , setNotesLength] = useState(0)
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -46,6 +48,8 @@ const Profile = () => {
     };
     FetchDataFromBackEnd();
   }, [FirebaseUid , ProfileData]);
+
+  console.log(NotesLength)
 
   useEffect(() => {
     setPeeredCount(UserProfileData?.connections?.length);
@@ -83,7 +87,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen relative bg-neutral-950 text-amber-100 py-8 px-4 md:px-8">
+    <div className="min-h-screen relative bg-neutral-950 text-amber-100 py-8 px-4 md:px-8 flex flex-col justify-between">
       <div className="fixed top-4 right-4 z-10 flex flex-col gap-3 md:flex-row md:gap-4">
         <Link to='/quiz' className="bg-gradient-to-r from-purple-600 to-amber-500 rounded-full h-12 w-12 flex justify-center items-center hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-110">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -113,6 +117,7 @@ const Profile = () => {
           </svg>
         </Link>
       </div>
+
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-neutral-900 p-6 rounded-2xl shadow-lg">
           <div className="flex items-center gap-3 mb-6">
@@ -187,7 +192,7 @@ const Profile = () => {
               
               <div className="grid grid-cols-3 gap-4 border-t border-neutral-700 pt-4">
                 <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">0</span>
+                  <span className="text-xl font-bold">{NotesLength}</span>
                   <p className="text-sm text-gray-400">Notes sent</p>
                 </div>
                 <div className="flex flex-col items-center">
@@ -202,6 +207,9 @@ const Profile = () => {
             </div>
           </div>
         </div>
+      </div>
+      <div className='border-t-2 mt-30 border-neutral-600'>
+        <UserPosts userId={ProfileData?._id} getPostLength={(value) => setNotesLength(value)} />
       </div>
     </div>
   )

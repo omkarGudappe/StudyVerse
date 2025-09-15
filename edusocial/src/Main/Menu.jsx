@@ -56,12 +56,9 @@ const Menu = () => {
   }, [ProfileData])
   
   useEffect(() => {
-    
     Socket.on("Length", ({ Length }) => {
       setNotificationsLenght(Length);
-      console.log("Length", Length)
     })
-
     return () => Socket.off("Length");
   }, [])
 

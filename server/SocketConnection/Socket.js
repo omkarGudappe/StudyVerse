@@ -109,22 +109,9 @@ module.exports = function(io) {
         Id,
         { $pull: { connectionRequests: fromID} }
       )
-       try{
-        console.log(Id);
-          const GetNotificationLength = await User.findById({ _id: Id })
-          if(!GetNotificationLength){
-            return console.log("User Not Found");
-          }
-          const Length = GetNotificationLength.connectionRequests.length;
-
-          const acceptorSocketId = userSocketMap.get(Id);
-          if(Length > 0){
-            console.log("getNotify");
-            io.to(acceptorSocketId).emit("Length", { Length:Length })
-          }
-        }catch(err){
-          console.log("getting error" , err.message);
-        }
+        const Length = await FetchConnectionRequiestDb(Id);
+        const acceptorSocketId = userSocketMap.get(Id);
+        io.to(acceptorSocketId).emit("Length", { Length:Length })  
     })
 
     socket.on("UsersChat", async ({user1, user2, chatId}) => {
@@ -192,25 +179,67 @@ module.exports = function(io) {
       }
     })
 
-    socket.on("Handle-user-like", async ({postId , userId}) => {
+    socket.on("Handle-user-like", async ({postId, userId , type, toId}) => {
       if(!postId || !userId){
-        return;
+        return console.log("Missing requirment", postId ,"and", userId);
       }
       try{
-        await Post.findByIdAndUpdate(
-          postId,
-          {$addToSet : {likes: userId}},
-          { new: true },
-          { upsert: true }
-        )
+        const post = await Post.findById(postId);
+        if (!post) return;
+        
+        const isLiked = post.likes.includes(userId);
+        console.log(isLiked);
+        
+        const newNotification = {
+            user: userId,
+            Type: type,
+            whichPost: postId,
+        }
 
-        const Id = userSocketMap.get(userId);
-        io.to(Id).emit()
+        if (isLiked) {
+          await Post.findByIdAndUpdate(
+            postId,
+            { $pull: { likes: userId } },
+            { new: true }
+          );
 
-      }catch(err){
-        console.log(err.message);
+          
+           await User.findByIdAndUpdate(
+            toId,
+            { 
+              $pull : { 
+                notification: newNotification 
+              }
+            },
+            {new: true}
+          )
+          
+        } else {
+          await Post.findByIdAndUpdate(
+            postId,
+            { $addToSet: { likes: userId } },
+            { new: true }
+          );
+
+          await User.findByIdAndUpdate(
+            toId,
+            { $push : { notification: newNotification }},
+            {new: true}
+          )
+        }
+        
+        const updatedPost = await Post.findById(postId).populate('likes', 'username');
+        
+        io.emit("post-like-updated", { 
+          postId, 
+          likes: updatedPost.likes,
+          liked: !isLiked 
+        });
+        
+      } catch(err) {
+        console.log("Like error:", err.message);
       }
-    })
+    });
 
     socket.on("NewPostUploded", ({ upload }) => {
       console.log("Check Upload", upload);
@@ -220,5 +249,6 @@ module.exports = function(io) {
         socket.broadcast.emit("FetchAgain", { Fetch: true });
       }
     });
+
   });
 };

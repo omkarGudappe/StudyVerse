@@ -240,7 +240,8 @@ const sendMessage = async () => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-neutral-900 text-white">
+    <div className="flex flex-col h-screen bg-neutral-900 text-white w-auto">
+      
       <div className="p-4 border-b border-neutral-700 bg-neutral-800/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -257,7 +258,6 @@ const sendMessage = async () => {
                 </span>
               )}
             </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-800"></div>
           </div>
           <div>
             <h2 className="text-lg font-bold">
@@ -378,12 +378,13 @@ const sendMessage = async () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-neutral-700 bg-neutral-800/50 backdrop-blur-sm md:sticky absolute w-full md:bottom-0 bottom-17">
-        <div className="flex items-center gap-2">
+      <div className="p-5 border-t border-neutral-700 bg-neutral-800/50 backdrop-blur-sm fixed bottom-15 md:bottom-0 md:relative w-full">
+        <div className="flex items-center gap-2 w-full">
           <div className="relative" ref={emojiPickerRef}>
             <button
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
               title="Insert Emoji"
+              className="cursor-pointer"
             >
               <FaSmile />
             </button>
@@ -393,11 +394,12 @@ const sendMessage = async () => {
               </div>
             )}
           </div>
-          <button className="p-2 text-neutral-400 hover:text-white rounded-lg transition-colors">
+          <label htmlFor="file" className="p-2 cursor-pointer text-neutral-400 hover:text-white rounded-lg transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
             </svg>
-          </button>
+          </label>
+          <input type="file" className="hidden" id="file" />
           
           <input
             ref={inputRef}

@@ -4,6 +4,8 @@ import axios from "axios";
 import Socket from "../../SocketConnection/Socket";
 import { auth } from "../../Auth/AuthProviders/FirebaseSDK";
 import { UserDataContextExport } from "./CurrentUserContexProvider";
+import UserPosts from './Panels/UserPosts';
+
 
 const UserProfile = () => {
   const { userName } = useParams();
@@ -14,6 +16,8 @@ const UserProfile = () => {
   const [PeeredCount , setPeeredCount] = useState(0)
   const { ProfileData } = UserDataContextExport();
   const [CheackPeer, setCheackPeer] = useState(false);
+  const [NotesLength , setNotesLength] = useState(0)
+
 
   useEffect(() => {
     if (!userName) return;
@@ -232,7 +236,7 @@ const UserProfile = () => {
 
               <div className="grid grid-cols-3 gap-4 border-t border-neutral-700 pt-4">
                 <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">0</span>
+                  <span className="text-xl font-bold">{NotesLength}</span>
                   <p className="text-sm text-gray-400">Notes sent</p>
                 </div>
                 <div className="flex flex-col items-center">
@@ -247,6 +251,9 @@ const UserProfile = () => {
             </div>
           </div>
         </div>
+      </div>
+      <div className='border-t-2 mt-30 border-neutral-600'>
+        <UserPosts userId={UserProfileData?._id} getPostLength={(value) => setNotesLength(value)} />
       </div>
     </div>
   );

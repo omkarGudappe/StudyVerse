@@ -256,7 +256,6 @@ Router.get('/:Uid/notifications', async (req, res) => {
       return res.status(400).json({ ok: false, message: "Uid is required" });
     }
 
-    // Find user & populate pending requests
     const user = await User.findOne({ Uid })
       .populate("connectionRequests", "firstName lastName UserProfile.avatar");
 
@@ -287,6 +286,37 @@ Router.get('/:Uid/notifications', async (req, res) => {
     res.status(500).json({ ok: false, message: "Internal server error" });
   }
 });
+
+
+Router.post('/notification/:fromId' , async (req, res) => {
+    const { fromId } = req.params;
+    const { type, toId } = req.body;
+
+   try{
+        if(!fromId || !type) {
+        return res.status(404).json({message: "Missing Requirment"});
+    }
+
+    const newNotification = {
+        user: fromId,
+        Type: type,
+    }
+
+    const setNotification = await User.findByIdAndUpdate(
+        toId,
+        { $push : { notification: newNotification }},
+        {new: true}
+    )
+
+    if(!setNotification){
+        return res.status(404).json({message: "User Not Found"});
+    }
+
+   }catch(err){
+        console.log(err.message);
+        res.json({message: err.message});
+   }
+})
 
 
 module.exports = Router;

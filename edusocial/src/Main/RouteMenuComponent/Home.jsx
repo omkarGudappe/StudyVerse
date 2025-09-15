@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 import Lenis from "@studio-freight/lenis";
 import { usePostsStore } from '../../StateManagement/StoreNotes';
 import Socket from '../../SocketConnection/Socket';
 import { Link } from 'react-router-dom'
 import { UserDataContextExport } from './CurrentUserContexProvider';
+import CommentModel from './Panels/CommentModel';
 
 const StudyVerseMain = () => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -14,13 +15,43 @@ const StudyVerseMain = () => {
   const videoRefs = useRef({});
   const observer = useRef(null);
   const searchRef = useRef(null);
-  const { posts, loading, error, fetchPosts, clearPosts } = usePostsStore();
+  const loadMoreRef = useRef(null);
+  const { posts, loading, error, hasMore, fetchPosts, loadMorePosts } = usePostsStore();
   const [ClickedGroupBtn, setClickedGroupBtn] = useState({id : null , isOpen: false, username: null});
   const [OpenBtnGroup , setOpenBtnGroup] = useState(false);
   const { ProfileData } = UserDataContextExport();
+  const [isLiked, setIsLiked] = useState({ id:null, status: false });
+  const [pendingLikes, setPendingLikes] = useState(new Set());
+  const [localLikedPosts, setLocalLikedPosts] = useState(new Set());
+  const [OpenCommentModel, setCommentModel] = useState({ id: null, status:false });
+  const [Comment, setComment] = useState("");
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const options = {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
+    };
+
+    const scrollObserver = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore && !loading) {
+        loadMorePosts();
+      }
+    }, options);
+
+    if (loadMoreRef.current) {
+      scrollObserver.observe(loadMoreRef.current);
+    }
+
+    return () => {
+      if (loadMoreRef.current) {
+        scrollObserver.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [hasMore, loading, loadMorePosts]);
 
   useEffect(() => {
-    console.log("Lenis init 🚀");
     const lenis = new Lenis({
       duration: 1.2,
       smoothWheel: true,
@@ -38,8 +69,6 @@ const StudyVerseMain = () => {
     requestAnimationFrame(raf);
 
     lenis.on("scroll", ({ scroll, limit, velocity, direction, progress }) => {
-      console.log("Lenis Scroll:", scroll, "/", limit);
-      
       if (observer.current) {
         observer.current.disconnect();
         
@@ -61,10 +90,8 @@ const StudyVerseMain = () => {
       const currentScrollY = window.scrollY;
       
       if (currentScrollY > lastScrollY && currentScrollY > 100) {
-        // Scrolling down - hide search bar
         setShowSearchBar(false);
       } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
-        // Scrolling up or at top - show search bar
         setShowSearchBar(true);
       }
       
@@ -84,7 +111,6 @@ const StudyVerseMain = () => {
 
   useEffect(() => {
     const handler = ({ Fetch }) => {
-      console.log("Fetch front", Fetch);
       if (Fetch) {
         fetchPosts(true);
       }
@@ -95,26 +121,47 @@ const StudyVerseMain = () => {
     return () => {
       Socket.off("FetchAgain", handler);
     };
-}, [fetchPosts]);
+  }, [fetchPosts]);
 
-  // console.log(posts);
+  useEffect(() => {
+    const handler = ({ postId, likes, liked }) => {
+      setPendingLikes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
 
-  // useEffect(() => {
-  //   const handler = ({ Fetch }) => {
-  //     console.log("Fetch front", Fetch);
-  //     if (Fetch) {
-  //       clearPosts();
-  //       console.log("Fetch")
-  //       fetchPosts();
-  //     }
-  //   };
+      usePostsStore.getState().updatePostLikes(postId, likes);
+      
+      if (liked) {
+        setLocalLikedPosts(prev => new Set([...prev, postId]));
+      } else {
+        setLocalLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+      }
+    };
 
-  //   Socket.on("FetchAgain", handler);
+    Socket.on("post-like-updated", handler);
 
-  //   return () => {
-  //     Socket.off("FetchAgain", handler);
-  //   };
-  // }, []);
+    return () => {
+      Socket.off("post-like-updated", handler);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (posts.length > 0 && ProfileData?._id) {
+      const userLikedPosts = new Set();
+      posts.forEach(post => {
+        if (VerifyLikeServer(post._id, post?.likes)) {
+          userLikedPosts.add(post._id);
+        }
+      });
+      setLocalLikedPosts(userLikedPosts);
+    }
+  }, [posts, ProfileData]);
 
   useEffect(() => {
     if (posts.length === 0) return;
@@ -130,7 +177,6 @@ const StudyVerseMain = () => {
               setActivePost(videoId);
               videoElement.muted = true;
               videoElement.play().catch(error => {
-                console.log('Autoplay prevented:', error);
               });
             } else {
               if (activePost === videoId) {
@@ -160,19 +206,35 @@ const StudyVerseMain = () => {
     };
   }, [posts, activePost]);
 
-  const handleLike = async (postId) => {
+  const handleLike = async (postId, postAuthorId) => {
     try {
-     const newLikedPosts = new Set(likedPosts);
-      if (newLikedPosts.has(postId)) {
-        newLikedPosts.delete(postId);
-      } else {
-        newLikedPosts.add(postId);
-      }
-      setLikedPosts(newLikedPosts);
       const UserId = ProfileData?._id;
-      Socket.emit("Handle-user-like", { postId:postId, userId: UserId });
+      if (!UserId) return;
+      
+      const isCurrentlyLiked = localLikedPosts.has(postId);
+      
+      if (isCurrentlyLiked) {
+        setLocalLikedPosts(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(postId);
+          return newSet;
+        });
+      } else {
+        setLocalLikedPosts(prev => new Set([...prev, postId]));
+      }
+      
+      setPendingLikes(prev => new Set([...prev, postId]));
+      
+      Socket.emit("Handle-user-like", { postId, userId: UserId, type: "like" , toId: postAuthorId  });
+      
     } catch (err) {
       console.log(err.message);
+      setLocalLikedPosts(new Set(localLikedPosts));
+      setPendingLikes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(postId);
+        return newSet;
+      });
     }
   };
 
@@ -201,22 +263,17 @@ const StudyVerseMain = () => {
     e.stopPropagation();
     
     const videoElement = videoRefs.current[postId];
-    console.log('Video element:', videoElement);
-    console.log('Video paused state:', videoElement?.paused);
     
     if (videoElement) {
       if (videoElement.paused) {
         videoElement.muted = false;
         videoElement.play().then(() => {
           setActivePost(postId);
-          console.log('Video playing');
         }).catch(error => {
-          console.log('Play failed:', error);
         });
       } else {
         videoElement.pause();
         setActivePost(null);
-        console.log('Video paused');
       }
     }
   };
@@ -239,17 +296,24 @@ const StudyVerseMain = () => {
     })
   }
 
-  const VerifyLike = (id , likes) => {
-    const userId = ProfileData.username;
-    const check = likes.some((like) => like.username === userId)
-    if(check){
-      return id;
-    }else{
-      return false;
-    }
-  }
+  const VerifyLikeServer = (postId, likes) => {
+    const userId = ProfileData?._id;
+    if (!userId) return false;
+    
+    return likes.some(like => 
+      typeof like === 'object' ? like._id === userId : like === userId
+    );
+  };
 
-  if (loading) {
+  const VerifyLike = (postId, likes) => {
+    return localLikedPosts.has(postId);
+  };
+
+  const isLikePending = (postId) => {
+    return pendingLikes.has(postId);
+  };
+
+  if (loading && posts.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
         <div className="flex flex-col items-center">
@@ -270,7 +334,7 @@ const StudyVerseMain = () => {
     );
   }
 
-  if (error) {
+  if (error && posts.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
         <div className="text-center p-8 bg-neutral-800/70 backdrop-blur-sm rounded-2xl border border-neutral-700/50 max-w-md w-full shadow-2xl">
@@ -534,41 +598,49 @@ const StudyVerseMain = () => {
                 <div className="p-6 border-t border-neutral-700/30 bg-neutral-800/20">
                   <div className="flex items-center justify-between flex-wrap gap-4">
                     <div className="flex items-center gap-6">
-                      <button
-                        className={`flex items-center gap-2 transition-all duration-300 ${
-                          VerifyLike(post._id , post?.likes) === post._id
+                     <button
+                        className={`flex items-center gap-2 cursor-pointer transition-all duration-300 ${
+                          VerifyLike(post._id, post?.likes)
                             ? 'text-red-500 hover:text-red-400' 
                             : 'text-neutral-400 hover:text-red-500'
-                        }`}
-                        onClick={() => handleLike(post._id)}
+                        } ${isLikePending(post._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        onClick={() => !isLikePending(post?._id) && handleLike(post?._id, post?.author?._id)}
+                        disabled={isLikePending(post._id)}
                       >
-                        <div className={`p-2 rounded-full transition-all duration-300 ${VerifyLike(post._id , post?.likes) === post._id ? 'bg-red-500/20' : 'bg-neutral-700/50 hover:bg-red-500/20'}`}>
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            width="20"
-                            height="20"
-                            fill={VerifyLike(post._id , post?.likes) === post._id ? "currentColor" : "none"}
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
-                          </svg>
+                        <div className={`p-2 rounded-full transition-all duration-300 ${
+                          VerifyLike(post._id, post?.likes) 
+                            ? 'bg-red-500/20' 
+                            : 'bg-neutral-700/50 hover:bg-red-500/20'
+                        }`}>
+                          {isLikePending(post._id) ? (
+                            <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              width="20"
+                              height="20"
+                              fill={VerifyLike(post._id, post?.likes) ? "currentColor" : "none"}
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+                            </svg>
+                          )}
                         </div>
-                        <span className="font-medium">
-                          {VerifyLike(post._id , post?.likes) === post._id ? 'Liked' : 'Like'}
+                        <span className="text-sm text-neutral-400">
+                          {post.likes?.length || 0}
                         </span>
                       </button>
 
-                      <button className="flex items-center gap-2 text-neutral-400 hover:text-amber-400 transition-all duration-300">
+                      <button onClick={() => setCommentModel({id: post?._id, status: true})} className="cursor-pointer flex items-center gap-2 text-neutral-400 hover:text-amber-400 transition-all duration-300">
                         <div className="p-2 rounded-full bg-neutral-700/50 hover:bg-amber-500/20 transition-all duration-300">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                         </div>
-                        <span className="font-medium">Comment</span>
                       </button>
 
                       <button className="flex items-center gap-2 text-neutral-400 hover:text-purple-400 transition-all duration-300">
@@ -577,7 +649,6 @@ const StudyVerseMain = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                           </svg>
                         </div>
-                        <span className="font-medium">Share</span>
                       </button>
                     </div>
 
@@ -587,15 +658,31 @@ const StudyVerseMain = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                         </svg>
                       </div>
-                      <span className="font-medium">Save</span>
                       </button>
                   </div>
                 </div>
               </div>
             ))}
+            
+            {/* Load More Trigger */}
+            <div ref={loadMoreRef} className="flex justify-center py-8">
+              {loading && (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                  <span className="ml-3 text-neutral-400">Loading more posts...</span>
+                </div>
+              )}
+              
+              {!hasMore && posts.length > 0 && (
+                <div className="text-center text-neutral-400 py-4">
+                  <p>You've reached the end! 🎉</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
+      {OpenCommentModel.status && <CommentModel open={OpenCommentModel.status} CommentId={OpenCommentModel.id} onClose={() => setCommentModel({id:null , status:false})} />}
     </div>
   );
 };
