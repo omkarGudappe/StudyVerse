@@ -31,21 +31,21 @@ const usePostsStore = create((set, get) => ({
     )
   })),
 
-  fetchPosts: async (loadMore = false) => {
+  fetchPosts: async ( userId ,loadMore = false) => {
     const currentState = get();
     
     // If loading more and no more posts, return
     if (loadMore && !currentState.hasMore) return;
     
-    // If initial load and already have posts, return
     if (!loadMore && currentState.posts.length > 0) return;
 
     set({ loading: true, error: null });
 
     try {
+      if(!userId) return;
       const pageToLoad = loadMore ? currentState.page + 1 : 1;
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/posts?page=${pageToLoad}&limit=${currentState.limit}`
+        `${import.meta.env.VITE_API_URL}/posts/${userId}?page=${pageToLoad}&limit=${currentState.limit}`
       );
       
       if (response.data.ok) {

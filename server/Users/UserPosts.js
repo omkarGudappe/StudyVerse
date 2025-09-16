@@ -10,7 +10,7 @@ Router.get('/:Uid', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const skip = (page - 1) * limit;
 
-        const user = await User.findById({ Uid })
+        const user = await User.findById({ _id: Uid })
         if(!user) return res.status(404).json({message: "User Not found"});
 
         const AllPosts = await Posts.find({

@@ -106,8 +106,10 @@ const StudyVerseMain = () => {
   }, [lastScrollY]);
 
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+     if (ProfileData?._id) {
+      fetchPosts(ProfileData._id);
+    }
+  }, [fetchPosts, ProfileData]);
 
   useEffect(() => {
     const handler = ({ Fetch }) => {
