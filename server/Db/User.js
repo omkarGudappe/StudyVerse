@@ -60,6 +60,7 @@ const UserSchema = new mongoose.Schema({
         user:  { type: mongoose.Schema.Types.ObjectId, ref: "User" },
         Type: { type: String },
         whichPost: { type: mongoose.Schema.Types.ObjectId, ref: "Posts" },
+        comment : { type: String },
        }
     ],
     Uid:{type:String, unique:true},

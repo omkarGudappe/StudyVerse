@@ -11,6 +11,7 @@ const Notification = ({ open, onClose, ProfileData }) => {
     const [notifications, setNotifications] = useState([]);
     const [activeActions, setActiveActions] = useState({});
     const { FirebaseUid } = UserDataContextExport();
+    const [NotificationId, setNotificationId] = useState(false)
 
     const NOTIFICATION_TYPES = {
         PEER_REQUEST: 'peer_request',
@@ -41,9 +42,14 @@ const Notification = ({ open, onClose, ProfileData }) => {
             setNotifications(prev => [newNotification, ...prev]);
         });
 
+        Socket.on("getNotify" , ({getNotify}) => {
+            console.log("my noti", getNotify);
+        })
+
         return () => {
             Socket.off('requestAccepted');
             Socket.off('newNotification');
+            Socket.off("getNotify");
         };
     }, []);
 
@@ -54,13 +60,29 @@ const Notification = ({ open, onClose, ProfileData }) => {
         
         try {
             const Response = await axios.get(`${import.meta.env.VITE_API_URL}/user/${ID}/notifications`);
+            const getNotification = await axios.get(`${import.meta.env.VITE_API_URL}/user/notification/${ID}`);
             const result = Response.data;
+            const Notification = [];
             
             if (result.ok) {
-                setNotifications(result.notifications || result.notifications || []);
+                const NotifyContainer = result.notifications || result.notifications || []
+
+                NotifyContainer.map((notify) => (
+                    Notification.push(notify)
+                ))
             } else {
                 throw new Error(result.message);
             }
+
+            if(getNotification.data.ok){
+                const NotifyContainer = getNotification.data.notification;
+
+                NotifyContainer.map((notify) => (
+                    Notification.push(notify)
+                ))
+            }
+            console.log(Notification)
+            setNotifications(Notification);
         } catch (err) {
             setError(err.response?.data?.message || "Failed to load notifications");
             console.error("Error fetching notifications:", err);
@@ -129,6 +151,19 @@ const Notification = ({ open, onClose, ProfileData }) => {
         }
     };
 
+    const handleDeleteNote = async (Id) => {
+        if(!ProfileData) return;
+        const userId = ProfileData?._id;
+        setNotificationId(true)
+        try{
+            Socket.emit("handle-delete-notification" , {Id , userId });
+        }catch(err){
+            console.log(err.message);
+        }finally{
+            setNotificationId(false)
+        }
+    }
+
     const NotificationSkeleton = () => (
         <div className="animate-pulse">
             {[1, 2, 3].map((i) => (
@@ -149,7 +184,7 @@ const Notification = ({ open, onClose, ProfileData }) => {
             onClose={onClose} 
             notifications={notifications}
         >
-            <div className="p-6 z-50">
+            <div className="p-6 z-50 lenis">
                 {isLoading ? (
                     <NotificationSkeleton />
                 ) : error ? (
@@ -175,13 +210,13 @@ const Notification = ({ open, onClose, ProfileData }) => {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
-                                className={`p-4 rounded-xl border transition-all duration-200 ${
+                                className={`p-4 rounded-xl border transition-all duration-200 relative ${
                                     notification.read 
                                         ? 'bg-neutral-800 border-neutral-700' 
-                                        : 'bg-neutral-800/50 border-purple-500/30 shadow-lg shadow-purple-500/10'
+                                        : 'bg-neutral-800/50 border-purple-500/30 shadow-lg'
                                 }`}
                             >
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-start gap-3 ">
                                     <div className="text-2xl">
                                       <div className='flex flex-col'>
                                         {getNotificationIcon(notification.type)}
@@ -231,6 +266,24 @@ const Notification = ({ open, onClose, ProfileData }) => {
                                         )}
                                     </div>
                                 </div>
+                                 <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        handleDeleteNote(notification._id);
+                                    }}
+                                    disabled={''}
+                                    className="absolute bottom-0 right-0 cursor-pointer transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200"
+                                    title="Delete Notification"
+                                >
+                                    {NotificationId === notification._id ? (
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
+                                    ) : (
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    )}
+                                </button>
                             </motion.div>
                         ))}
                     </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import axios from 'axios';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
 
-const CommentModel = ({ open, CommentId, onClose }) => {
+const CommentModel = ({ open, CommentId, onClose, PostownerId }) => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newComment, setNewComment] = useState("");
@@ -20,13 +20,15 @@ const CommentModel = ({ open, CommentId, onClose }) => {
                 `${import.meta.env.VITE_API_URL}/posts/comments/${CommentId}`,
                 {
                     userId: ProfileData._id,
-                    comment: newComment.trim()
+                    comment: newComment.trim(),
+                    PostownerId: PostownerId,
                 }
             );
 
             if (res.data.ok) {
                 setComments(prev => [res.data.comment, ...prev]);
                 setNewComment("");
+
             }
         } catch (err) {
             console.log(err?.response?.data?.message || err.message);

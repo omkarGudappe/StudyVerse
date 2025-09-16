@@ -23,7 +23,7 @@ const StudyVerseMain = () => {
   const [isLiked, setIsLiked] = useState({ id:null, status: false });
   const [pendingLikes, setPendingLikes] = useState(new Set());
   const [localLikedPosts, setLocalLikedPosts] = useState(new Set());
-  const [OpenCommentModel, setCommentModel] = useState({ id: null, status:false });
+  const [OpenCommentModel, setCommentModel] = useState({ id: null, PostownerId: null, status:false });
   const [Comment, setComment] = useState("");
 
   // Infinite scroll observer
@@ -635,7 +635,7 @@ const StudyVerseMain = () => {
                         </span>
                       </button>
 
-                      <button onClick={() => setCommentModel({id: post?._id, status: true})} className="cursor-pointer flex items-center gap-2 text-neutral-400 hover:text-amber-400 transition-all duration-300">
+                      <button onClick={() => setCommentModel({id: post?._id, PostownerId: post?.author?._id ,status: true})} className="cursor-pointer flex items-center gap-2 text-neutral-400 hover:text-amber-400 transition-all duration-300">
                         <div className="p-2 rounded-full bg-neutral-700/50 hover:bg-amber-500/20 transition-all duration-300">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -682,7 +682,7 @@ const StudyVerseMain = () => {
           </div>
         )}
       </div>
-      {OpenCommentModel.status && <CommentModel open={OpenCommentModel.status} CommentId={OpenCommentModel.id} onClose={() => setCommentModel({id:null , status:false})} />}
+      {OpenCommentModel.status && <CommentModel open={OpenCommentModel.status} PostownerId={OpenCommentModel.PostownerId} CommentId={OpenCommentModel.id} onClose={() => setCommentModel({id:null, PostownerId: null, status:false})} />}
     </div>
   );
 };

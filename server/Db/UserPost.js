@@ -31,6 +31,7 @@ const PostSchema = new mongoose.Schema({
             createdAt: { type: Date, default: Date.now }
         }
     ],
+    visibility: { type: String, enum: ["public", "peers"], default: "public" },
     createdAt: { type: Date, default: Date.now }
 }, {timestamps: true});
 

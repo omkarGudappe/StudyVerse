@@ -208,7 +208,7 @@ const Profile = () => {
           </div>
         </div>
       </div>
-      <div className='border-t-2 mt-30 border-neutral-600'>
+      <div className=''>
         <UserPosts userId={ProfileData?._id} getPostLength={(value) => setNotesLength(value)} />
       </div>
     </div>

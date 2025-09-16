@@ -49,7 +49,6 @@ const Menu = () => {
     if(!ProfileData) return;
     const Id = ProfileData?._id;
     if(ProfileData?.Uid){
-      console.log(Id);
       Socket.emit("registerUser",{userId: Id});
     }
     

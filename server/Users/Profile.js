@@ -4,6 +4,13 @@ const cloudinary = require('../CloudinaryStorage/cloudinary');
 const User = require('../Db/User');
 const Posts = require('../Db/UserPost');
 
+const fs = require("fs");
+const path = require("path");
+const ffmpeg = require("fluent-ffmpeg");
+const ffmpegPath = require("ffmpeg-static");
+
+ffmpeg.setFfmpegPath(ffmpegPath);
+
 const Router = express.Router();
 const storage = multer.diskStorage({});
 const upload = multer({ storage });
@@ -132,46 +139,138 @@ Router.get('/profile/:FUid' , async (req , res) => {
 })
 
 
-Router.post('/posts/:Fid', upload.single('image'), async (req, res) => {
-    try{
-        const { Fid } = req.params;
-        const { heading, description } = req.body;
+// Router.post('/posts/:Fid', upload.single('image'), async (req, res) => {
+//     try{
+//         const { Fid } = req.params;
+//         const { heading, description } = req.body;
 
-        if(!heading || !description || !Fid){
-            return res.status(400).json({ message: "All fields required"});
-        }
+//         if(!heading || !description || !Fid){
+//             return res.status(400).json({ message: "All fields required"});
+//         }
 
-        const MongoId = await User.findOne({ firebaseUid: Fid });
+//         const MongoId = await User.findOne({ firebaseUid: Fid });
 
-        if(!MongoId){
-            return res.status(404).json({ message:"User not Found from the user" });
-        }
+//         if(!MongoId){
+//             return res.status(404).json({ message:"User not Found from the user" });
+//         }
 
-        const uploadFile = await cloudinary.uploader.upload(req.file.path, {
-            folder: "studyverse/posts",
-            resource_type: req.file.mimetype === "application/pdf" ? "raw" : "auto",
-        });
+//         const uploadFile = await cloudinary.uploader.upload(req.file.path, {
+//             folder: "studyverse/posts",
+//             resource_type: req.file.mimetype === "application/pdf" ? "raw" : "auto",
+//         });
 
-        const newPost = await Posts.create({
-            author: MongoId._id,
-            heading,
-            description,
-            files: {
-                url: uploadFile.secure_url,
-                publicId: uploadFile.public_id,
-                type: uploadFile.resource_type,
-            },
-        })
+//         const newPost = await Posts.create({
+//             author: MongoId._id,
+//             heading,
+//             description,
+//             files: {
+//                 url: uploadFile.secure_url,
+//                 publicId: uploadFile.public_id,
+//                 type: uploadFile.resource_type,
+//             },
+//         })
 
-        if(newPost) {
-            return res.json({ message: "Content Posted Successfully" , newPost });
-        }
+//         if(newPost) {
+//             return res.json({ message: "Content Posted Successfully" , newPost });
+//         }
 
-    }catch(err){
-        res.status(500).json({ message: "Because of Some reason content is not posted. Please Try again" });
-        console.log("Error: ", err);
+//     }catch(err){
+//         res.status(500).json({ message: "Because of Some reason content is not posted. Please Try again" });
+//         console.log("Error: ", err);
+//     }
+// })
+
+
+Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
+  try {
+    const { Fid } = req.params;
+    const { heading, description, visibility } = req.body;
+
+    if (!heading || !description || !Fid) {
+      return res.status(400).json({ message: "All fields required" });
     }
-})
+
+    const MongoId = await User.findOne({ firebaseUid: Fid });
+    if (!MongoId) {
+      return res.status(404).json({ message: "User not Found from the user" });
+    }
+
+    let filePath = req.file.path;
+
+    const fileSizeInMB = req.file.size / (1024 * 1024);
+    if (req.file.mimetype.startsWith("video/") && fileSizeInMB > 100) {
+    console.log("⚡ Large video detected, compressing...");
+    console.log(`Original size: ${fileSizeInMB.toFixed(2)} MB`);
+
+    const uploadsDir = path.join(__dirname, "../uploads");
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+
+    const compressedPath = path.join(
+        uploadsDir,
+        `compressed-${Date.now()}.mp4`
+    );
+
+    await new Promise((resolve, reject) => {
+        ffmpeg(filePath)
+        .videoCodec("libx264")
+        .size("?x720")
+        .outputOptions(["-crf 28"])
+        .on("end", () => {
+            const stats = fs.statSync(compressedPath);
+            const compressedSizeMB = stats.size / (1024 * 1024);
+
+            console.log(`✅ Compression finished: ${compressedPath}`);
+            console.log(
+            `Compressed size: ${compressedSizeMB.toFixed(
+                2
+            )} MB (Saved: ${(fileSizeInMB - compressedSizeMB).toFixed(2)} MB)`
+            );
+
+            filePath = compressedPath;
+            resolve();
+        })
+        .on("error", (err) => reject(err))
+        .save(compressedPath);
+    });
+    }
+
+    const uploadFile = await cloudinary.uploader.upload(filePath, {
+      folder: "studyverse/posts",
+      resource_type:
+        req.file.mimetype === "application/pdf" ? "raw" : "auto",
+    });
+
+    fs.unlinkSync(filePath);
+
+    const newPost = await Posts.create({
+      author: MongoId._id,
+      heading,
+      description,
+      files: {
+        url: uploadFile.secure_url,
+        publicId: uploadFile.public_id,
+        type: uploadFile.resource_type,
+      },
+      visibility: visibility,
+    });
+
+    return res.json({
+      message: "Content Posted Successfully",
+      newPost,
+    });
+
+    console.log("complete");
+
+  } catch (err) {
+    res.status(500).json({
+      message:
+        "Because of Some reason content is not posted. Please Try again",
+    });
+    console.log("Error: ", err);
+  }
+});
 
 Router.get('/search', async (req, res) => {
     const { query } = req.query;
@@ -248,6 +347,41 @@ Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => 
     }
 });
 
+Router.get('/notification/:Uid' , async (req, res) => {
+
+    const { Uid } = req.params;
+
+      try{
+        const GetNotification = await User.findOne({ Uid })
+        .select("notification._id notification.user notification.Type notification.whichPost")
+        .populate("notification.user" , "firstName lastName UserProfile.avatar")
+        .populate("notification.whichPost", "files.url")
+    
+        if(!GetNotification){
+          return res.status(404).json({message: "User Not Found"});
+        }
+
+        const notification = GetNotification.notification.map((notify) => ({
+            _id: notify._id,
+            type: notify.Type,
+            message: `${notify.Type === 'comment' ? `${notify.user.firstName} commented on your post` : `Your post Liked by the ${notify.user.firstName} ${notify.user.lastName}` }`,
+            sender: {
+                _id: notify.user._id,
+                firstName: notify.user.firstName,
+                lastName: notify.user.lastName,
+                avatar: notify?.whichPost?.files?.url,
+            },
+            comment: notify?.comment || '',
+            createdAt: new Date(),
+            read: false
+        }))
+    
+        res.json({ok: true , notification});
+      }catch(err) {
+        console.log(err.message);
+      }
+})
+
 Router.get('/:Uid/notifications', async (req, res) => {
   try {
     const { Uid } = req.params;
@@ -318,5 +452,23 @@ Router.post('/notification/:fromId' , async (req, res) => {
    }
 })
 
+Router.post('/messages/fileupload' , upload.single('file') , async (req, res) => {
+
+    try{
+        if (!req.file) {
+            return res.status(404).json({ message: "No file uploaded", code: "NO_FILE_UPLOADED" });
+        }
+
+        const uploadFile = await cloudinary.uploader.upload(req.file.path, {
+            folder: "studyverse/posts",
+            resource_type: req.file.mimetype === "application/pdf" ? "raw" : "auto",
+        });
+
+        return res.json({ok: true, url: uploadFile.secure_url, publicId: uploadFile.public_id, type: uploadFile.resource_type })
+
+    }catch(err){
+        console.log(err.message);
+    }
+})
 
 module.exports = Router;

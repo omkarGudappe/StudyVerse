@@ -113,15 +113,17 @@ const UserPosts = ({ userId, getPostLength }) => {
     }
 
     return (
-        <div className="py-6">
-            <h2 className="text-2xl font-bold mb-6 px-4 text-amber-100 flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                Study Materials and Posts
-            </h2>
+        <div className="py-6 mt-20">
+            <div className='border-b-1 border-neutral-700'>
+                <h2 className="text-2xl  mb-6 font-bold px-4 text-amber-100 flex items-center ga-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    Study Materials and Posts
+                </h2>
+            </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
+            <div className="grid grid-cols-1 mt-6 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4">
                 {posts.map((post) => (
                     <div key={post._id} className="bg-neutral-900 rounded-2xl overflow-hidden border border-neutral-700/50 shadow-lg transition-all duration-300 hover:shadow-purple-500/10 hover:border-purple-500/30">
                         <div className="p-4">

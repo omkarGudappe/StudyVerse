@@ -18,10 +18,12 @@ const Post = ({ ModelCloseClicked }) => {
         heading: "",
         description: "",
         image: "",
+        visibility: "",
     })
     const [PostContent, setPostContent] = useState("");
     const cancelRequest = useRef(null);
     const { addPost } = usePostsStore();
+    const [uploadPhase, setUploadPhase] = useState('');
 
     const variants = {
         enter: (direction) => ({
@@ -133,61 +135,132 @@ const Post = ({ ModelCloseClicked }) => {
         }
     }, [error]);
 
-    const handleSubmit = async () => {
-        if (!PostDetail.heading.trim()) {
-            setError("Please add a title for your content");
-            return;
-        }
+    // const handleSubmit = async () => {
+    //     if (!PostDetail.heading.trim()) {
+    //         setError("Please add a title for your content");
+    //         return;
+    //     }
 
-        const form = new FormData();
-        const Fid = auth.currentUser.uid;
-        form.append('heading', PostDetail.heading.trim());
-        form.append('description', PostDetail.description.trim());
-        form.append('image', PostDetail.image);
-        form.append('contentType', PostContent);
+    //     const form = new FormData();
+    //     const Fid = auth.currentUser.uid;
+    //     form.append('heading', PostDetail.heading.trim());
+    //     form.append('description', PostDetail.description.trim());
+    //     form.append('image', PostDetail.image);
+    //     form.append('contentType', PostContent);
         
-        setLoading(true);
-        setUploadStatus('uploading');
-        setPercent(0);
+    //     setLoading(true);
+    //     setUploadStatus('uploading');
+    //     setPercent(0);
 
-        try {
-            cancelRequest.current = axios.CancelToken.source();
+    //     try {
+    //         cancelRequest.current = axios.CancelToken.source();
             
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
-                headers: { "Content-Type": "multipart/form-data" },
-                cancelToken: cancelRequest.current.token,
-                onUploadProgress: (progressEvent) => {
-                    if (progressEvent.total) {
-                        const percent = Math.round(
-                            (progressEvent.loaded * 100) / progressEvent.total
-                        );
-                        setPercent(percent);
-                    }
-                }
-            });
+    //         const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
+    //             headers: { "Content-Type": "multipart/form-data" },
+    //             cancelToken: cancelRequest.current.token,
+    //             onUploadProgress: (progressEvent) => {
+    //                 if (progressEvent.total) {
+    //                     const percent = Math.round(
+    //                         (progressEvent.loaded * 100) / progressEvent.total
+    //                     );
+    //                     setPercent(percent);
+    //                 }
+    //             }
+    //         });
 
-            const result = await res.data;
-            if (result && result.newPost) {
-                setUploadStatus('success');
-                console.log(result.newPost);
-                addPost(result.newPost);
-                Socket.emit("NewPostUploded", { upload: true });
-                setTimeout(() => {
-                    ModelCloseClicked(false);
-                }, 1500);
-            } else {
-                throw new Error(result.message || "Failed to upload");
-            }
-        } catch (err) {
-            if (axios.isCancel(err)) {
-                setUploadStatus('idle');
-            } else {
-                setError(err.response?.data?.message || "Upload failed. Please try again.");
-                setUploadStatus('error');
-            }
-            setLoading(false);
-        }
+    //         const result = await res.data;
+    //         if (result && result.newPost) {
+    //             setUploadStatus('success');
+    //             console.log(result.newPost);
+    //             addPost(result.newPost);
+    //             Socket.emit("NewPostUploded", { upload: true });
+    //             setTimeout(() => {
+    //                 ModelCloseClicked(false);
+    //             }, 1500);
+    //         } else {
+    //             throw new Error(result.message || "Failed to upload");
+    //         }
+    //     } catch (err) {
+    //         if (axios.isCancel(err)) {
+    //             setUploadStatus('idle');
+    //         } else {
+    //             setError(err.response?.data?.message || "Upload failed. Please try again.");
+    //             setUploadStatus('error');
+    //         }
+    //         setLoading(false);
+    //     }
+    // }
+
+
+ const handleSubmit = async () => {
+  if (!PostDetail.heading.trim()) {
+    setError("Please add a title for your content");
+    return;
+  }
+
+  const form = new FormData();
+  const Fid = auth.currentUser.uid;
+  form.append('heading', PostDetail.heading.trim());
+  form.append('description', PostDetail.description.trim());
+  form.append('image', PostDetail.image);
+  form.append('contentType', PostContent);
+  form.append('visibility' , PostDetail.visibility);
+
+  setLoading(true);
+  setUploadStatus('uploading');
+  setPercent(0);
+  setUploadPhase('preparing');
+
+  try {
+    cancelRequest.current = axios.CancelToken.source();
+
+    // 🔹 Fake progress for compression
+    if (Selected.type.startsWith("video/")) {
+      setUploadPhase('compressing');
+      let fakeProgress = 0;
+      while (fakeProgress < 40) {
+        await new Promise(res => setTimeout(res, 4000));
+        fakeProgress += 3;
+        setPercent(fakeProgress);
+      }
     }
+
+    // 🔹 Real upload progress
+    setUploadPhase('uploading');
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      cancelToken: cancelRequest.current.token,
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const uploadProgress = Math.round((progressEvent.loaded * 60) / progressEvent.total);
+          // shift upload progress to 40–100%
+          setPercent(40 + uploadProgress);
+        }
+      }
+    });
+
+    const result = res.data;
+    if (result && result.newPost) {
+      setUploadStatus('success');
+      setPercent(100);
+      addPost(result.newPost);
+      Socket.emit("NewPostUploded", { upload: true });
+      setTimeout(() => ModelCloseClicked(false), 1500);
+    } else {
+      throw new Error(result.message || "Failed to upload");
+    }
+  } catch (err) {
+    if (axios.isCancel(err)) {
+      setUploadStatus('idle');
+    } else {
+      setError(err.response?.data?.message || "Upload failed. Please try again.");
+      setUploadStatus('error');
+    }
+    setLoading(false);
+  }
+};
+
+
 
     const handleCheckSelectedData = () => {
         if (!Selected) {
@@ -471,30 +544,52 @@ const Post = ({ ModelCloseClicked }) => {
                             </div>
 
                             {uploadStatus === 'uploading' && (
-                                <motion.div 
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    className="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-6"
-                                >
-                                    <div className="flex justify-between items-center mb-3">
-                                        <span className="text-white text-sm font-medium">Uploading...</span>
-                                        <span className="text-blue-500 text-sm font-bold">{Percent}%</span>
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-6"
+                            >
+                                <div className="flex justify-between items-center mb-3">
+                                    <div>
+                                        <span className="text-white text-sm font-medium block">
+                                            {uploadPhase === 'compressing' ? 'Compressing...' : 
+                                             uploadPhase === 'uploading' ? 'Uploading...' : 'Preparing...'}
+                                        </span>
+                                        <span className="text-blue-500 text-xs">
+                                            {Selected && uploadPhase === 'compressing' ? 
+                                             `This may take a while for ${formatFileSize(Selected.size)} video` : ''}
+                                        </span>
                                     </div>
-                                    <div className="w-full bg-neutral-700 rounded-full h-2.5 mb-2">
-                                        <div 
-                                            className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2.5 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${Percent}%` }}
-                                        ></div>
-                                    </div>
-                                    <p className="text-neutral-400 text-xs">Please wait while we upload your file</p>
+                                    <span className="text-blue-500 text-sm font-bold">{Percent}%</span>
+                                </div>
+                                
+                                <div className="w-full bg-neutral-700 rounded-full h-2.5 mb-2 relative overflow-hidden">
+                                    <div 
+                                        className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+                                        style={{ width: `${Percent}%` }}
+                                    ></div>
+                                    {/* Animated shimmer effect for better UX */}
+                                    {Percent > 0 && Percent < 100 && (
+                                        <div className="absolute top-0 left-0 w-full h-full animate-pulse">
+                                            <div className="bg-white/20 h-full w-10 -skew-x-12 animate-shimmer"></div>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="flex justify-between items-center">
+                                    <p className="text-neutral-400 text-xs">
+                                        {uploadPhase === 'compressing' ? 'Optimizing for web...' : 
+                                         uploadPhase === 'uploading' ? 'Sending to server...' : 'Getting ready...'}
+                                    </p>
                                     <button 
-                                        className="mt-3 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-full transition-colors"
+                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-full transition-colors"
                                         onClick={handleCancelUpload}
                                     >
-                                        Cancel Upload
+                                        Cancel
                                     </button>
-                                </motion.div>
-                            )}
+                                </div>
+                            </motion.div>
+                        )}
 
                             {uploadStatus === 'success' && (
                                 <motion.div 
@@ -535,6 +630,16 @@ const Post = ({ ModelCloseClicked }) => {
                                         onChange={handleFileChange}
                                         disabled={uploadStatus === 'uploading'}
                                     />
+                                </div>
+                                <div>
+                                    <select 
+                                        className='w-full bg-neutral-800 border-neutral-700 py-3 px-4 rounded-xl text-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+                                        onChange={(e) => setPostDetail({...PostDetail , visibility: e.target.value})}
+                                    >
+                                        <option value="">Select Post status</option>
+                                        <option value="public">Public</option>
+                                        <option value="peers">Peers Only</option>
+                                    </select>
                                 </div>
                             </div>
 
