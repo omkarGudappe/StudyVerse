@@ -47,7 +47,7 @@ const Post = ({ ModelCloseClicked }) => {
 
     const contentTypes = [
         {
-            type: "image",
+            type: "post",
             label: "Post",
             icon: (
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,7 +58,7 @@ const Post = ({ ModelCloseClicked }) => {
             color: "from-blue-500 to-cyan-500"
         },
         {
-            type: "video",
+            type: "lesson",
             label: "Lesson",
             icon: (
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,13 +87,14 @@ const Post = ({ ModelCloseClicked }) => {
             if (!selectedFile) return;
             
             const validTypes = {
-                image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-                video: ['video/mp4', 'video/webm', 'video/ogg'],
+                post: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+                lesson: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-m4v'],
                 note: ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
             };
 
+
             if (!validTypes[PostContent]?.includes(selectedFile.type)) {
-                setError(`Please select a valid ${PostContent} file type`);
+                setError(`Please select a valid ${PostContent} file type. Got: ${selectedFile.type}`);
                 return;
             }
 
@@ -191,7 +192,6 @@ const Post = ({ ModelCloseClicked }) => {
     //     }
     // }
 
-
  const handleSubmit = async () => {
   if (!PostDetail.heading.trim()) {
     setError("Please add a title for your content");
@@ -225,7 +225,6 @@ const Post = ({ ModelCloseClicked }) => {
       }
     }
 
-    // 🔹 Real upload progress
     setUploadPhase('uploading');
     const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -233,7 +232,6 @@ const Post = ({ ModelCloseClicked }) => {
       onUploadProgress: (progressEvent) => {
         if (progressEvent.total) {
           const uploadProgress = Math.round((progressEvent.loaded * 60) / progressEvent.total);
-          // shift upload progress to 40–100%
           setPercent(40 + uploadProgress);
         }
       }
@@ -432,7 +430,6 @@ const Post = ({ ModelCloseClicked }) => {
                                                     </div>
                                                 </div>
                                             )}
-
                                             <button
                                                 onClick={() => {
                                                     setSelected(false);
@@ -476,8 +473,8 @@ const Post = ({ ModelCloseClicked }) => {
                                                 <h3 className="text-lg font-medium text-white mb-2">Drop your file here</h3>
                                                 <p className="text-neutral-400 text-sm">or click to browse files</p>
                                                 <p className="text-xs text-neutral-500 mt-2">
-                                                    {PostContent === "image" ? "JPG, PNG, GIF, WEBP" : 
-                                                     PostContent === "video" ? "MP4, WEBM, OGG" : 
+                                                    {PostContent === "post" ? "JPG, PNG, GIF, WEBP" : 
+                                                     PostContent === "lesson" ? "MP4, WEBM, OGG" : 
                                                      "PDF, TXT, DOC, DOCX"}
                                                 </p>
                                             </div>
@@ -487,7 +484,7 @@ const Post = ({ ModelCloseClicked }) => {
                                             onChange={handleFileChange}
                                             id='fileInput'
                                             name='image'
-                                            accept={PostContent === "image" ? 'image/*' : PostContent === "video" ? "video/*" : '.pdf,.txt,.doc,.docx'}
+                                            accept={PostContent === "post" ? 'image/*' : PostContent === "lesson" ? "video/*" : '.pdf,.txt,.doc,.docx'}
                                             className='hidden' 
                                         />
                                     </motion.div>
@@ -568,7 +565,6 @@ const Post = ({ ModelCloseClicked }) => {
                                         className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2.5 rounded-full transition-all duration-300 ease-out"
                                         style={{ width: `${Percent}%` }}
                                     ></div>
-                                    {/* Animated shimmer effect for better UX */}
                                     {Percent > 0 && Percent < 100 && (
                                         <div className="absolute top-0 left-0 w-full h-full animate-pulse">
                                             <div className="bg-white/20 h-full w-10 -skew-x-12 animate-shimmer"></div>

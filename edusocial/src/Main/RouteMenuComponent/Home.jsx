@@ -16,7 +16,7 @@ const StudyVerseMain = () => {
   const observer = useRef(null);
   const searchRef = useRef(null);
   const loadMoreRef = useRef(null);
-  const { posts, loading, error, hasMore, fetchPosts, loadMorePosts } = usePostsStore();
+  const { posts, loading, error, hasMore, fetchPosts, loadMorePosts, initialLoading } = usePostsStore();
   const [ClickedGroupBtn, setClickedGroupBtn] = useState({id : null , isOpen: false, username: null});
   const [OpenBtnGroup , setOpenBtnGroup] = useState(false);
   const { ProfileData } = UserDataContextExport();
@@ -24,7 +24,8 @@ const StudyVerseMain = () => {
   const [pendingLikes, setPendingLikes] = useState(new Set());
   const [localLikedPosts, setLocalLikedPosts] = useState(new Set());
   const [OpenCommentModel, setCommentModel] = useState({ id: null, PostownerId: null, status:false });
-  const [Comment, setComment] = useState("");
+  const [RunLoading , setRunLoading] = useState(false);
+  // const [initialLoading, setInitialLoading] = useState(false);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -106,9 +107,23 @@ const StudyVerseMain = () => {
   }, [lastScrollY]);
 
   useEffect(() => {
-     if (ProfileData?._id) {
+    return () => {
+      // Clean up any pending requests or timeouts
+      usePostsStore.getState().clearPosts();
+    };
+  }, []);
+
+  const FetchPostsFromBack = () => {
+    if (ProfileData?._id) {
       fetchPosts(ProfileData._id);
-    }
+    } 
+    // else {
+    //   usePostsStore.getState().error = "Faild To Loade Posts";
+    // }
+  }
+
+  useEffect(() => {
+    FetchPostsFromBack()
   }, [fetchPosts, ProfileData]);
 
   useEffect(() => {
@@ -280,6 +295,13 @@ const StudyVerseMain = () => {
     }
   };
 
+  useEffect(() => {
+    setTimeout(() => {
+      setRunLoading(false);
+    }, 4000)
+    setRunLoading(true);
+  } , [initialLoading])
+
   const handleVideoPlay = (postId) => {
     setActivePost(postId);
   };
@@ -315,7 +337,7 @@ const StudyVerseMain = () => {
     return pendingLikes.has(postId);
   };
 
-  if (loading && posts.length === 0) {
+  const Loading = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
         <div className="flex flex-col items-center">
@@ -333,10 +355,16 @@ const StudyVerseMain = () => {
           <p className="text-neutral-400 text-sm mt-2">Preparing your learning journey</p>
         </div>
       </div>
-    );
+    )
   }
 
-  if (error && posts.length === 0) {
+  if (loading && posts.length === 0) {
+    return <Loading/>
+  }
+
+  console.log(initialLoading, "Check");
+
+  if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
         <div className="text-center p-8 bg-neutral-800/70 backdrop-blur-sm rounded-2xl border border-neutral-700/50 max-w-md w-full shadow-2xl">
@@ -348,7 +376,7 @@ const StudyVerseMain = () => {
           <h2 className="text-2xl font-bold mb-4 text-white">Oops! Something went wrong</h2>
           <p className="text-neutral-300 mb-6">{error}</p>
           <button 
-            onClick={() => fetchPosts()} 
+            onClick={() => {fetchPosts(ProfileData._id)}} 
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 rounded-full hover:from-purple-500 hover:to-amber-400 transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-purple-500/30 font-medium"
           >
             Try Again
@@ -419,7 +447,9 @@ const StudyVerseMain = () => {
           </div>
         </div>
 
-        {posts.length === 0 ? (
+        { initialLoading ? (
+          <Loading/>
+        ) : posts.length === 0 ? (
           <div className="text-center py-16 bg-neutral-800/40 rounded-3xl border border-neutral-700/30 backdrop-blur-sm">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-700/30 rounded-3xl mb-6">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

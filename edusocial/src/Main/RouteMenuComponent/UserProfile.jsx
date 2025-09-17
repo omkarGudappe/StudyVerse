@@ -252,7 +252,7 @@ const UserProfile = () => {
           </div>
         </div>
       </div>
-      <div className='border-t-2 mt-30 border-neutral-600'>
+      <div className=''>
         <UserPosts userId={UserProfileData?._id} getPostLength={(value) => setNotesLength(value)} />
       </div>
     </div>

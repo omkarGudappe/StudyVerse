@@ -184,7 +184,7 @@ Router.get('/profile/:FUid' , async (req , res) => {
 Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
   try {
     const { Fid } = req.params;
-    const { heading, description, visibility } = req.body;
+    const { heading, description, visibility, contentType } = req.body;
 
     if (!heading || !description || !Fid) {
       return res.status(400).json({ message: "All fields required" });
@@ -198,7 +198,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
     let filePath = req.file.path;
 
     const fileSizeInMB = req.file.size / (1024 * 1024);
-    if (req.file.mimetype.startsWith("video/") && fileSizeInMB > 100) {
+    if (req.file.mimetype.startsWith("video/") && fileSizeInMB > 70) {
     console.log("⚡ Large video detected, compressing...");
     console.log(`Original size: ${fileSizeInMB.toFixed(2)} MB`);
 
@@ -254,6 +254,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
         type: uploadFile.resource_type,
       },
       visibility: visibility,
+      contentType: contentType,
     });
 
     return res.json({

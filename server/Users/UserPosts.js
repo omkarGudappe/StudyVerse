@@ -3,21 +3,22 @@ const Router = express.Router();
 const Posts = require('../Db/UserPost');
 const User = require('../Db/User');
 
-Router.get('/:Uid', async (req, res) => {
-    const { Uid } = req.params;
+Router.get('/:id', async (req, res) => {
+    const { id } = req.params;
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 5;
         const skip = (page - 1) * limit;
 
-        const user = await User.findById({ _id: Uid })
+        const user = await User.findById({ _id: id })
         if(!user) return res.status(404).json({message: "User Not found"});
 
         const AllPosts = await Posts.find({
+            contentType: "post",
             $or: [
                 { visibility : "public" },
                 { visibility : "peers" , author: { $in: user.connections }},
-                { author: Uid },
+                { author: id },
             ]
         }).populate({
                 path: 'author',
@@ -37,6 +38,54 @@ Router.get('/:Uid', async (req, res) => {
         res.json({ 
             ok: true, 
             posts: AllPosts,
+            pagination: {
+                page,
+                limit,
+                totalPosts,
+                hasMore,
+                totalPages: Math.ceil(totalPosts / limit)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ ok: false, message: error.message });
+    }
+})
+
+Router.get('/lesson/:id' , async (req, res) => {
+    const { id } = req.params;
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 5;
+        const skip = (page - 1) * limit;
+
+        const user = await User.findById({ _id: id })
+        if(!user) return res.status(404).json({message: "User Not found"});
+
+        const AllPosts = await Posts.find({
+            contentType: "lesson",
+            $or: [
+                { visibility : "public" },
+                { visibility : "peers" , author: { $in: user.connections }},
+                { author: id },
+            ]
+        }).populate({
+                path: 'author',
+                select: 'firstName lastName UserProfile.avatar username'
+            })
+            .populate({
+                path: 'likes',
+                select: 'Uid username',
+            })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        const totalPosts = await Posts.countDocuments();
+        const hasMore = page * limit < totalPosts;
+
+        res.json({ 
+            ok: true, 
+            lesson: AllPosts,
             pagination: {
                 page,
                 limit,

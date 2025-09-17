@@ -45,6 +45,10 @@ const UserSchema = new mongoose.Schema({
         type:String,
         required:true,
     },
+    // education: {
+    //     institute: { type: String , required: true },
+
+    // },
     UserProfile: UserProfileSchema,
     connections: [
         { type: mongoose.Schema.Types.ObjectId, ref: "User" }

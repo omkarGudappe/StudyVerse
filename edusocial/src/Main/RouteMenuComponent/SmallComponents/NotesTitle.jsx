@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { StoreNotes } from '../../../StateManagement/StoreNotes';
+import { useNotesStore } from '../../../StateManagement/StoreNotes';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
 import { auth } from '../../../Auth/AuthProviders/FirebaseSDK';
 
@@ -9,7 +9,7 @@ const NotesTitle = ({ open, onClose , editor }) => {
   const [title, setTitle] = useState('');
   const [IsLoading, setIsLoading] = useState(false);
   const Navigate = useNavigate();
-  const { setNotes, setLoading } = StoreNotes();
+  const { setNotes, setLoading } = useNotesStore();
   const { ProfileData , FirebaseUid } = UserDataContextExport();
 
   const handleSubmit = async (e) => {

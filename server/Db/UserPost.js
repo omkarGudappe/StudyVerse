@@ -14,6 +14,11 @@ const PostSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    contentType: {
+        type: String,
+        enum: ["post", "lesson", "note"],
+        default: "post"
+    },
     files: {
             url: { type: String , required: true },
             publicId: { type: String, required: true },

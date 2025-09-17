@@ -108,7 +108,7 @@ import {
 } from "react-icons/ai";
 import EmojiPicker from "emoji-picker-react";
 import "katex/dist/katex.min.css";
-import { StoreNotes } from "../../StateManagement/StoreNotes";
+import { useNotesStore } from "../../StateManagement/StoreNotes";
 import { LuCaseSensitive } from "react-icons/lu";
 
 const Mention = Node.create({

@@ -26,6 +26,8 @@ import MobileUserNotes from "../Main/RouteMenuComponent/MobileUserNotes";
 import SettingePage from "../Main/RouteMenuComponent/Settings/SettingePage";
 import ProfileUpdate from '../Main/RouteMenuComponent/Settings/ProfileUpdate';
 import DeailyQuiz from '../Main/RouteMenuComponent/AIModel/DeailyQuiz'
+import Lesson from "../Main/RouteMenuComponent/Lesson";
+import Video from "../Main/RouteMenuComponent/Panels/Video";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -102,7 +104,15 @@ const PageRoute = () => {
               path="/lessons"
               element={
                 <MenuWrapper>
-                  {/* <Lessons /> */}
+                  <Lesson/>
+                </MenuWrapper>
+              }
+            />
+            <Route
+              path="/video"
+              element={
+                <MenuWrapper>
+                  <Video/>
                 </MenuWrapper>
               }
             />
