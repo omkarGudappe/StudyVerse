@@ -4,6 +4,7 @@ const sendMail = require('./sendMail').sendMail;
 const crypto = require("crypto");
 const User = require('../Db/User');
 
+
 let otpStore = {};
 
 Router.post('/verify' , async (req , res) => {
@@ -45,6 +46,12 @@ Router.post('/verify-otp' , (req , res) => {
             throw new Error("Invalid OTP");
         }
 
+        const token = jwt.sign(
+            { id: check._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
         delete otpStore[email];
 
         res.status(200).json({ ok: true , message: "OTP verified successfully" });
@@ -65,9 +72,19 @@ Router.post('/google-signin' , async(req , res) => {
         const check = await User.findOne({ firebaseUid: uid });
         if(!check){
             return res.json({ exist: false });
-        }else{
-            return res.json({ exist: true, user: check });
         }
+        
+        const token = jwt.sign(
+            { id: check._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        return res.json({
+            exist: true,
+            user: check,
+            token, // send token to frontend
+        });
 
     }catch(err){
         console.log("Error: ", err.message);

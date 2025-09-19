@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate , useSearchParams} from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useLessonStore } from '../../../StateManagement/StoreNotes';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
 import Socket from '../../../SocketConnection/Socket';
@@ -8,7 +8,7 @@ import Lenis from "@studio-freight/lenis";
 const Video = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { getLessonById, loading, error, addCommentToLesson, updateLessonLikes, fetchLesson } = useLessonStore();
+    const { getLessonById, loading, error, addCommentToLesson, updateLessonLikes, fetchLesson, Lessons } = useLessonStore();
     const { ProfileData } = UserDataContextExport();
     const [lesson, setLesson] = useState(null);
     const [comment, setComment] = useState('');
@@ -27,15 +27,76 @@ const Video = () => {
     const [showComments, setShowComments] = useState(true);
     const [relatedLessons, setRelatedLessons] = useState([]);
     const [isLoadingRelated, setIsLoadingRelated] = useState(false);
+    const [isLoadingLesson, setIsLoadingLesson] = useState(false);
     const videoRef = useRef(null);
     const controlsTimeout = useRef(null);
     const containerRef = useRef(null);
     const commentInputRef = useRef(null);
-    const [searchParams] = useSearchParams();
+    const [searchParams, setSearchParams] = useSearchParams();
     const lessonId = searchParams.get('l');
 
-
     const playbackRates = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+    // Function to load lesson data
+    const loadLesson = useCallback(async (id) => {
+        if (!id) return;
+        
+        setIsLoadingLesson(true);
+        try {
+            // Try to get from store first
+            let lessonData = getLessonById(id);
+            
+            // If not in store, fetch from server
+            if (!lessonData) {
+                await fetchLesson(ProfileData?._id);
+                lessonData = getLessonById(id);
+            }
+            
+            if (lessonData) {
+                setLesson(lessonData);
+                setComments(lessonData.comments || []);
+                setLikeCount(lessonData.likes?.length || 0);
+                setIsLiked(lessonData.likes?.includes(ProfileData?._id) || false);
+                fetchRelatedLessons(lessonData.author?._id, lessonData._id);
+                
+                // Reset video state
+                if (videoRef.current) {
+                    videoRef.current.currentTime = 0;
+                    setIsPlaying(false);
+                }
+            } else {
+                console.error('Lesson not found');
+            }
+        } catch (err) {
+            console.error('Error loading lesson:', err);
+        } finally {
+            setIsLoadingLesson(false);
+        }
+    }, [getLessonById, fetchLesson, ProfileData]);
+
+    // Effect to handle lessonId changes
+    useEffect(() => {
+        if (lessonId) {
+            loadLesson(lessonId);
+        }
+    }, [lessonId, loadLesson]);
+
+    // Effect to handle URL parameter changes
+    useEffect(() => {
+        const handleUrlChange = () => {
+            const newLessonId = new URLSearchParams(window.location.search).get('l');
+            if (newLessonId && newLessonId !== lessonId) {
+                loadLesson(newLessonId);
+            }
+        };
+
+        // Listen for popstate events (back/forward navigation)
+        window.addEventListener('popstate', handleUrlChange);
+        
+        return () => {
+            window.removeEventListener('popstate', handleUrlChange);
+        };
+    }, [lessonId, loadLesson]);
 
     useEffect(() => {
         const lenis = new Lenis({
@@ -58,20 +119,6 @@ const Video = () => {
             lenis.destroy();
         };
     }, []);
-
-  useEffect(() => {
-      if (lessonId) {
-          // Change from getLesson(lessonId) to getLessonById(lessonId)
-          const lessonData = getLessonById(lessonId);
-          if (lessonData) {
-              setLesson(lessonData);
-              setComments(lessonData.comments || []);
-              setLikeCount(lessonData.likes?.length || 0);
-              setIsLiked(lessonData.likes?.includes(ProfileData?._id) || false);
-              fetchRelatedLessons(lessonData.author?._id, lessonData._id);
-          }
-      }
-  }, [id, getLessonById, ProfileData]);
 
     useEffect(() => {
         const handleKeyPress = (e) => {
@@ -201,18 +248,15 @@ const Video = () => {
         
         setIsLoadingRelated(true);
         try {
-            // This would typically be an API call to fetch related lessons
-            // For now, we'll simulate with a timeout
-            setTimeout(() => {
-                const lessons = useLessonStore.getState().Lessons;
-                const related = lessons
-                    .filter(l => l.author?._id === authorId && l._id !== currentLessonId)
-                    .slice(0, 3);
-                setRelatedLessons(related);
-                setIsLoadingRelated(false);
-            }, 1000);
+            // Get lessons from store
+            const lessons = Lessons || [];
+            const related = lessons
+                .filter(l => l.author?._id === authorId && l._id !== currentLessonId)
+                .slice(0, 3);
+            setRelatedLessons(related);
         } catch (error) {
             console.error('Error fetching related lessons:', error);
+        } finally {
             setIsLoadingRelated(false);
         }
     };
@@ -292,63 +336,65 @@ const Video = () => {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-  const handleLike = async () => {
-      if (!ProfileData?._id) return;
-      
-      try {
-          const newLikeStatus = !isLiked;
-          setIsLiked(newLikeStatus);
-          setLikeCount(prev => newLikeStatus ? prev + 1 : prev - 1);
-          
-          Socket.emit("Handle-user-like", { 
-              lessonId: lesson._id, 
-              userId: ProfileData._id, 
-              type: "like", 
-              toId: lesson.author?._id 
-          });
-          
-          // Change from likeLesson to updateLessonLikes
-          updateLessonLikes(lesson._id, newLikeStatus ? [...lesson.likes, ProfileData._id] : lesson.likes.filter(id => id !== ProfileData._id));
-      } catch (error) {
-          console.error('Error liking lesson:', error);
-          setIsLiked(!newLikeStatus);
-          setLikeCount(prev => newLikeStatus ? prev - 1 : prev + 1);
-      }
-  };
-
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    if (!comment.trim() || !ProfileData?._id) return;
-    
-    try {
-        const newComment = {
-            text: comment,
-            user: ProfileData._id,
-            createdAt: new Date().toISOString()
-        };
+    const handleLike = async () => {
+        if (!ProfileData?._id || !lesson) return;
         
-        setComments(prev => [newComment, ...prev]);
-        setComment('');
-        
-        Socket.emit("lesson-comment", {
-            lessonId: lesson._id,
-            userId: ProfileData._id,
-            comment: newComment.text,
-            toId: lesson.author?._id
-        });
-        
-        // Change from addComment to addCommentToLesson
-        addCommentToLesson(lesson._id, newComment);
-    } catch (error) {
-        console.error('Error adding comment:', error);
-    }
-};
-
-    const navigateToLesson = (lessonId) => {
-        navigate(`/video/${lessonId}`);
+        try {
+            const newLikeStatus = !isLiked;
+            setIsLiked(newLikeStatus);
+            setLikeCount(prev => newLikeStatus ? prev + 1 : prev - 1);
+            
+            Socket.emit("Handle-user-like", { 
+                lessonId: lesson._id, 
+                userId: ProfileData._id, 
+                type: "like", 
+                toId: lesson.author?._id 
+            });
+            
+            updateLessonLikes(lesson._id, newLikeStatus ? [...lesson.likes, ProfileData._id] : lesson.likes.filter(id => id !== ProfileData._id));
+        } catch (error) {
+            console.error('Error liking lesson:', error);
+            setIsLiked(!isLiked);
+            setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+        }
     };
 
-    if (loading) {
+    const handleCommentSubmit = async (e) => {
+        e.preventDefault();
+        if (!comment.trim() || !ProfileData?._id || !lesson) return;
+        
+        try {
+            const newComment = {
+                text: comment,
+                user: ProfileData._id,
+                createdAt: new Date().toISOString()
+            };
+            
+            setComments(prev => [newComment, ...prev]);
+            setComment('');
+            
+            Socket.emit("lesson-comment", {
+                lessonId: lesson._id,
+                userId: ProfileData._id,
+                comment: newComment.text,
+                toId: lesson.author?._id
+            });
+            
+            addCommentToLesson(lesson._id, newComment);
+        } catch (error) {
+            console.error('Error adding comment:', error);
+        }
+    };
+
+    const navigateToLesson = (newLessonId) => {
+        // Update URL without full page reload
+        setSearchParams({ l: newLessonId });
+        
+        // Scroll to top for better UX
+        window.scrollTo(0, 0);
+    };
+
+    if (loading || isLoadingLesson) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center">
                 <div className="flex items-center space-x-2">
@@ -597,7 +643,7 @@ const Video = () => {
                                         }}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.10M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                         </svg>
                                         <span className="font-medium">{comments.length}</span>
                                     </button>
@@ -667,7 +713,7 @@ const Video = () => {
                                     {comments.length === 0 ? (
                                         <div className="text-center py-8 text-neutral-500">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9 8s9 3.582 9 8z" />
                                             </svg>
                                             <p>No comments yet. Be the first to comment!</p>
                                         </div>
@@ -703,17 +749,15 @@ const Video = () => {
                     {/* Sidebar - Related Lessons */}
                     <div className="lg:w-80 flex-shrink-0">
                         <div className="sticky top-24">
-                            <h2 className="text-xl font-semibold text-white mb-4">More from {lesson.author?.firstName}</h2>
+                            <h2 className="text-xl font-semibold text-white mb-4">Related Lessons</h2>
                             
                             {isLoadingRelated ? (
                                 <div className="space-y-4">
                                     {[1, 2, 3].map(i => (
-                                        <div key={i} className="bg-neutral-800/40 backdrop-blur-sm rounded-2xl overflow-hidden border border-neutral-700/30 animate-pulse">
-                                            <div className="w-full aspect-video bg-gradient-to-r from-neutral-700/50 to-neutral-600/50"></div>
-                                            <div className="p-3">
-                                                <div className="h-4 bg-gradient-to-r from-neutral-700/50 to-neutral-600/50 rounded-full w-3/4 mb-2"></div>
-                                                <div className="h-3 bg-gradient-to-r from-neutral-700/50 to-neutral-600/50 rounded-full w-1/2"></div>
-                                            </div>
+                                        <div key={i} className="bg-neutral-800/40 rounded-xl p-4 border border-neutral-700/30 animate-pulse">
+                                            <div className="w-full aspect-video bg-neutral-700/50 rounded-lg mb-3"></div>
+                                            <div className="h-4 bg-neutral-700/50 rounded mb-2"></div>
+                                            <div className="h-3 bg-neutral-700/50 rounded w-3/4"></div>
                                         </div>
                                     ))}
                                 </div>
@@ -721,60 +765,42 @@ const Video = () => {
                                 <div className="space-y-4">
                                     {relatedLessons.map(relatedLesson => (
                                         <div 
-                                            key={relatedLesson._id}
-                                            className="bg-neutral-800/40 backdrop-blur-sm rounded-2xl overflow-hidden border border-neutral-700/30 transition-all hover:border-neutral-600/50 hover:shadow-lg cursor-pointer"
+                                            key={relatedLesson._id} 
+                                            className="bg-neutral-800/40 backdrop-blur-sm rounded-xl overflow-hidden border border-neutral-700/30 transition-all hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
                                             onClick={() => navigateToLesson(relatedLesson._id)}
                                         >
-                                            {relatedLesson.files?.url && relatedLesson.files.url.match(/\.(jpeg|jpg|gif|png|webp)$/) ? (
-                                                <img
+                                            {relatedLesson.files?.url && relatedLesson.files.url.match(/\.(mp4|webm|ogg)$/) ? (
+                                                <video
                                                     src={relatedLesson.files.url}
-                                                    alt={relatedLesson.heading || 'Study lesson'}
                                                     className="w-full aspect-video object-cover"
-                                                    loading="lazy"
+                                                    poster={relatedLesson.thumbnail}
+                                                    muted
                                                 />
-                                            ) : relatedLesson.files?.url && relatedLesson.files.url.match(/\.(mp4|webm|ogg)$/) ? (
-                                                <div className="relative w-full aspect-video">
-                                                    <video
-                                                        src={relatedLesson.files.url}
-                                                        className="w-full h-full object-cover"
-                                                        muted
-                                                        playsInline
-                                                        poster={relatedLesson.thumbnail}
-                                                    />
-                                                    <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
                                             ) : (
-                                                <div className="w-full aspect-video bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
+                                                <div className="w-full aspect-video bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center">
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                                     </svg>
                                                 </div>
                                             )}
-                                            
                                             <div className="p-3">
-                                                <h3 className="font-medium text-white truncate">
+                                                <h3 className="font-medium text-white line-clamp-2">
                                                     {relatedLesson.heading || 'Untitled Lesson'}
                                                 </h3>
                                                 <p className="text-sm text-neutral-400 mt-1">
                                                     {relatedLesson.author?.firstName} {relatedLesson.author?.lastName}
-                                                </p>
-                                                <p className="text-xs text-neutral-500 mt-1">
-                                                    {new Date(relatedLesson.createdAt).toLocaleDateString()}
                                                 </p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-8 text-neutral-500 bg-neutral-800/40 backdrop-blur-sm rounded-2xl border border-neutral-700/30">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                <div className="bg-neutral-800/40 backdrop-blur-sm rounded-xl p-6 border border-neutral-700/30 text-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto text-neutral-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
-                                    <p>No other lessons from this creator yet.</p>
+                                    <p className="text-neutral-400">No related lessons found</p>
                                 </div>
                             )}
                         </div>

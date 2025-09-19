@@ -314,7 +314,7 @@ const Post = ({ ModelCloseClicked }) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className='relative lenis bg-neutral-900 rounded-3xl w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-2xl border border-neutral-700'
+                className='relative lenis bg-neutral-900 rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-y-auto shadow-2xl border border-neutral-700'
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className='flex items-center justify-between p-6 border-b border-neutral-700 bg-neutral-800/50'>
@@ -332,7 +332,6 @@ const Post = ({ ModelCloseClicked }) => {
                     </button>
                 </div>
 
-                {/* Progress Bar */}
                 <div className='w-full bg-neutral-800 h-1'>
                     <motion.div 
                         className='bg-gradient-to-r from-blue-500 to-purple-500 h-full'

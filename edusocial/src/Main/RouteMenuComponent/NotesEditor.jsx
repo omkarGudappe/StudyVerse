@@ -655,7 +655,7 @@ const NotesEditor = ({content , Id}) => {
   const [showTableControls, setShowTableControls] = useState(false);
   const emojiPickerRef = useRef(null);
   const editorRef = useRef(null);
-  const { notes, isLoading } = StoreNotes();
+  // const { notes, isLoading } = StoreNotes();
   const [OpenNotesTitleModel, setOpenNotesTitleModel] = useState(false);
   const [EditorContentData, setEditorContentData] = useState(content || null);
   

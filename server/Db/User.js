@@ -17,6 +17,12 @@ const UserProfileSchema = new mongoose.Schema({
     avatar: AvatarSchema,
 } , { _id: false });
 
+const UserSettingsSchema = new mongoose.Schema({
+  showLikeNotifications: { type: Boolean, default: true },
+  showCommentNotifications: { type: Boolean, default: true },
+  acceptAllPeersRequest: { type: Boolean, default: false },
+}, { _id: false });
+
 const UserSchema = new mongoose.Schema({
     firstName: {
         type: String,
@@ -67,6 +73,9 @@ const UserSchema = new mongoose.Schema({
         comment : { type: String },
        }
     ],
+
+    setting: { type: UserSettingsSchema , default: () => ({})},
+
     Uid:{type:String, unique:true},
     firebaseUid:{type:String, unique:true}
 

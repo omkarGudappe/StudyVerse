@@ -111,6 +111,9 @@ const LogIn = () => {
       if(result.ok){
         const data = await NewUser(Email , Password);
         if(data.ok){
+          if (data.token) {
+              localStorage.setItem("token", data.token);
+          }
           setEnterOtp(false);
           setEmail(null);
           setPassword(null);

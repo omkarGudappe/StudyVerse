@@ -28,6 +28,8 @@ import ProfileUpdate from '../Main/RouteMenuComponent/Settings/ProfileUpdate';
 import DeailyQuiz from '../Main/RouteMenuComponent/AIModel/DeailyQuiz'
 import Lesson from "../Main/RouteMenuComponent/Lesson";
 import Video from "../Main/RouteMenuComponent/Panels/Video";
+import NotificationSetting from "../Main/RouteMenuComponent/Settings/NotificationSetting";
+import Privacy from "../Main/RouteMenuComponent/Settings/Privacy";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -185,6 +187,22 @@ const PageRoute = () => {
               element={
                 <MenuWrapper>
                   <ProfileUpdate/>
+                </MenuWrapper>
+              }
+            />
+            <Route
+              path="/setting/notifications"
+              element={
+                <MenuWrapper>
+                  <NotificationSetting/>
+                </MenuWrapper>
+              }
+            />
+            <Route
+              path="/setting/privacy"
+              element={
+                <MenuWrapper>
+                  <Privacy/>
                 </MenuWrapper>
               }
             />

@@ -1,8 +1,12 @@
 import React from 'react'
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { UserDataContextExport } from "../CurrentUserContexProvider";
 
 const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , title, onClose}) => {
+
+  const { ProfileData } = UserDataContextExport();
+
   return (
       <div className="p-6">
         {isLoading ? (
@@ -37,7 +41,7 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
                   className="cursor-pointer flex items-center gap-4 p-4 bg-neutral-800 rounded-xl hover:bg-neutral-750 transition-all duration-200 group"
                 >
                 <Link
-                  to={`/${title}/${encodeURIComponent(user?.username)}`}
+                  to={ProfileData?._id === user?._id ? `/profile` : `/${title}/${encodeURIComponent(user?.username)}`}
                   onClick={onClose}
                   className="cursor-pointer flex items-center w-full gap-4 bg-neutral-800 rounded-xl hover:bg-neutral-750 transition-all duration-200"
                 >
@@ -67,7 +71,8 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
                       </p>
                     )}
                   </div>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center lg:opacity-0 opacity-100 group-hover:opacity-100 transition-opacity">
+                   <p className='text-md text-neutral-400'>{ProfileData?._id === user?._id ? 'Self' : ''}</p>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>

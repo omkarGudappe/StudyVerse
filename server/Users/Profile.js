@@ -348,13 +348,65 @@ Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => 
     }
 });
 
+Router.get('/setting/:id' , async (req, res) => {
+    const { id } = req.params;
+
+    if(!id) {
+        return res.status(404).json({message : "User not found, Please refresh the page"})
+    }
+
+    try{
+        const UserSetting = await User.findById(id);
+
+        if(!UserSetting) {
+            return res.status(404).json({message: "User not found, Please refresh the page or try again"});
+        }
+
+        res.json({ok: true , settings: UserSetting.setting});
+
+    }catch(err){
+        console.log(err.message);
+        res.status(500).json({message: "Server is busy"});
+    }
+});
+
+Router.post('/settingsUpdated/:id', async (req, res) => {
+    const { id } = req.params;
+    const settings  = req.body;
+
+    if(!id) {
+        return res.status(404).json({message : "User not found, Please refresh the page"})
+    }
+
+    if(!settings) {
+        return res.status(404).json({message: "Changes found"});
+    }
+
+    try{
+       const UserSettings = await User.findOneAndUpdate(
+            { _id: id },
+            { setting: settings},
+            { new: true },
+        )
+
+        if(!UserSettings){
+            return res.status(404).json({message: "User not found"});
+        }
+
+        return res.json({ok : true , message: "Setting updated successfully"})
+    }catch(err){
+        res.status(500).json({message: err.message});
+        console.log(err.message);
+    }
+})
+
 Router.get('/notification/:Uid' , async (req, res) => {
 
     const { Uid } = req.params;
 
       try{
         const GetNotification = await User.findOne({ Uid })
-        .select("notification._id notification.user notification.Type notification.whichPost")
+        .select("notification._id setting notification.user notification.Type notification.whichPost")
         .populate("notification.user" , "firstName lastName UserProfile.avatar")
         .populate("notification.whichPost", "files.url")
     
@@ -362,7 +414,15 @@ Router.get('/notification/:Uid' , async (req, res) => {
           return res.status(404).json({message: "User Not Found"});
         }
 
-        const notification = GetNotification.notification.map((notify) => ({
+        const {setting}  = GetNotification;
+
+        let filterNotification = GetNotification.notification.filter((notify) => {
+            if(notify.Type === 'like' && !setting.showLikeNotifications) return false;
+            if(notify.Type === 'comment' && !setting.showCommentNotifications) return false;
+            return true;
+        })        
+
+        const notification = filterNotification.map((notify) => ({
             _id: notify._id,
             type: notify.Type,
             message: `${notify.Type === 'comment' ? `${notify.user.firstName} commented on your post` : `Your post Liked by the ${notify.user.firstName} ${notify.user.lastName}` }`,
@@ -379,8 +439,33 @@ Router.get('/notification/:Uid' , async (req, res) => {
     
         res.json({ok: true , notification});
       }catch(err) {
-        console.log(err.message);
+        console.log("Notificaion" ,err.message);
       }
+})
+
+Router.get('/getConnections', async (req, res) => {
+    const  ids = req.query.ids.split(',');
+
+    try{
+        if(ids.length < 2 ) {
+            return res.status(404).json({message: " Missing requirements" });
+        }
+        const User1 = await User.findById(ids[0])
+            .select("firstName lastName connections MyConnections connectionRequests");
+
+        const User2 = await User.findById(ids[1])
+            .select("firstName lastName connections MyConnections connectionRequests");
+
+        if(!User1 || !User2){
+            return res.status(404).json({message: "User Not Found"});
+        }
+
+        return res.json({ok: true, currentUserData: User1, OtherUserData: User2});
+
+    }catch(err){
+        console.log(err.message);
+        res.status(500).json({ ok: false, message: "Internal server error" });
+    }
 })
 
 Router.get('/:Uid/notifications', async (req, res) => {
@@ -471,5 +556,38 @@ Router.post('/messages/fileupload' , upload.single('file') , async (req, res) =>
         console.log(err.message);
     }
 })
+
+Router.get('/userConnections/:id', async (req, res) => {
+    const { id } = req.params;
+
+    if (!id) {
+        return res.status(400).json({ message: "User ID is required" });
+    }
+
+    try {
+        const user = await User.findById(id)
+            .populate({
+                path: "connections",
+                select: "firstName lastName username education UserProfile.avatar"
+            })
+            .populate({
+                path: "MyConnections",
+                select: "firstName lastName username education UserProfile.avatar"
+            });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            ok: true,
+            Connections: user.connections,
+            ConnectionNetWork: user.MyConnections
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: "Server error" });
+    }
+});
 
 module.exports = Router;

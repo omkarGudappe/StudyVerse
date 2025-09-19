@@ -4,6 +4,7 @@ import { auth } from '../../Auth/AuthProviders/FirebaseSDK'
 import { Link } from 'react-router-dom';
 import { UserDataContextExport } from './CurrentUserContexProvider';
 import UserPosts from './Panels/UserPosts';
+import OpenPeersModel from "./Panels/OpenPeersModel";
 
 const Profile = () => {
   const [UserProfileData, setUserProfileData] = useState(null);
@@ -14,6 +15,8 @@ const Profile = () => {
   const [MyPeeredCount , setMyPeeredCount] = useState(0);
   const { ProfileData } = UserDataContextExport();
   const [NotesLength , setNotesLength] = useState(0)
+  const [OpenPeerConnectionsModel , setOpenPeerConnectionsModel] = useState(false);
+
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
@@ -49,15 +52,12 @@ const Profile = () => {
     FetchDataFromBackEnd();
   }, [FirebaseUid , ProfileData]);
 
-  console.log(NotesLength)
-
   useEffect(() => {
     setPeeredCount(UserProfileData?.connections?.length);
     setMyPeeredCount(UserProfileData?.MyConnections?.length);
   }, [UserProfileData])
 
   const Education = UserProfileData?.education?.split(',') || [];
-  console.log(Education);
 
   if (loading) {
     return (
@@ -195,11 +195,11 @@ const Profile = () => {
                   <span className="text-xl font-bold">{NotesLength}</span>
                   <p className="text-sm text-gray-400">Notes sent</p>
                 </div>
-                <div className="flex flex-col items-center">
+                <div onClick={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} className="flex cursor-pointer flex-col items-center">
                   <span className="text-xl font-bold">{MyPeeredCount}</span>
                   <p className="text-sm text-gray-400">Peers</p>
                 </div>
-                <div className="flex flex-col items-center">
+                <div onClick={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} className="flex cursor-pointer flex-col items-center">
                   <span className="text-xl font-bold">{PeeredCount}</span>
                   <p className="text-sm text-gray-400">Peers Network</p>
                 </div>
@@ -211,6 +211,8 @@ const Profile = () => {
       <div className=''>
         <UserPosts userId={ProfileData?._id} getPostLength={(value) => setNotesLength(value)} />
       </div>
+       { OpenPeerConnectionsModel && <OpenPeersModel open={OpenPeerConnectionsModel} from='CurrentUser' onClose={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} ProfileData={UserProfileData} currentUserData={ProfileData} />}
+
     </div>
   )
 }

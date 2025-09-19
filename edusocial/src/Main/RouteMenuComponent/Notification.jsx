@@ -46,10 +46,18 @@ const Notification = ({ open, onClose, ProfileData }) => {
             console.log("my noti", getNotify);
         })
 
+        Socket.on("Removed" , ({status , Id}) => {
+            if(status === "removed"){
+              const newNotification = notifications.filter((notification) => notification?.id !== Id);
+              setNotifications(newNotification);
+            }
+        })
+
         return () => {
             Socket.off('requestAccepted');
             Socket.off('newNotification');
             Socket.off("getNotify");
+            Socket.off("Removed");
         };
     }, []);
 

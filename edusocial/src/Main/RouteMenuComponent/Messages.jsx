@@ -16,9 +16,10 @@ import { UserDataContextExport } from "./CurrentUserContexProvider";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
-import { FaSmile, FaPaperclip, FaPaperPlane, FaFile, FaImage, FaDownload, FaTimes } from "react-icons/fa";
+import { FaSmile, FaPaperclip, FaPaperPlane, FaFile, FaImage, FaDownload, FaTimes, FaEllipsisH } from "react-icons/fa";
 import { serverTimestamp } from "firebase/database";
 import Socket from '../../SocketConnection/Socket';
+import OpenPostModel from "./SmallComponents/OpenPostModel";
 
 const Messages = () => {
   const { userName } = useParams();
@@ -38,6 +39,12 @@ const Messages = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileInfo, setFileInfo] = useState({ name: "", type: "", size: 0 });
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [sharedPosts, setSharedPosts] = useState({});
+  const [expandedPosts, setExpandedPosts] = useState({});
+  const [openPostModel, setOpenPostModel] = useState({
+    status: false,
+    id: null
+  });
   
   // Check if device is mobile
   useEffect(() => {
@@ -91,7 +98,32 @@ const Messages = () => {
     fetchOtherUser();
   }, [userName, ProfileData]);
 
-  // Fetch messages
+  useEffect(() => {
+    const handleIncomingSharedPost = (data) => {
+      setSharedPosts(prev => ({
+        ...prev,
+        [data.postId]: data.postData
+      }));
+      
+      // Optional: Show notification
+      console.log("Post shared with you:", data.postData);
+    };
+
+    Socket.on("post-shared", handleIncomingSharedPost);
+
+    return () => {
+      Socket.off("post-shared", handleIncomingSharedPost);
+    };
+  }, []);
+
+  const sharePostInChat = (postId) => {
+    if (!sharedPosts[postId]) return;
+    
+    const messageText = `Check out this post: ${sharedPosts[postId].heading || 'Shared post'}`;
+    setNewMessage(messageText);
+    sendMessage(postId);
+  };
+
   useEffect(() => {
     if (!otherUser || !ProfileData) return;
 
@@ -164,8 +196,8 @@ const Messages = () => {
     }
   }, [isLoading, isFetchingUser]);
 
-  const sendMessage = async () => {
-    if ((!newMessage.trim() && !selectedFile) || !otherUser || !ProfileData) return;
+  const sendMessage = async (sharedPostId = null) => {
+    if ((!newMessage.trim() && !selectedFile && !sharedPostId) || !otherUser || !ProfileData) return;
 
     setIsSending(true);
     let fileUrlData = { url: "", type: "" };
@@ -205,6 +237,10 @@ const Messages = () => {
       text: newMessage.trim(),
       timestamp: serverTimestamp()
     };
+
+     if (sharedPostId && sharedPosts[sharedPostId]) {
+      messageData.sharedPost = sharedPosts[sharedPostId];
+    }
 
     // Add file data to message if available
     if (fileUrlData.url) {
@@ -347,6 +383,33 @@ const Messages = () => {
     return fileType && fileType.startsWith('image');
   }
 
+  const togglePostExpansion = (postId) => {
+    setExpandedPosts(prev => ({
+      ...prev,
+      [postId]: !prev[postId]
+    }));
+  };
+
+  const truncateText = (text, maxLength = 100) => {
+    if (!text) return '';
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength) + '...';
+  };
+
+  const handleViewPost = (postId) => {
+    setOpenPostModel({
+      status: true,
+      id: postId
+    });
+  };
+
+  const handleClosePostModal = () => {
+    setOpenPostModel({
+      status: false,
+      id: null
+    });
+  };
+
   if (isFetchingUser || !otherUser) {
     return (
       <div className="flex flex-col h-full bg-gradient-to-br from-neutral-900 to-neutral-800 text-white items-center justify-center">
@@ -472,10 +535,10 @@ const Messages = () => {
                   <div className="w-8"></div>
                 )}
                 
-                <div className={`max-w-[70%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
+                <div className={`max-w-[85%] sm:max-w-[75%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
                   <motion.div
                     whileTap={{ scale: 0.98 }}
-                    className={`p-2 rounded-2xl shadow-md ${
+                    className={`p-3 rounded-2xl shadow-md ${
                       isOwnMessage
                         ? "bg-gradient-to-r from-purple-600 to-amber-500 text-white rounded-br-md"
                         : "bg-neutral-700 text-white rounded-bl-md"
@@ -485,15 +548,20 @@ const Messages = () => {
                     {msg.file && (
                       <div className="mt-2">
                         {isImageFile(msg.file.type) ? (
-                          <div className="max-w-xs block overflow-hidden rounded-lg border border-neutral-600">
+                          <div className="max-w-xs block overflow-hidden rounded-lg border border-neutral-600 relative">
                             <img 
                               src={msg.file.url} 
                               alt="Shared image" 
                               className="w-full h-auto max-h-64 object-contain"
                             />
-                            <div className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1.5 backdrop-blur-sm">
+                            <a 
+                              href={msg.file.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1.5 backdrop-blur-sm hover:bg-black/70 transition-colors"
+                            >
                               <FaDownload className="h-3 w-3 text-white" />
-                            </div>
+                            </a>
                           </div>
                         ) : (
                           <a 
@@ -514,7 +582,56 @@ const Messages = () => {
                         )}
                       </div>
                     )}
-                      {msg.text && <p className="text-white text-end ">{msg.text}</p>}
+                    
+                    {msg.text && (
+                      <p className={`text-white ${isOwnMessage ? 'text-end' : 'text-start'} break-words`}>
+                        {msg.text}
+                      </p>
+                    )}
+
+                    {msg.sharedPost && (
+                      <div className="mt-2 p-3 bg-neutral-700/50 rounded-lg border border-neutral-600 max-w-full">
+                        <p className="text-sm text-neutral-300 mb-2">Shared a post:</p>
+                        <div className="flex gap-3">
+                          {msg.sharedPost.files?.url && msg.sharedPost.files.url.match(/\.(jpeg|jpg|gif|png|webp)$/) ? (
+                            <img 
+                              src={msg.sharedPost.files.url} 
+                              alt="Shared post" 
+                              className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center flex-shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-white text-sm font-medium mb-1">{msg.sharedPost.heading || 'Shared post'}</p>
+                            <div className="text-neutral-400 text-xs">
+                              {expandedPosts[msg.id] 
+                                ? msg.sharedPost.description || ''
+                                : truncateText(msg.sharedPost.description, 80)}
+                              
+                              {msg.sharedPost.description && msg.sharedPost.description.length > 80 && (
+                                <button 
+                                  onClick={() => togglePostExpansion(msg.id)}
+                                  className="text-purple-400 hover:text-purple-300 ml-1 font-medium"
+                                >
+                                  {expandedPosts[msg.id] ? 'Show less' : 'Read more'}
+                                </button>
+                              )}
+                            </div>
+                            <button 
+                              onClick={() => handleViewPost(msg.sharedPost._id)}
+                              className="text-xs text-purple-400 hover:text-purple-300 mt-1 font-medium"
+                            >
+                              View Post
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </motion.div>
                   
                   {showTimestamp && (
@@ -625,6 +742,13 @@ const Messages = () => {
           </motion.button>
         </div>
       </div>
+      
+      {/* Post Modal */}
+      <OpenPostModel 
+        open={openPostModel.status} 
+        onClose={handleClosePostModal} 
+        Id={openPostModel.id} 
+      />
     </div>
   );
 };

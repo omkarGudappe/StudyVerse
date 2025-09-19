@@ -36,6 +36,13 @@ const PostSchema = new mongoose.Schema({
             createdAt: { type: Date, default: Date.now }
         }
     ],
+    share: [
+        {
+            sender: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+            recipient: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+            sharedAt: { type: Date, default: Date.now }
+        }
+    ],
     visibility: { type: String, enum: ["public", "peers"], default: "public" },
     createdAt: { type: Date, default: Date.now }
 }, {timestamps: true});

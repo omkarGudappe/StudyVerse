@@ -5,6 +5,8 @@ import Socket from "../../SocketConnection/Socket";
 import { auth } from "../../Auth/AuthProviders/FirebaseSDK";
 import { UserDataContextExport } from "./CurrentUserContexProvider";
 import UserPosts from './Panels/UserPosts';
+import OpenPeersModel from "./Panels/OpenPeersModel";
+import PeerButtonManage from "./SmallComponents/PeerButtonManage";
 
 
 const UserProfile = () => {
@@ -14,9 +16,11 @@ const UserProfile = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [PeeredCount , setPeeredCount] = useState(0)
+  const [PeerNetworkCount, setPeerNetworkCount] = useState(0);
   const { ProfileData } = UserDataContextExport();
   const [CheackPeer, setCheackPeer] = useState(false);
   const [NotesLength , setNotesLength] = useState(0)
+  const [OpenPeerConnectionsModel , setOpenPeerConnectionsModel] = useState(false);
 
 
   useEffect(() => {
@@ -45,26 +49,21 @@ const UserProfile = () => {
     FetchUser();
   }, [userName]);
 
-  useEffect(() => {
+    useEffect(() => {
       if (ProfileData?.MyConnections?.includes(UserProfileData?._id)) {
         setCheackPeer(true);
         setPeer(false);
+      } else if (UserProfileData?.connectionRequests?.includes(ProfileData?._id)) {
+        setCheackPeer(true);
+        setPeer(true);
+        console.log("Hello brother")
       }
-      setPeeredCount(UserProfileData?.connections.length)
-      console.log("Check ", ProfileData?.connections?.includes(UserProfileData?._id));
+
+      setPeeredCount(UserProfileData?.MyConnections?.length)
+      setPeerNetworkCount(UserProfileData?.connections.length);
     }, [UserProfileData, ProfileData]);
 
   const Education = UserProfileData?.education?.split(",") || [];
-
-  const handleSocketConnection = () => {
-    if(auth.currentUser){
-      const FromID = ProfileData?._id;
-      console.log(ProfileData);
-      Socket.emit("SendRequest", { Id: UserProfileData?._id , fromID: FromID });
-      setCheackPeer(true);
-      setPeer(true);
-    }
-  };
 
   if (loading) {
     return (
@@ -200,26 +199,7 @@ const UserProfile = () => {
                     {UserProfileData?.lastName || "Name"}
                   </h1>
                   <div className="px-5 w-auto absolute top-5 right-0">
-                    {!CheackPeer ?(<button
-                      onClick={handleSocketConnection}
-                      className="p-2 px-5 bg-blue-600 cursor-pointer active:scale-95 text-center w-full rounded-2xl"
-                    >
-                      Peer
-                    </button>) : !Peer ? (
-                      <button
-                        className="p-2 px-5 bg- cursor-pointer text-center w-full rounded-2xl"
-                      >
-                        Peered
-                      </button>
-                      ) : (
-                        <button 
-                        className="p-1 bg-gray-900 cursor-pointer active:scale-95 text-center w-full rounded-2xl"
-                        onClick={() => setPeer(false)}
-                        disabled
-                      >
-                        Requested
-                      </button>
-                    )}
+                    <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={UserProfileData?._id} />
                   </div>
                 </div>
                 <p className="text-purple-400 italic">
@@ -239,12 +219,12 @@ const UserProfile = () => {
                   <span className="text-xl font-bold">{NotesLength}</span>
                   <p className="text-sm text-gray-400">Notes sent</p>
                 </div>
-                <div className="flex flex-col items-center">
+                <div onClick={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} className="flex cursor-pointer flex-col items-center">
                   <span className="text-xl font-bold">{PeeredCount}</span>
                   <p className="text-sm text-gray-400">Peers</p>
                 </div>
-                <div className="flex flex-col items-center">
-                  <span className="text-xl font-bold">0</span>
+                <div onClick={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} className="flex cursor-pointer flex-col items-center">
+                  <span className="text-xl font-bold">{PeerNetworkCount}</span>
                   <p className="text-sm text-gray-400">Peers Network</p>
                 </div>
               </div>
@@ -255,6 +235,7 @@ const UserProfile = () => {
       <div className=''>
         <UserPosts userId={UserProfileData?._id} getPostLength={(value) => setNotesLength(value)} />
       </div>
+       { OpenPeerConnectionsModel && <OpenPeersModel open={OpenPeerConnectionsModel} from='OtherUser' onClose={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} ProfileData={UserProfileData} currentUserData={ProfileData} />}
     </div>
   );
 };

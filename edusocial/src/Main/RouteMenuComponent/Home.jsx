@@ -6,6 +6,10 @@ import Socket from '../../SocketConnection/Socket';
 import { Link } from 'react-router-dom'
 import { UserDataContextExport } from './CurrentUserContexProvider';
 import CommentModel from './Panels/CommentModel';
+import PeerButtonManage from './SmallComponents/PeerButtonManage';
+import { ref, push } from "firebase/database";   // 👈 add at top
+import { database } from "../../Auth/AuthProviders/FirebaseSDK"; // 👈 add at top
+
 
 const StudyVerseMain = () => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -25,7 +29,12 @@ const StudyVerseMain = () => {
   const [localLikedPosts, setLocalLikedPosts] = useState(new Set());
   const [OpenCommentModel, setCommentModel] = useState({ id: null, PostownerId: null, status:false });
   const [RunLoading , setRunLoading] = useState(false);
-  // const [initialLoading, setInitialLoading] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState({ 
+    isOpen: false, 
+    post: null 
+  });
+  const [peersList, setPeersList] = useState([]);
+  const [selectedPeer, setSelectedPeer] = useState(null);
 
   // Infinite scroll observer
   useEffect(() => {
@@ -139,6 +148,72 @@ const StudyVerseMain = () => {
       Socket.off("FetchAgain", handler);
     };
   }, [fetchPosts]);
+
+  const fetchPeersList = async () => {
+    const id = ProfileData?._id;
+    try {
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/userConnections/${id}`);
+        if (res.data.ok) {
+            // setConnections(res.data.ConnectionNetWork);
+            // setConnectionsNetwork(res.data.Connections);
+            setPeersList(res.data.Connections);
+        }
+    } catch (err) {
+        console.log(err.message);
+    }
+  }
+
+
+const handleShareToPeer = async (peerId) => {
+  if (!shareModalOpen.post) return;
+
+  try {
+    const Id = ProfileData?._id;
+    const response = await axios.post(
+      `${import.meta.env.VITE_API_URL}/posts/share`,
+      {
+        postId: shareModalOpen.post._id,
+        recipientId: peerId,
+        senderId: Id,
+      },
+    );
+    
+    if (response.data.success) {
+      alert('Post shared successfully!');
+      setShareModalOpen({ isOpen: false, post: null });
+
+      // 👇 1. Emit socket for real-time notification
+      Socket.emit("post-shared", {
+        postData: shareModalOpen.post,
+        recipientId: peerId,
+        senderId: Id,
+      });
+
+      // 👇 2. Save the shared post as a message in Firebase
+      const chatId = Id > peerId ? `${Id}_${peerId}` : `${peerId}_${Id}`;
+      const messageData = {
+        senderId: Id,
+        text: "", // optional
+        sharedPost: shareModalOpen.post, // 👈 attach the full post object
+        timestamp: Date.now()
+      };
+
+      const messagesRef = ref(database, `chats/${chatId}/messages`);
+      await push(messagesRef, messageData);
+    }
+  } catch (error) {
+    console.error("Error sharing post:", error);
+    alert('Failed to share post');
+  }
+};
+
+
+// Remove the sharePostInChat function as it's not needed
+
+  const handleSharePost = (post) => {
+    setShareModalOpen({ isOpen: true, post });
+    fetchPeersList();
+  };
 
   useEffect(() => {
     const handler = ({ postId, likes, liked }) => {
@@ -362,8 +437,6 @@ const StudyVerseMain = () => {
     return <Loading/>
   }
 
-  console.log(initialLoading, "Check");
-
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
@@ -518,7 +591,9 @@ const StudyVerseMain = () => {
                         <div className='flex flex-col absolute right-2 bg-neutral-800 rounded-xl text-center'>
                           <Link to={`/messages/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 rounded-tl-xl cursor-pointer rounded-tr-xl'>Message</Link>
                           <Link to={`/profile/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 cursor-pointer'>Profile</Link>
-                          <Link to='#' className='hover:bg-blue-700 cursor-pointer bg-blue-600 w-full px-5 p-2 rounded-bl-xl rounded-br-xl'>Peer</Link>
+                          <div className=''>
+                            <PeerButtonManage className='rounded-bl-xl rounded-br-xl w-full' currentUser={ProfileData?._id} OtherUser={post?.author?._id} />
+                          </div>
                         </div>
                       )}
                     </div>
@@ -675,7 +750,10 @@ const StudyVerseMain = () => {
                         </div>
                       </button>
 
-                      <button className="flex items-center gap-2 text-neutral-400 hover:text-purple-400 transition-all duration-300">
+                      <button 
+                        onClick={() => handleSharePost(post)}
+                        className="flex items-center gap-2 text-neutral-400 hover:text-purple-400 transition-all duration-300"
+                      >
                         <div className="p-2 rounded-full bg-neutral-700/50 hover:bg-purple-500/20 transition-all duration-300">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -715,6 +793,60 @@ const StudyVerseMain = () => {
         )}
       </div>
       {OpenCommentModel.status && <CommentModel open={OpenCommentModel.status} PostownerId={OpenCommentModel.PostownerId} CommentId={OpenCommentModel.id} onClose={() => setCommentModel({id:null, PostownerId: null, status:false})} />}
+
+      {shareModalOpen.isOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-neutral-800 rounded-2xl p-6 max-w-md w-full border border-neutral-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white">Share Post</h3>
+              <button 
+                onClick={() => setShareModalOpen({ isOpen: false, post: null })}
+                className="text-neutral-400 hover:text-white"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-neutral-300">Select a peer to share with:</p>
+            </div>
+            
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {peersList.map(peer => (
+                <div 
+                  key={peer._id} 
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-700 cursor-pointer"
+                  onClick={() => handleShareToPeer(peer._id)}
+                >
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center overflow-hidden">
+                    {peer.UserProfile?.avatar?.url ? (
+                      <img 
+                        src={peer.UserProfile.avatar.url} 
+                        alt={`${peer.firstName} ${peer.lastName}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white font-semibold">
+                        {peer.firstName?.[0]}{peer.lastName?.[0]}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-white font-medium">{peer.firstName} {peer.lastName}</p>
+                    <p className="text-neutral-400 text-sm">{peer.username}</p>
+                  </div>
+                </div>
+              ))}
+              
+              {peersList.length === 0 && (
+                <p className="text-neutral-400 text-center py-4">No peers found</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

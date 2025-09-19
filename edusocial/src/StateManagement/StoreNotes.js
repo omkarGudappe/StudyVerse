@@ -511,13 +511,11 @@ export const useLessonStore = create((set, get) => ({
     get().fetchLesson(userId, false, true);
   },
 
-  // Get a specific lesson by ID
   getLessonById: (lessonId) => {
     const state = get();
     return state.Lessons.find(lesson => lesson._id === lessonId);
   },
 
-  // Search lessons by keyword
   searchLessons: (keyword) => {
     const state = get();
     if (!keyword) return state.Lessons;
@@ -532,23 +530,19 @@ export const useLessonStore = create((set, get) => ({
   }
 }));
 
-// Combined store for cross-store operations
 export const useCombinedStore = create((set, get) => ({
-  // Refresh all data
   refreshAll: (userId) => {
     usePostsStore.getState().refreshPosts(userId);
     useLessonStore.getState().refreshLessons(userId);
     useNotesStore.getState().fetchNotes(userId, true);
   },
   
-  // Clear all data
   clearAll: () => {
     usePostsStore.getState().clearPosts();
     useLessonStore.getState().clearLesson();
     useNotesStore.getState().clearNotes();
   },
   
-  // Get statistics
   getStats: () => {
     const posts = usePostsStore.getState().posts;
     const lessons = useLessonStore.getState().Lessons;

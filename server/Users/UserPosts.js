@@ -2,6 +2,9 @@ const express = require('express');
 const Router = express.Router();
 const Posts = require('../Db/UserPost');
 const User = require('../Db/User');
+const AuthMiddleware = require('../AuthVerify/AuthMiddleware');
+const userSocketMap = require('../SocketConnection/socketMap');
+const { getIo } = require('../SocketConnection/socketInstance'); // Import the getter
 
 Router.get('/:id', async (req, res) => {
     const { id } = req.params;
@@ -242,5 +245,176 @@ Router.get('/usersPosts/:uid', async (req, res) => {
     res.json({message: err.message})
    }
 })
+
+
+Router.post('/share', async (req, res) => {
+  try {
+    const { postId, recipientId, senderId } = req.body;
+    
+    console.log("Sharing post:", { postId, recipientId, senderId });
+    
+    const post = await Posts.findById(postId)
+      .populate('author', 'firstName lastName UserProfile.avatar username');
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    const recipient = await User.findById(recipientId);
+    if (!recipient) {
+      return res.status(404).json({ error: 'Recipient not found' });
+    }
+    
+    await Posts.findByIdAndUpdate(
+      postId,
+      { 
+        $addToSet: { 
+          share: {
+            sender: senderId,
+            recipient: recipientId,
+            sharedAt: new Date()
+          }
+        } 
+      },
+      { new: true }
+    );
+    
+    const recipientSocketId = userSocketMap.get(recipientId);
+    
+   if (recipientSocketId) {
+      const authorData = post.author ? {
+        _id: post.author._id,
+        firstName: post.author.firstName || '',
+        lastName: post.author.lastName || '',
+        username: post.author.username || '',
+        UserProfile: post.author.UserProfile || {}
+      } : {
+        _id: null,
+        firstName: 'Unknown',
+        lastName: 'User',
+        username: 'unknown',
+        UserProfile: {}
+      };
+      
+      // Use the imported io instance
+      const io = getIo();
+      io.to(recipientSocketId).emit('post-shared', {
+        postId,
+        postData: {
+          _id: post._id,
+          heading: post.heading || '',
+          description: post.description || '',
+          files: post.files || {},
+          author: authorData
+        },
+        senderId
+      });
+    }
+    
+    res.json({ success: true, message: 'Post shared successfully' });
+  } catch (error) {
+    console.log('Error sharing post:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+Router.get('/single/:id', async (req, res) => {
+    const { id } = req.params;
+
+    if(!id) {
+        return res.status(404).json({message: "Post not found"});
+    }
+
+    try{
+        const Post = await Posts.findById(id)
+            .populate({
+                  path: 'author',
+                select: 'firstName lastName UserProfile.avatar username'
+            }).populate({
+                path: 'likes',
+                select: 'Uid username',
+            }).populate({
+                path: "comments.user",
+                select: "firstName lastName UserProfile.avatar",
+                populate: {
+                    path: "UserProfile.avatar",
+                    select: "url"
+                }
+            });
+
+        if(!Post) {
+            return res.status(404).json({message: "Post not found"});
+        }
+
+        return res.json({ok: true, Post});
+    }catch(err){
+        console.log(err.message);
+        res.json({message: err.message});
+    }
+})
+
+// Router.post('/share', async (req, res) => {
+//   try {
+//     const { postId, recipientId, senderId } = req.body;
+    
+//     const post = await Posts.findById(postId)
+//       .populate('author', 'firstName lastName UserProfile.avatar username');
+//       console.log("1 check", postId, recipientId, senderId)
+    
+//     if (!post) {
+//       return res.status(404).json({ error: 'Post not found' });
+//     }
+    
+//     console.log("1 check", postId, recipientId, senderId)
+
+//     const recipient = await User.findById(recipientId);
+//     if (!recipient) {
+//       return res.status(404).json({ error: 'Recipient not found' });
+//     }
+    
+//     console.log("2 check", postId, recipientId, senderId)
+
+//     // Update the post with share information
+//     await Posts.findByIdAndUpdate(
+//       postId,
+//       { 
+//         $addToSet: { 
+//           share: {
+//             sender: senderId,
+//             recipient: recipientId
+//           }
+//         } 
+//       },
+//       { new: true }
+//     );
+    
+//     const recipientSocketId = userSocketMap.get(recipientId);
+//     console.log("3 check", postId, recipientId, senderId)
+//     if (recipientSocketId) {
+//       req.io.to(recipientSocketId).emit('post-shared', {
+//         postId,
+//         postData: {
+//           _id: post._id,
+//           heading: post.heading,
+//           description: post.description,
+//           files: post.files,
+//           author: {
+//             _id: post.author._id,
+//             firstName: post.author.firstName,
+//             lastName: post.author.lastName,
+//             username: post.author.username,
+//             UserProfile: post.author.UserProfile
+//           }
+//         },
+//         senderId
+//       });
+//     }
+//     console.log("4 check", postId, recipientId, senderId)
+//     res.json({ success: true, message: 'Post shared successfully' });
+//   } catch (error) {
+//     console.log('Error sharing post:', error);
+//     res.status(500).json({ error: 'Internal server error' });
+//   }
+// });
 
 module.exports = Router;

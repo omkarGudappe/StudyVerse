@@ -16,7 +16,7 @@ const DailyQuizSchema = new mongoose.Schema(
     subject: { type: String, required: true },
     level: { type: String, required: true },
     questions: [QuestionSchema],
-    date: { type: String, required: true } // YYYY-MM-DD
+    date: { type: String, required: true }
   },
   { timestamps: true }
 );
