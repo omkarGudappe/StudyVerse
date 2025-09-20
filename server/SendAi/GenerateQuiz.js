@@ -11,6 +11,7 @@ Router.post('/generate-quiz' , async (req, res) => {
         const today = dayjs().format('YYYY-MM-DD');
         
         let existingQuiz = await Quiz.findOne({userId: uid, date: today})
+        console.log(existingQuiz, "Cheak");
 
         if(existingQuiz){
             return res.json({ok: true, quiz: existingQuiz.questions })
@@ -47,6 +48,7 @@ Router.post('/generate-quiz' , async (req, res) => {
             return {
                 question: q.question,
                 options: optionsArray,
+                hint: q.hint,
                 answer: answerText,
                 difficulty: q.difficulty,
                 explanation: q.explanation,

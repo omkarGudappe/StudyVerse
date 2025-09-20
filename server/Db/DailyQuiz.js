@@ -4,10 +4,12 @@ const QuestionSchema = new mongoose.Schema({
   question: { type: String, required: true },
   options: { type: [String], required: true },
   answer: { type: String, required: true },
+  hint: {type: String, required: true},
   difficulty: { type: String, required: true},
   explanation: { type: String, required: true},
   solved: { type: Boolean, default: false },
-  chosenAnswer: { type: String, default: "" } 
+  chosenAnswer: { type: String, default: "" },
+  isCorrect: { type: Boolean, default: true},
 });
 
 const DailyQuizSchema = new mongoose.Schema(
@@ -16,7 +18,10 @@ const DailyQuizSchema = new mongoose.Schema(
     subject: { type: String, required: true },
     level: { type: String, required: true },
     questions: [QuestionSchema],
-    date: { type: String, required: true }
+    date: { type: String, required: true },
+    score: { type: Number, default: 0 },
+    totalQuestions: { type: Number, default: 0 },
+    completedAt: { type: Date }
   },
   { timestamps: true }
 );

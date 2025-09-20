@@ -7,6 +7,8 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
 
   const { ProfileData } = UserDataContextExport();
 
+  console.log(searchResults , "chek")
+
   return (
       <div className="p-6">
         {isLoading ? (
@@ -67,7 +69,7 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
                     <p className="text-neutral-400 text-sm truncate">{user?.username}</p>
                     {user?.education && (
                       <p className="text-neutral-500 text-xs mt-1 truncate">
-                        {user?.education?.split(',')[0]}
+                        {user?.education?.standard}  {user?.education?.degree} 
                       </p>
                     )}
                   </div>

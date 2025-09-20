@@ -110,6 +110,8 @@ import EmojiPicker from "emoji-picker-react";
 import "katex/dist/katex.min.css";
 import { useNotesStore } from "../../StateManagement/StoreNotes";
 import { LuCaseSensitive } from "react-icons/lu";
+import Superscript from "@tiptap/extension-superscript";
+import Subscript from "@tiptap/extension-subscript";
 
 const Mention = Node.create({
   name: 'mention',
@@ -855,6 +857,16 @@ const ResizableImage = Image.extend({
       TableCell.configure({
         HTMLAttributes: {
           class: 'table-cell',
+        },
+      }),
+       Superscript.configure({
+        HTMLAttributes: {
+          class: 'superscript',
+        },
+      }),
+      Subscript.configure({
+        HTMLAttributes: {
+          class: 'subscript',
         },
       }),
       Mention.configure({

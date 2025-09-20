@@ -865,3 +865,36 @@ html, body {
 .animate-shimmer {
   animation: shimmer 1.5s infinite;
 }
+
+.loader {
+  position: relative;
+  width: 6px;
+  height: 6px;
+}
+.loader:before, .loader:after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 17px 0 #fff; /* Reduced from 32px */
+  left: 0;
+  top: 0;
+  animation: ballMoveX 1s linear infinite;
+}
+.loader:after {
+  box-shadow: none;
+  transform-origin: 28px 0; /* Reduced from 40px */
+  transform: rotate(-153deg);
+  animation: rotateLoader 1s linear infinite;
+}
+
+@keyframes rotateLoader {
+  0%, 10% { transform: rotate(-153deg); }
+  90%, 100% { transform: rotate(0deg); }
+}
+@keyframes ballMoveX {
+  0%, 10% { transform: translateX(0); }
+  90%, 100% { transform: translateX(17px); } /* Reduced from 32px */
+}

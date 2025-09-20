@@ -21,6 +21,12 @@ const UserSettingsSchema = new mongoose.Schema({
   showLikeNotifications: { type: Boolean, default: true },
   showCommentNotifications: { type: Boolean, default: true },
   acceptAllPeersRequest: { type: Boolean, default: false },
+    accountType: {
+    type: String,
+    enum: ["public", "private"],
+    default: "public"
+  },
+  showOnlineStatus: { type: Boolean, default: true },
 }, { _id: false });
 
 const UserSchema = new mongoose.Schema({
@@ -47,14 +53,68 @@ const UserSchema = new mongoose.Schema({
         enum:["male", "female", "other"],
         default:"other"
     },
-    education:{
-        type:String,
-        required:true,
-    },
-    // education: {
-    //     institute: { type: String , required: true },
-
+    // education:{
+    //     type:String,
+    //     required:true,
     // },
+    education: {
+        level: { 
+            type: String, 
+            enum: ["school", "higher_secondary", "undergraduate", "postgraduate", "other"], 
+            required: true 
+        },
+
+        standard: { 
+            type: String, 
+            enum: [
+            "1", "2", "3", "4", "5", 
+            "6", "7", "8", "9", "10",
+            "11", "12" 
+            ],
+            default: null 
+        },
+
+        stream: { 
+            type: String, 
+            enum: ["Science", "Commerce", "Arts", "Other"], 
+            default: null 
+        },
+
+        degree: { 
+            type: String, 
+            enum: [
+            "B.Sc", "B.A", "B.Com", "B.Tech", "M.B.B.S", "BBA",
+            "M.Sc", "M.A", "M.Com", "M.Tech", "MBA", "PhD",
+            "Other"
+            ], 
+            default: null 
+        },
+
+        field: { 
+            type: String, 
+            default: "" 
+        },
+
+        institute: { 
+            type: String, 
+            required: true 
+        },
+
+        startYear: { 
+            type: Number, 
+            default: null 
+        },
+
+        endYear: { 
+            type: Number, 
+            default: null 
+        },
+
+        currentYear: { 
+            type: Number, 
+            default: null 
+        }
+    },
     UserProfile: UserProfileSchema,
     connections: [
         { type: mongoose.Schema.Types.ObjectId, ref: "User" }

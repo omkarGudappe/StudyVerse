@@ -46,15 +46,17 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
     }
 
     const filteredConnections = Connections.filter(connection => {
-        const fullName = `${connection?.firstName || ''} ${connection?.lastName || ''}`.toLowerCase();
-        const education = connection?.education ? connection.education.toLowerCase() : '';
-        return fullName.includes(searchTerm.toLowerCase()) || education.includes(searchTerm.toLowerCase()) && User;
+        const fullName = `${connection?.firstName || ''} ${connection?.lastName || ''}`;
+        const education = connection?.education ? connection.education : '';
+        return fullName.includes(searchTerm) || education.includes(searchTerm) && User;
     });
 
+    console.log(filteredConnections);
+
     const filteredNetwork = ConnectionsNetwork.filter(connection => {
-        const fullName = `${connection?.firstName || ''} ${connection?.lastName || ''}`.toLowerCase();
-        const education = connection?.education ? connection.education.toLowerCase() : '';
-        return fullName.includes(searchTerm.toLowerCase()) || education.includes(searchTerm.toLowerCase());
+        const fullName = `${connection?.firstName || ''} ${connection?.lastName || ''}`;
+        const education = connection?.education ? connection.education : '';
+        return fullName.includes(searchTerm) || education.includes(searchTerm);
     });
 
     if (!open) return null;
@@ -62,7 +64,6 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
     return (
         <div className='fixed inset-0 backdrop-blur-sm bg-black/70 z-50 flex items-center justify-center p-4' onClick={onClose}>
             <div className='relative rounded-2xl max-h-[90vh] w-full max-w-md bg-neutral-900 border border-neutral-700 overflow-hidden' onClick={e => e.stopPropagation()}>
-                {/* Header */}
                 <div className='flex items-center justify-between p-4 border-b border-neutral-700'>
                     <h1 className='text-xl font-bold text-amber-100'>Connections</h1>
                     <button 
@@ -75,7 +76,6 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                     </button>
                 </div>
                 
-                {/* Search Bar */}
                 <div className="p-4 border-b border-neutral-700">
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -93,7 +93,6 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                     </div>
                 </div>
                 
-                {/* Tabs */}
                 <div className='flex border-b border-neutral-700'>
                     <button 
                         onClick={() => setActiveState("Peers")} 
@@ -109,7 +108,6 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                     </button>
                 </div>
                 
-                {/* Content */}
                 <div className="overflow-y-auto max-h-[calc(90vh-180px)]">
                     {loading ? (
                         <div className="flex justify-center items-center py-12">
@@ -132,9 +130,9 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                 <div className='flex-1 min-w-0'>
                                                     <h2 className='font-medium text-amber-100 truncate'>{connection?.firstName} {connection?.lastName}</h2>
                                                     {connection?.education && (
-                                                        <div className='text-sm text-neutral-400 truncate'>
-                                                            {connection.education.split(',')[0]}
-                                                            {connection.education.split(',')[1] && `, ${connection.education.split(',')[1]}`}
+                                                        <div className='text-sm text-neutral-400 flex gap-1 truncate'>
+                                                           <p> {connection?.education?.standard || connection?.education?.degree }</p>
+                                                            <p>{connection?.education?.stream || connection?.education?.field}</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -178,8 +176,8 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                     <h2 className='font-medium text-amber-100 truncate'>{connection?.firstName} {connection?.lastName}</h2>
                                                     {connection?.education && (
                                                         <div className='text-sm text-neutral-400 truncate'>
-                                                            {connection.education.split(',')[0]}
-                                                            {connection.education.split(',')[1] && `, ${connection.education.split(',')[1]}`}
+                                                            {connection?.education?.standard}
+                                                            {connection?.education.standard || connection?.education?.degree && `, ${connection?.education?.stream || connection?.education?.field}`}
                                                         </div>
                                                     )}
                                                     <div className="text-xs text-purple-400 mt-1">

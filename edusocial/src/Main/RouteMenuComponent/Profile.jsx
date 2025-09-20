@@ -57,7 +57,8 @@ const Profile = () => {
     setMyPeeredCount(UserProfileData?.MyConnections?.length);
   }, [UserProfileData])
 
-  const Education = UserProfileData?.education?.split(',') || [];
+  // const Education = UserProfileData?.education?.split(',') || [];
+  console.log("For cheking education ", UserProfileData);
 
   if (loading) {
     return (
@@ -144,8 +145,8 @@ const Profile = () => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-medium">{Education[0] || "Not specified"}</h3>
-                  <p className="text-sm text-gray-400">{Education[1] || ""}</p>
+                  <h3 className="font-medium">{UserProfileData?.education?.standard || UserProfileData?.education?.degree || "Not specified"}</h3>
+                  <p className="text-sm text-gray-400">{UserProfileData?.education?.stream || UserProfileData?.education?.field || ""}</p>
                 </div>
               </div>
               
@@ -156,8 +157,8 @@ const Profile = () => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-medium">{Education[2] || "Not specified"}</h3>
-                  <p className="text-sm text-gray-400">{Education[3] || ""}</p>
+                  <h3 className="font-medium">{UserProfileData?.education?.institute || "Not specified"}</h3>
+                  {/* <p className="text-sm text-gray-400">{UserProfileData?.UserProfile?.education?.stream || ""}</p> */}
                 </div>
               </div>
             </div>
@@ -183,7 +184,7 @@ const Profile = () => {
                 <p className="text-purple-400 italic">
                   {UserProfileData?.username || "username"}
                 </p>
-                <p className="text-gray-400">{Education[0] || ""} {Education[1] || ""}</p>
+                <p className="text-gray-400">{UserProfileData?.education?.standard || UserProfileData?.education?.degree} <sup>{UserProfileData?.education?.stream || `${UserProfileData?.education?.currentYear} Year`  || ""}</sup></p>
               </div>
               
               <p className="text-gray-300 mb-6 line-clamp-2">

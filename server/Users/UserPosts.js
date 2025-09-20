@@ -328,7 +328,7 @@ Router.get('/single/:id', async (req, res) => {
     try{
         const Post = await Posts.findById(id)
             .populate({
-                  path: 'author',
+                path: 'author',
                 select: 'firstName lastName UserProfile.avatar username'
             }).populate({
                 path: 'likes',
@@ -346,12 +346,15 @@ Router.get('/single/:id', async (req, res) => {
             return res.status(404).json({message: "Post not found"});
         }
 
+        // Sort comments by createdAt in descending order (most recent first)
+        Post.comments.sort((a, b) => b.createdAt - a.createdAt);
+
         return res.json({ok: true, Post});
     }catch(err){
         console.log(err.message);
         res.json({message: err.message});
     }
-})
+});
 
 // Router.post('/share', async (req, res) => {
 //   try {

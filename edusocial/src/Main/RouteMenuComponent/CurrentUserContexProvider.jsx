@@ -44,7 +44,7 @@ export const UserDataContextExport = () => {
   }, [FirebaseUid]);
 
   return (
-    <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error }}>
+    <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error, setProfileData }}>
       {children}
     </UserDataContext.Provider>
   );

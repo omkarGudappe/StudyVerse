@@ -548,7 +548,7 @@ const handleShareToPeer = async (peerId) => {
                 <div className="p-6 border-b border-neutral-700/30 relative ">
                   <div className="flex items-center gap-4 ">
                     <div className="relative">
-                        <Link to={`/profile/${post?.author?.username}`}>
+                        <Link to={ProfileData?._id === post?.author?._id ? `/profile` : `/profile/${post?.author?.username}`}>
                           <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg">
                               <img 
                                 src={post.author?.UserProfile?.avatar?.url} 
@@ -590,7 +590,7 @@ const handleShareToPeer = async (peerId) => {
                       {OpenBtnGroup && ClickedGroupBtn.id === post?._id && (
                         <div className='flex flex-col absolute right-2 bg-neutral-800 rounded-xl text-center'>
                           <Link to={`/messages/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 rounded-tl-xl cursor-pointer rounded-tr-xl'>Message</Link>
-                          <Link to={`/profile/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 cursor-pointer'>Profile</Link>
+                          <Link to={ProfileData?._id === post?.author?._id ? `/profile` : `/profile/${post?.author?.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 cursor-pointer'>Profile</Link>
                           <div className=''>
                             <PeerButtonManage className='rounded-bl-xl rounded-br-xl w-full' currentUser={ProfileData?._id} OtherUser={post?.author?._id} />
                           </div>

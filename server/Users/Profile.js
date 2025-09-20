@@ -16,27 +16,33 @@ const storage = multer.diskStorage({});
 const upload = multer({ storage });
 
 
-Router.post('/userdetail' , upload.none(), async (req , res) => {
-    const { firstname , lastname , dob , gender , education , Uid , FUid } = req.body;
+Router.post('/userdetail', upload.none(), async (req, res) => {
+    const { firstName, lastName, dob, gender, education, Uid, FUid } = req.body;
 
-    // Validate the received data
-    if (!firstname || !lastname || !dob || !gender || !education || !Uid || !FUid) {
-        return res.json({ ok:false, message: "All fields are required" });
+    if (!firstName || !lastName || !dob || !gender || !education || !Uid || !FUid) {
+        return res.json({ ok: false, message: "All fields are required" });
     }
 
     await User.findOne({ firebaseUid: FUid }).then((existingUser) => {
         if (existingUser) {
-            return res.json({ ok:false, message: "User already exists" });
+            return res.json({ ok: false, message: "User already exists" });
         }
     });
 
     try {
+        let educationData;
+        try {
+            educationData = typeof education === 'string' ? JSON.parse(education) : education;
+        } catch (e) {
+            educationData = education;
+        }
+
         const user = new User({
-            firstName: firstname,
-            lastName: lastname,
+            firstName: firstName,
+            lastName: lastName,
             dob,
             gender,
-            education,
+            education: educationData,
             Uid,
             firebaseUid: FUid,
             UserProfile: {
@@ -53,7 +59,7 @@ Router.post('/userdetail' , upload.none(), async (req , res) => {
         console.error("Error creating user:", error);
         res.json({ ok: false, message: error.message || "Internal server error" });
     }
-})
+});
 
 Router.post('/profile', upload.single('image'), async (req, res) => {
     const { bio, FUid, username } = req.body;
@@ -103,7 +109,6 @@ Router.post('/profile', upload.single('image'), async (req, res) => {
 Router.get('/friend/username/:userName' , async (req, res) => {
     try{
         const { userName } = req.params;
-        console.log("Backend" , userName);
         if(!userName) {
             return res.status(400).json({ok: false, message: "Missing Requirment" });
         }
@@ -299,13 +304,20 @@ Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => 
         return res.status(400).json({ message: "User ID is required", code: "MISSING_USER_ID" });
     }
 
+    let educationData;
+    try {
+        educationData = typeof education === 'string' ? JSON.parse(education) : education;
+    } catch (e) {
+        educationData = education;
+    }
+
     try {
         let updateData = {
             firstName,
             lastName,
             dob,
             gender,
-            education,
+            education: educationData,
             "UserProfile.description": description,
             "UserProfile.heading": heading,
         };
@@ -381,6 +393,8 @@ Router.post('/settingsUpdated/:id', async (req, res) => {
     if(!settings) {
         return res.status(404).json({message: "Changes found"});
     }
+
+    console.log("Check updated setting", settings);
 
     try{
        const UserSettings = await User.findOneAndUpdate(

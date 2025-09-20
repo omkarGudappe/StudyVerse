@@ -30,9 +30,8 @@ const Menu = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [])
 
-  // Sync activeBtn with current route
   useEffect(() => {
-    const path = location.pathname.substring(1); // Remove leading slash
+    const path = location.pathname.substring(1);
     const validMenuItems = [
       "home", "search", "upload", "createNotes", "notification", 
       "messages", "profile", "lessons", "notes", "settings"

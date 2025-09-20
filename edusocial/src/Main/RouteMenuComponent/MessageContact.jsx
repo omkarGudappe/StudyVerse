@@ -136,7 +136,7 @@ const MessageContact = ({ open, onClose }) => {
                     <p className="text-neutral-400 text-sm truncate">{user?.username}</p>
                     {user?.education && (
                       <p className="text-neutral-500 text-xs mt-1 truncate">
-                        {user?.education?.split(',')[0]}
+                        {user?.User2?.education?.standard || user?.User2?.education?.degree}
                       </p>
                     )}
                   </div>
@@ -188,7 +188,7 @@ const MessageContact = ({ open, onClose }) => {
                     <p className="text-neutral-400 text-sm truncate">{user?.User2?.username}</p>
                     {user?.User2?.education && (
                       <p className="text-neutral-500 text-xs mt-1 truncate">
-                        {user?.User2?.education?.split(',')[0]}
+                        {user?.User2?.education?.standard || user?.User2?.education?.degree}
                       </p>
                     )}
                   </div>
