@@ -285,9 +285,9 @@ Router.get('/search', async (req, res) => {
         const users = await User.find({
             $or: [
                 { username: { $regex: query, $options: "i" } },
-                { "UserProfile.description": { $regex: query, $options: "i" } }
             ]
-        });
+        })
+        .select('firstName lastName education firebaseUid username UserProfile')
 
         res.json({ message: "Search results", users });
     } catch (err) {
@@ -322,7 +322,6 @@ Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => 
             "UserProfile.heading": heading,
         };
 
-        // If a file is uploaded, add avatar data to update
         if (req.file) {
             const uploadResult = await cloudinary.uploader.upload(req.file.path, {
                 folder: "studyverse/profiles",

@@ -2,6 +2,7 @@ const User = require("../Db/User");
 const Chat = require("../Db/Chat");
 const Post = require("../Db/UserPost");
 const userSocketMap = require('./socketMap');
+const GroupChat = require("../Db/GroupChat");
 
 // const userSocketMap = new Map();
 
@@ -265,25 +266,40 @@ module.exports = function (io) {
       }
     });
 
-    socket.on("SendContactUsers", async ({ ID }) => {
-      if (!ID) {
-        return io.to(socket.id).emit("IdNotFound", { message: "Id Missing" });
+   socket.on("SendContactUsers", async ({ ID }) => {
+    if (!ID) {
+      console.log("Id not found from the socket sendcontact user");
+      return io.to(socket.id).emit("IdNotFound", { message: "Id Missing" });
+    }
+    console.log("Finding User");
+    try {
+      const Users = await Chat.findOne({ User1: ID }).populate({
+        path: "OtherUser.User2",
+        select: "firstName lastName UserProfile.avatar username education firebaseUid",
+      });
+
+      const userGroups = await GroupChat.find({ members: ID })
+        .populate("members", "firstName lastName username UserProfile.avatar.url")
+        .populate("createdBy", "firstName lastName username");
+
+        console.log("Get Users Groups ", userGroups);
+
+      if (!Users) {
+        return io
+          .to(socket.id)
+          .emit("UserNotFound", { message: "User is not exist" });
       }
-      try {
-        const Users = await Chat.findOne({ User1: ID }).populate({
-          path: "OtherUser.User2",
-          select: "firstName lastName UserProfile.avatar username",
-        });
-        if (!Users) {
-          return io
-            .to(socket.id)
-            .emit("UserNotFound", { message: "User is not exist" });
-        }
-        socket.emit("ContactUsers", { User: Users.OtherUser });
-      } catch (err) {
-        console.log(err.message);
-      }
-    });
+
+      // Send both contacts and groups
+      socket.emit("ContactUsers", { 
+        User: Users.OtherUser,
+        Groups: userGroups || [] 
+      });
+    } catch (err) {
+      console.log("Error in SendContactUsers:", err.message);
+      socket.emit("ContactUsersError", { message: "Failed to fetch contacts and groups" });
+    }
+  });
 
     socket.on("NewPostUploded", ({ upload }) => {
       console.log("Check Upload", upload);

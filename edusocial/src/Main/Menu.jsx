@@ -241,18 +241,18 @@ const Menu = () => {
 
   const IsShowOrNot = () => {
      const path = location.pathname.substring(1);
-    const current = ["settings" , "notes", "profile" , "search", "createNotes" , "notification", "profile" , "messages" , "contactMessage",];
+    const current = ["settings" , "notes", "profile" , "search", "createNotes" , "notification", "profile" , "messages" , "contactMessage", "lessons", ];
 
-    const dynamicRoutes = ["messages"];
+    const dynamicRoutes = ["messages", "setting"];
 
-    if (current.includes(path)) {
-      return "hidden";
-    }
-
+    
     for (const route of dynamicRoutes) {
       if (path.startsWith(route + "/")) {
         return "hidden";
       }
+    }
+    if (current.includes(path)) {
+      return "hidden";
     }
     return "";
   }

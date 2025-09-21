@@ -9,6 +9,7 @@ import {
   query,
   limitToLast,
   update,
+  serverTimestamp
 } from "firebase/database";
 import { database } from "../../Auth/AuthProviders/FirebaseSDK";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,19 +17,19 @@ import { UserDataContextExport } from "./CurrentUserContexProvider";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
-import { FaSmile, FaPaperclip, FaPaperPlane, FaFile, FaImage, FaDownload, FaTimes, FaEllipsisH } from "react-icons/fa";
-import { serverTimestamp } from "firebase/database";
+import { FaSmile, FaPaperclip, FaPaperPlane, FaFile, FaImage, FaDownload, FaTimes, FaUsers, FaUser } from "react-icons/fa";
 import Socket from '../../SocketConnection/Socket';
 import OpenPostModel from "./SmallComponents/OpenPostModel";
 
 const Messages = () => {
-  const { userName } = useParams();
+  const { userName, groupId } = useParams();
   const { ProfileData } = UserDataContextExport();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [otherUser, setOtherUser] = useState(null);
-  const [isFetchingUser, setIsFetchingUser] = useState(true);
+  const [groupData, setGroupData] = useState(null);
+  const [isFetching, setIsFetching] = useState(true);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -56,6 +57,9 @@ const Messages = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Determine if this is a group chat or individual chat
+  const isGroupChat = !!groupId;
+  
   // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -75,28 +79,78 @@ const Messages = () => {
     setShowEmojiPicker(false);
   };
 
-  const getChatId = (userId1, userId2) => {
-    return userId1 > userId2 ? `${userId1}_${userId2}` : `${userId2}_${userId1}`;
+  // Get appropriate chat ID based on chat type
+  const getChatId = () => {
+    if (isGroupChat) {
+      return groupId;
+    } else {
+      if (!otherUser || !ProfileData) return null;
+      const userId1 = ProfileData._id;
+      const userId2 = otherUser._id;
+      return userId1 > userId2 ? `${userId1}_${userId2}` : `${userId2}_${userId1}`;
+    }
   };
 
-  // Fetch other user data
+  // Get appropriate database path based on chat type
+  const getDatabasePath = () => {
+    return isGroupChat ? `groupChats/${groupId}` : `chats/${getChatId()}`;
+  };
+
+  // Fetch other user data (for individual chats)
   useEffect(() => {
-    if (!userName || !ProfileData) return;
+    if (isGroupChat || !userName || !ProfileData) return;
 
     const fetchOtherUser = async () => {
       try {
-        setIsFetchingUser(true);
+        setIsFetching(true);
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/friend/username/${userName}`);
         setOtherUser(res.data.user);
       } catch (error) {
         console.error("Error fetching user:", error);
       } finally {
-        setIsFetchingUser(false);
+        setIsFetching(false);
       }
     };
 
     fetchOtherUser();
-  }, [userName, ProfileData]);
+  }, [userName, ProfileData, isGroupChat]);
+
+  // Fetch group data (for group chats)
+  useEffect(() => {
+    if (!isGroupChat || !groupId || !ProfileData) return;
+
+    // In the fetchGroupData function in Messages.jsx:
+    const fetchGroupData = async () => {
+      try {
+        setIsFetching(true);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/group/${groupId}`);
+        
+        if (res.data.ok && res.data.group) {
+          setGroupData(res.data.group);
+        } else {
+          console.error("Unexpected response structure:", res.data);
+          // Set fallback data to prevent infinite loading
+          setGroupData({
+            _id: groupId,
+            name: "Unknown Group",
+            members: []
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching group:", error);
+        // Set fallback data
+        setGroupData({
+          _id: groupId,
+          name: "Unknown Group",
+          members: []
+        });
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchGroupData();
+  }, [groupId, ProfileData, isGroupChat]);
 
   useEffect(() => {
     const handleIncomingSharedPost = (data) => {
@@ -104,9 +158,6 @@ const Messages = () => {
         ...prev,
         [data.postId]: data.postData
       }));
-      
-      // Optional: Show notification
-      console.log("Post shared with you:", data.postData);
     };
 
     Socket.on("post-shared", handleIncomingSharedPost);
@@ -124,15 +175,16 @@ const Messages = () => {
     sendMessage(postId);
   };
 
+  // Listen for messages
   useEffect(() => {
-    if (!otherUser || !ProfileData) return;
+    const chatId = getChatId();
+    if (!chatId) return;
 
     setMessages([]);
     setIsLoading(true);
 
-    const chatId = getChatId(ProfileData._id, otherUser._id);
     const messagesRef = query(
-      ref(database, `chats/${chatId}/messages`),
+      ref(database, `${getDatabasePath()}/messages`),
       orderByChild("timestamp"),
       limitToLast(100)
     );
@@ -165,7 +217,7 @@ const Messages = () => {
     return () => {
       off(messagesRef);
     };
-  }, [otherUser, ProfileData]);
+  }, [otherUser, groupData, ProfileData, isGroupChat]);
 
   const GetFileUrlfromBackend = async () => {
     if(!selectedFile) return { url: "", type: "" };
@@ -191,13 +243,16 @@ const Messages = () => {
   }
 
   useEffect(() => {
-    if (!isLoading && !isFetchingUser) {
+    if (!isLoading && !isFetching) {
       inputRef.current?.focus();
     }
-  }, [isLoading, isFetchingUser]);
+  }, [isLoading, isFetching]);
 
   const sendMessage = async (sharedPostId = null) => {
-    if ((!newMessage.trim() && !selectedFile && !sharedPostId) || !otherUser || !ProfileData) return;
+    if ((!newMessage.trim() && !selectedFile && !sharedPostId) || 
+        (!isGroupChat && !otherUser) || 
+        (isGroupChat && !groupData) || 
+        !ProfileData) return;
 
     setIsSending(true);
     let fileUrlData = { url: "", type: "" };
@@ -220,15 +275,14 @@ const Messages = () => {
 
     const senderMongoId = ProfileData._id;
     const senderFirebaseUid = ProfileData.firebaseUid;
-    const otherFirebaseUid = otherUser.firebaseUid;
+    const chatId = getChatId();
+    const databasePath = getDatabasePath();
 
-    if (!senderFirebaseUid || !otherFirebaseUid) {
-      console.error("❌ Missing Firebase UIDs for sender or recipient.");
+    if (!senderFirebaseUid || !chatId) {
+      console.error("❌ Missing required data for sending message");
       setIsSending(false);
       return;
     }
-
-    const chatId = getChatId(ProfileData._id, otherUser._id);
 
     // Prepare message data
     const messageData = {
@@ -238,7 +292,12 @@ const Messages = () => {
       timestamp: serverTimestamp()
     };
 
-     if (sharedPostId && sharedPosts[sharedPostId]) {
+    // Add sender name for group chats
+    if (isGroupChat) {
+      messageData.senderName = `${ProfileData.firstName} ${ProfileData.lastName}`;
+    }
+
+    if (sharedPostId && sharedPosts[sharedPostId]) {
       messageData.sharedPost = sharedPosts[sharedPostId];
     }
 
@@ -253,24 +312,32 @@ const Messages = () => {
     }
 
     try {
-      const chatRef = ref(database, `chats/${chatId}`);
+      // Update chat metadata
+      const chatRef = ref(database, databasePath);
       await update(chatRef, {
-        participants: {
-          [senderFirebaseUid]: true,
-          [otherFirebaseUid]: true,
-        },
         lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
         updatedAt: serverTimestamp(),
       });
-      console.log("✅ Chat metadata created/updated");
+      
+      // For individual chats, update participants
+      if (!isGroupChat) {
+        const otherFirebaseUid = otherUser.firebaseUid;
+        await update(chatRef, {
+          participants: {
+            [senderFirebaseUid]: true,
+            [otherFirebaseUid]: true,
+          },
+        });
+      }
+      
+      console.log("✅ Chat metadata updated");
     } catch (err) {
-      console.error("❌ Failed to create chat metadata:", err);
-      setIsSending(false);
-      return;
+      console.error("❌ Failed to update chat metadata:", err);
     }
 
     try {
-      const messagesRef = ref(database, `chats/${chatId}/messages`);
+      // Save the message
+      const messagesRef = ref(database, `${databasePath}/messages`);
       const newMsgRef = push(messagesRef);
       await set(newMsgRef, messageData);
       console.log("✅ Message saved");
@@ -280,33 +347,40 @@ const Messages = () => {
       return;
     }
 
-    try {
-      const userChatRef = ref(database, `userChats/${senderFirebaseUid}/${chatId}`);
-      await update(userChatRef, {
-        otherUserFirebaseUid: otherFirebaseUid,
-        otherUserMongoId: otherUser._id,
-        lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
-        timestamp: serverTimestamp(),
+    // Update user chats for individual conversations
+    if (!isGroupChat) {
+      try {
+        const otherFirebaseUid = otherUser.firebaseUid;
+        const userChatRef = ref(database, `userChats/${senderFirebaseUid}/${chatId}`);
+        await update(userChatRef, {
+          otherUserFirebaseUid: otherFirebaseUid,
+          otherUserMongoId: otherUser._id,
+          lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
+          timestamp: serverTimestamp(),
+        });
+        
+        // const otherUserChatRef = ref(database, `userChats/${otherFirebaseUid}/${chatId}`);
+        // await update(otherUserChatRef, {
+        //   otherUserFirebaseUid: senderFirebaseUid,
+        //   otherUserMongoId: senderMongoId,
+        //   lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
+        //   timestamp: serverTimestamp(),
+        // });
+        
+        const User1 = ProfileData._id
+        const User2 = otherUser._id;   
+        Socket.emit("UsersChat", { user1: User1, user2: User2, chatId: chatId})
+        console.log("✅ User chats updated");
+      } catch (err) {
+        console.error("❌ Failed to update user chats:", err);
+      }
+    } else {
+      // Notify group members about new message
+      Socket.emit("new-group-message", {
+        groupId: groupId,
+        message: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
+        sender: ProfileData._id
       });
-      const User1 = ProfileData._id
-      const User2 = otherUser._id;   
-      Socket.emit("UsersChat", { user1: User1, user2: User2, chatId: chatId})
-      console.log("✅ Sender userChat updated");
-    } catch (err) {
-      console.error("❌ Failed to update sender userChat:", err);
-    }
-
-    try {
-      const otherUserChatRef = ref(database, `userChats/${otherFirebaseUid}/${chatId}`);
-      await update(otherUserChatRef, {
-        otherUserFirebaseUid: senderFirebaseUid,
-        otherUserMongoId: senderMongoId,
-        lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
-        timestamp: serverTimestamp(),
-      });
-      console.log("✅ Recipient userChat updated");
-    } catch (err) {
-      console.error("❌ Failed to update recipient userChat:", err);
     }
 
     // Reset states
@@ -340,7 +414,7 @@ const Messages = () => {
   };
 
   const isConsecutiveMessage = (currentMsg, previousMsg) => {
-    if (!previousMsg) return false;
+    if (!previousMsg || isGroupChat) return false;
     return (
       currentMsg.senderId === previousMsg.senderId && 
       (currentMsg.timestamp - previousMsg.timestamp) < 300000
@@ -410,11 +484,11 @@ const Messages = () => {
     });
   };
 
-  if (isFetchingUser || !otherUser) {
+  if (isFetching || (!isGroupChat && !otherUser) || (isGroupChat && !groupData)) {
     return (
       <div className="flex flex-col h-full bg-gradient-to-br from-neutral-900 to-neutral-800 text-white items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mb-4"></div>
-        <p className="text-neutral-300">Loading user information...</p>
+        <p className="text-neutral-300">Loading {isGroupChat ? 'group' : 'user'} information...</p>
       </div>
     );
   }
@@ -425,8 +499,16 @@ const Messages = () => {
       <div className="p-4 border-b border-neutral-700 bg-neutral-800/80 backdrop-blur-sm sticky top-0 z-10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center overflow-hidden border-2 border-neutral-700 shadow-lg">
-              {otherUser?.UserProfile?.avatar?.url ? (
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-neutral-700 shadow-lg ${
+              isGroupChat 
+                ? "bg-gradient-to-br from-purple-600 to-indigo-600" 
+                : "bg-gradient-to-br from-purple-600 to-blue-500"
+            }`}>
+              {isGroupChat ? (
+                <span className="text-white font-semibold text-lg">
+                  {groupData.name?.[0]}{groupData.name?.[1] || ''}
+                </span>
+              ) : otherUser?.UserProfile?.avatar?.url ? (
                 <img
                   src={otherUser.UserProfile.avatar.url}
                   alt={`${otherUser.firstName} ${otherUser.lastName}`}
@@ -438,13 +520,17 @@ const Messages = () => {
                 </span>
               )}
             </div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-900"></div>
+            {!isGroupChat && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-900"></div>
+            )}
           </div>
           <div>
             <h2 className="text-lg font-bold text-white">
-              {otherUser.firstName} {otherUser.lastName}
+              {isGroupChat ? groupData.name : `${otherUser.firstName} ${otherUser.lastName}`}
             </h2>
-            <p className="text-neutral-400 text-sm">Online</p>
+            <p className="text-neutral-400 text-sm">
+              {isGroupChat ? `${groupData.members?.length || 0} members` : 'Online'}
+            </p>
           </div>
         </div>
       </div>
@@ -458,50 +544,61 @@ const Messages = () => {
         ) : messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-neutral-400 py-8">
             <div className="w-24 h-24 rounded-full bg-neutral-800 flex items-center justify-center mb-6 shadow-lg">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
+              {isGroupChat ? (
+                <FaUsers className="h-12 w-12 text-purple-500" />
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              )}
             </div>
             <h3 className="text-xl font-semibold mb-2 text-white">No messages yet</h3>
             <p className="text-center mb-6 max-w-md text-neutral-300">
-              Start a conversation with {otherUser.firstName} by sending a message below.
+              {isGroupChat 
+                ? `Start the conversation in ${groupData.name} by sending a message below.`
+                : `Start a conversation with ${otherUser.firstName} by sending a message below.`
+              }
             </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={startConversation}
-              className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 shadow-lg"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-              </svg>
-              Start Conversation
-            </motion.button>
+            {!isGroupChat && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={startConversation}
+                className="bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white px-6 py-3 rounded-xl font-medium transition-all flex items-center gap-2 shadow-lg"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                </svg>
+                Start Conversation
+              </motion.button>
+            )}
             
-            <div className="mt-8 w-full max-w-md">
-              <p className="text-neutral-500 text-sm mb-3">Try one of these conversation starters:</p>
-              <div className="grid grid-cols-1 gap-2">
-                {[
-                  `Hi ${otherUser.firstName}! How are you doing today?`,
-                  `Hey ${otherUser.firstName}, I saw we're both interested in studying together!`,
-                  `Hello! Would you like to collaborate on some study materials?`
-                ].map((starter, index) => (
-                  <motion.div
-                    key={index}
-                    whileHover={{ scale: 1.02 }}
-                    className="bg-neutral-800 p-3 rounded-lg cursor-pointer hover:bg-neutral-750 transition-all duration-200 border border-neutral-700"
-                    onClick={() => setNewMessage(starter)}
-                  >
-                    <p className="text-sm text-neutral-200">{starter}</p>
-                  </motion.div>
-                ))}
+            {!isGroupChat && (
+              <div className="mt-8 w-full max-w-md">
+                <p className="text-neutral-500 text-sm mb-3">Try one of these conversation starters:</p>
+                <div className="grid grid-cols-1 gap-2">
+                  {[
+                    `Hi ${otherUser.firstName}! How are you doing today?`,
+                    `Hey ${otherUser.firstName}, I saw we're both interested in studying together!`,
+                    `Hello! Would you like to collaborate on some study materials?`
+                  ].map((starter, index) => (
+                    <motion.div
+                      key={index}
+                      whileHover={{ scale: 1.02 }}
+                      className="bg-neutral-800 p-3 rounded-lg cursor-pointer hover:bg-neutral-750 transition-all duration-200 border border-neutral-700"
+                      onClick={() => setNewMessage(starter)}
+                    >
+                      <p className="text-sm text-neutral-200">{starter}</p>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         ) : (
           messages.map((msg, index) => {
             const isOwnMessage = msg.senderId === ProfileData._id;
-            const showAvatar = !isOwnMessage && !isConsecutiveMessage(msg, messages[index - 1]);
+            const showAvatar = !isOwnMessage && (!isConsecutiveMessage(msg, messages[index - 1]) || isGroupChat);
             const showTimestamp = index === messages.length - 1 || 
               (messages[index + 1] && 
               (messages[index + 1].senderId !== msg.senderId || 
@@ -517,7 +614,11 @@ const Messages = () => {
               >
                 {!isOwnMessage && showAvatar && (
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center overflow-hidden mt-1 shadow-md">
-                    {otherUser?.UserProfile?.avatar?.url ? (
+                    {isGroupChat ? (
+                      <span className="text-white text-xs font-semibold">
+                        {msg.senderName?.[0] || 'U'}
+                      </span>
+                    ) : otherUser?.UserProfile?.avatar?.url ? (
                       <img
                         src={otherUser.UserProfile.avatar.url}
                         alt={`${otherUser.firstName} ${otherUser.lastName}`}
@@ -536,6 +637,12 @@ const Messages = () => {
                 )}
                 
                 <div className={`max-w-[85%] sm:max-w-[75%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
+                  {!isOwnMessage && isGroupChat && (
+                    <span className="text-xs text-neutral-500 mb-1 px-1">
+                      {msg.senderName}
+                    </span>
+                  )}
+                  
                   <motion.div
                     whileTap={{ scale: 0.98 }}
                     className={`p-3 rounded-2xl shadow-md ${

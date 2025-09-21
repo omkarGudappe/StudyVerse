@@ -82,13 +82,50 @@ const ProfileUpdate = () => {
         }
     }, [ProfileData]);
 
-    const handleInputChange = (e) => {
-        const { name, value, files } = e.target;
+    // const handleInputChange = (e) => {
+    //     const { name, value, files } = e.target;
         
-        if (name === 'profileImage') {
-            setFormData(prev => ({ ...prev, profileImage: files[0] }));
-        } else if (name.startsWith('education.')) {
-            const educationField = name.split('.')[1];
+    //     if (name === 'profileImage') {
+    //         setFormData(prev => ({ ...prev, profileImage: files[0] }));
+    //     } else if (name.startsWith('education.')) {
+    //         const educationField = name.split('.')[1];
+    //         setFormData(prev => ({
+    //             ...prev,
+    //             education: {
+    //                 ...prev.education,
+    //                 [educationField]: value
+    //             }
+    //         }));
+    //     } else {
+    //         setFormData(prev => ({ ...prev, [name]: value }));
+    //     }
+    // };
+
+    const handleInputChange = (e) => {
+    const { name, value, files } = e.target;
+    
+    if (name === 'profileImage') {
+        setFormData(prev => ({ ...prev, profileImage: files[0] }));
+    } else if (name.startsWith('education.')) {
+        const educationField = name.split('.')[1];
+        
+        // If education level is being changed, clear all education fields
+        if (educationField === 'level') {
+            setFormData(prev => ({
+                ...prev,
+                education: {
+                    level: value,
+                    standard: "",
+                    stream: "",
+                    degree: "",
+                    field: "",
+                    institute: "",
+                    currentYear: "",
+                    startYear: new Date().getFullYear() - 1,
+                    endYear: new Date().getFullYear() + 3
+                }
+            }));
+        } else {
             setFormData(prev => ({
                 ...prev,
                 education: {
@@ -96,10 +133,11 @@ const ProfileUpdate = () => {
                     [educationField]: value
                 }
             }));
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }));
         }
-    };
+    } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+    }
+};
 
     const handleDateChange = (date) => {
         setFormData(prev => ({ ...prev, dob: date }));

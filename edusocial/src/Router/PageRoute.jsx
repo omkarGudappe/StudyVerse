@@ -103,6 +103,14 @@ const PageRoute = () => {
               }
             />
             <Route
+              path='/group-chat/:groupId'
+              element={
+                <MenuWrapper>
+                  <Messages/>
+                </MenuWrapper>
+              }
+            />
+            <Route
               path="/lessons"
               element={
                 <MenuWrapper>

@@ -145,8 +145,8 @@ const Profile = () => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-medium">{UserProfileData?.education?.standard || UserProfileData?.education?.degree || "Not specified"}</h3>
-                  <p className="text-sm text-gray-400">{UserProfileData?.education?.stream || UserProfileData?.education?.field || ""}</p>
+                  <h3 className="font-medium">{UserProfileData?.education?.standard ? `${UserProfileData?.education?.standard}st` : UserProfileData?.education?.degree} <sup>{UserProfileData?.education?.stream ? UserProfileData?.education?.stream : UserProfileData?.education?.currentYear ? `${UserProfileData?.education?.currentYear} Year`  : ""}</sup></h3>
+                  <p className="text-sm text-gray-400">{UserProfileData?.education?.stream ? UserProfileData?.education?.stream : UserProfileData?.education?.field ? UserProfileData?.education?.field : ""}</p>
                 </div>
               </div>
               
@@ -184,7 +184,7 @@ const Profile = () => {
                 <p className="text-purple-400 italic">
                   {UserProfileData?.username || "username"}
                 </p>
-                <p className="text-gray-400">{UserProfileData?.education?.standard || UserProfileData?.education?.degree} <sup>{UserProfileData?.education?.stream || `${UserProfileData?.education?.currentYear} Year`  || ""}</sup></p>
+                <p className="text-gray-400">{UserProfileData?.education?.standard ? `${UserProfileData?.education?.standard}st` : UserProfileData?.education?.degree} <sup>{UserProfileData?.education?.stream ? UserProfileData?.education?.stream : UserProfileData?.education?.currentYear ? `${UserProfileData?.education?.currentYear} Year`  : ""}</sup></p>
               </div>
               
               <p className="text-gray-300 mb-6 line-clamp-2">
