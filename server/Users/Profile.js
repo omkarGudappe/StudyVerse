@@ -245,6 +245,8 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       folder: "studyverse/posts",
       resource_type:
         req.file.mimetype === "application/pdf" ? "raw" : "auto",
+        use_filename: true,
+        unique_filename: false
     });
 
     fs.unlinkSync(filePath);

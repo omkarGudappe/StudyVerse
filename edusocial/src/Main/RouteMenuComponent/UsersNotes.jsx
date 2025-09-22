@@ -15,6 +15,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
     useEffect(() => {
         const FetchNotes = async () => {
             if (!open || !ProfileData?._id) return;
+            console.log("check");
             
             const ID = ProfileData._id;
             setLoading(true);
@@ -35,7 +36,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
             }
         }
         FetchNotes();
-    }, []);
+    }, [open]);
 
     const handleDeleteNote = async (noteId) => {
         if (!window.confirm("Are you sure you want to delete this note?")) return;
@@ -149,8 +150,6 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     </div>
                 </div>
             </button>
-
-            {/* Delete Button */}
             <button
                 onClick={(e) => {
                     e.preventDefault();
@@ -188,7 +187,6 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     </p>
                 </div>
 
-                {/* Content */}
                 {Loading ? (
                     <NoteSkeleton />
                 ) : error ? (

@@ -92,9 +92,27 @@ const Post = ({ ModelCloseClicked }) => {
                 note: ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
             };
 
-
+            // Check if file type is valid
             if (!validTypes[PostContent]?.includes(selectedFile.type)) {
                 setError(`Please select a valid ${PostContent} file type. Got: ${selectedFile.type}`);
+                return;
+            }
+
+            // Check file size limits
+            const fileSizeInMB = selectedFile.size / (1024 * 1024);
+            
+            if (PostContent === 'lesson' && fileSizeInMB > 100) {
+                setError(`Video files must be less than 100MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
+                return;
+            }
+            
+            if (PostContent === 'post' && fileSizeInMB > 10) {
+                setError(`Image files must be less than 10MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
+                return;
+            }
+            
+            if (PostContent === 'note' && fileSizeInMB > 5) {
+                setError(`Document files must be less than 5MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
                 return;
             }
 
@@ -136,129 +154,120 @@ const Post = ({ ModelCloseClicked }) => {
         }
     }, [error]);
 
-    // const handleSubmit = async () => {
-    //     if (!PostDetail.heading.trim()) {
-    //         setError("Please add a title for your content");
-    //         return;
-    //     }
-
-    //     const form = new FormData();
-    //     const Fid = auth.currentUser.uid;
-    //     form.append('heading', PostDetail.heading.trim());
-    //     form.append('description', PostDetail.description.trim());
-    //     form.append('image', PostDetail.image);
-    //     form.append('contentType', PostContent);
-        
-    //     setLoading(true);
-    //     setUploadStatus('uploading');
-    //     setPercent(0);
-
-    //     try {
-    //         cancelRequest.current = axios.CancelToken.source();
-            
-    //         const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
-    //             headers: { "Content-Type": "multipart/form-data" },
-    //             cancelToken: cancelRequest.current.token,
-    //             onUploadProgress: (progressEvent) => {
-    //                 if (progressEvent.total) {
-    //                     const percent = Math.round(
-    //                         (progressEvent.loaded * 100) / progressEvent.total
-    //                     );
-    //                     setPercent(percent);
-    //                 }
-    //             }
-    //         });
-
-    //         const result = await res.data;
-    //         if (result && result.newPost) {
-    //             setUploadStatus('success');
-    //             console.log(result.newPost);
-    //             addPost(result.newPost);
-    //             Socket.emit("NewPostUploded", { upload: true });
-    //             setTimeout(() => {
-    //                 ModelCloseClicked(false);
-    //             }, 1500);
-    //         } else {
-    //             throw new Error(result.message || "Failed to upload");
-    //         }
-    //     } catch (err) {
-    //         if (axios.isCancel(err)) {
-    //             setUploadStatus('idle');
-    //         } else {
-    //             setError(err.response?.data?.message || "Upload failed. Please try again.");
-    //             setUploadStatus('error');
-    //         }
-    //         setLoading(false);
-    //     }
-    // }
-
- const handleSubmit = async () => {
-  if (!PostDetail.heading.trim()) {
-    setError("Please add a title for your content");
-    return;
-  }
-
-  const form = new FormData();
-  const Fid = auth.currentUser.uid;
-  form.append('heading', PostDetail.heading.trim());
-  form.append('description', PostDetail.description.trim());
-  form.append('image', PostDetail.image);
-  form.append('contentType', PostContent);
-  form.append('visibility' , PostDetail.visibility);
-
-  setLoading(true);
-  setUploadStatus('uploading');
-  setPercent(0);
-  setUploadPhase('preparing');
-
-  try {
-    cancelRequest.current = axios.CancelToken.source();
-
-    // 🔹 Fake progress for compression
-    if (Selected.type.startsWith("video/")) {
-      setUploadPhase('compressing');
-      let fakeProgress = 0;
-      while (fakeProgress < 40) {
-        await new Promise(res => setTimeout(res, 4000));
-        fakeProgress += 3;
-        setPercent(fakeProgress);
-      }
-    }
-
-    setUploadPhase('uploading');
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
-      headers: { "Content-Type": "multipart/form-data" },
-      cancelToken: cancelRequest.current.token,
-      onUploadProgress: (progressEvent) => {
-        if (progressEvent.total) {
-          const uploadProgress = Math.round((progressEvent.loaded * 60) / progressEvent.total);
-          setPercent(40 + uploadProgress);
+    const handleSubmit = async () => {
+        if (!PostDetail.heading.trim()) {
+            setError("Please add a title for your content");
+            return;
         }
-      }
-    });
+        
+        if (!PostDetail.visibility) {
+            setError("Please select a visibility option");
+            return;
+        }
 
-    const result = res.data;
-    if (result && result.newPost) {
-      setUploadStatus('success');
-      setPercent(100);
-      addPost(result.newPost);
-      Socket.emit("NewPostUploded", { upload: true });
-      setTimeout(() => ModelCloseClicked(false), 1500);
-    } else {
-      throw new Error(result.message || "Failed to upload");
-    }
-  } catch (err) {
-    if (axios.isCancel(err)) {
-      setUploadStatus('idle');
-    } else {
-      setError(err.response?.data?.message || "Upload failed. Please try again.");
-      setUploadStatus('error');
-    }
-    setLoading(false);
-  }
-};
+        const form = new FormData();
+        const Fid = auth.currentUser.uid;
+        form.append('heading', PostDetail.heading.trim());
+        form.append('description', PostDetail.description.trim());
+        form.append('image', PostDetail.image);
+        form.append('contentType', PostContent);
+        form.append('visibility', PostDetail.visibility);
 
+        setLoading(true);
+        setUploadStatus('uploading');
+        setPercent(0);
+        setUploadPhase('preparing');
 
+        try {
+            cancelRequest.current = axios.CancelToken.source();
+
+            // 🔹 Fake progress for compression
+            if (Selected.type.startsWith("video/")) {
+                setUploadPhase('compressing');
+                let fakeProgress = 0;
+                while (fakeProgress < 40) {
+                    await new Promise(res => setTimeout(res, 4000));
+                    fakeProgress += 3;
+                    setPercent(fakeProgress);
+                }
+            }
+
+            setUploadPhase('uploading');
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
+                headers: { "Content-Type": "multipart/form-data" },
+                cancelToken: cancelRequest.current.token,
+                onUploadProgress: (progressEvent) => {
+                    if (progressEvent.total) {
+                        const uploadProgress = Math.round((progressEvent.loaded * 60) / progressEvent.total);
+                        setPercent(40 + uploadProgress);
+                    }
+                },
+                timeout: 300000, // 5 minute timeout for large uploads
+            });
+
+            const result = res.data;
+            if (result && result.newPost) {
+                setUploadStatus('success');
+                setPercent(100);
+                addPost(result.newPost);
+                console.log(result.uploadFile , "for chceking url");
+                Socket.emit("NewPostUploded", { upload: true });
+                setTimeout(() => ModelCloseClicked(false), 1500);
+            } else {
+                throw new Error(result.message || "Failed to upload");
+            }
+        } catch (err) {
+            if (axios.isCancel(err)) {
+                setUploadStatus('idle');
+                setError("Upload cancelled");
+            } else if (err.code === 'ECONNABORTED') {
+                setError("Upload timed out. Please try again with a smaller file or better connection.");
+                setUploadStatus('error');
+            } else if (err.response) {
+                // Server responded with error status
+                const status = err.response.status;
+                const message = err.response.data?.message || "Upload failed";
+                
+                switch (status) {
+                    case 400:
+                        setError(message || "Missing required fields");
+                        break;
+                    case 401:
+                        setError("Please log in again to upload content");
+                        break;
+                    case 403:
+                        setError("You don't have permission to upload content");
+                        break;
+                    case 404:
+                        setError("User not found. Please check your account");
+                        break;
+                    case 413:
+                        setError("File too large. Please choose a smaller file");
+                        break;
+                    case 415:
+                        setError("Unsupported file type");
+                        break;
+                    case 500:
+                    case 502:
+                    case 503:
+                        setError("Server error. Please try again later");
+                        break;
+                    default:
+                        setError(message || "Upload failed. Please try again.");
+                }
+                setUploadStatus('error');
+            } else if (err.request) {
+                // Network error
+                setError("Network error. Please check your connection and try again.");
+                setUploadStatus('error');
+            } else {
+                // Other errors
+                setError(err.message || "An unexpected error occurred");
+                setUploadStatus('error');
+            }
+            setLoading(false);
+        }
+    };
 
     const handleCheckSelectedData = () => {
         if (!Selected) {
@@ -275,6 +284,7 @@ const Post = ({ ModelCloseClicked }) => {
         setUploadStatus('idle');
         setLoading(false);
         setPercent(0);
+        setUploadPhase('');
     }
 
     const handleCancel = () => {
@@ -287,12 +297,14 @@ const Post = ({ ModelCloseClicked }) => {
             heading: "",
             description: "",
             image: "",
+            visibility: "",
         });
         setPreview(null);
         setUploadStatus('idle');
         setPercent(0);
         setPage(0);
         setError(null);
+        setUploadPhase('');
     }
 
     const navigateTo = (newPage) => {
@@ -472,9 +484,9 @@ const Post = ({ ModelCloseClicked }) => {
                                                 <h3 className="text-lg font-medium text-white mb-2">Drop your file here</h3>
                                                 <p className="text-neutral-400 text-sm">or click to browse files</p>
                                                 <p className="text-xs text-neutral-500 mt-2">
-                                                    {PostContent === "post" ? "JPG, PNG, GIF, WEBP" : 
-                                                     PostContent === "lesson" ? "MP4, WEBM, OGG" : 
-                                                     "PDF, TXT, DOC, DOCX"}
+                                                    {PostContent === "post" ? "JPG, PNG, GIF, WEBP (Max 10MB)" : 
+                                                     PostContent === "lesson" ? "MP4, WEBM, OGG (Max 100MB)" : 
+                                                     "PDF, TXT, DOC, DOCX (Max 5MB)"}
                                                 </p>
                                             </div>
                                         </div>
@@ -601,6 +613,16 @@ const Post = ({ ModelCloseClicked }) => {
                                 </motion.div>
                             )}
 
+                            {error && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: -10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 mb-4"
+                                >
+                                    <p className="text-red-400 text-sm">{error}</p>
+                                </motion.div>
+                            )}
+
                             <div className="space-y-4 mb-6">
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-300 mb-2">Title *</label>
@@ -627,9 +649,12 @@ const Post = ({ ModelCloseClicked }) => {
                                     />
                                 </div>
                                 <div>
+                                    <label className="block text-sm font-medium text-neutral-300 mb-2">Visibility *</label>
                                     <select 
                                         className='w-full bg-neutral-800 border-neutral-700 py-3 px-4 rounded-xl text-white cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-transparent'
                                         onChange={(e) => setPostDetail({...PostDetail , visibility: e.target.value})}
+                                        value={PostDetail.visibility}
+                                        disabled={uploadStatus === 'uploading'}
                                     >
                                         <option value="">Select Post status</option>
                                         <option value="public">Public</option>
@@ -656,7 +681,7 @@ const Post = ({ ModelCloseClicked }) => {
                                                 : 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600'
                                         }`}
                                         onClick={handleSubmit}
-                                        disabled={uploadStatus === 'uploading' || !PostDetail.heading.trim()}
+                                        disabled={uploadStatus === 'uploading' || !PostDetail.heading.trim() || !PostDetail.visibility}
                                     >
                                         {uploadStatus === 'uploading' ? (
                                             <>

@@ -80,6 +80,7 @@ Router.get('/usernotes/:ID', async (req, res) => {
 
     try{
        const notes = await Notes.find({ author: ID });
+       console.log(notes , " check to the data");
 
         if(!notes){
             return res.status(404).json({message: "User Not Found"});

@@ -7,9 +7,16 @@ import { Link } from 'react-router-dom'
 import { UserDataContextExport } from './CurrentUserContexProvider';
 import CommentModel from './Panels/CommentModel';
 import PeerButtonManage from './SmallComponents/PeerButtonManage';
-import { ref, push } from "firebase/database";   // 👈 add at top
-import { database } from "../../Auth/AuthProviders/FirebaseSDK"; // 👈 add at top
+import { ref, push } from "firebase/database";
+import { database } from "../../Auth/AuthProviders/FirebaseSDK";
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+import RawToPdfConverter from './Panels/RawToPdfConverter';
+import LikeComponent from './SmallComponents/LikeComponent';
 
+// Configure PDF.js worker
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const StudyVerseMain = () => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -35,9 +42,22 @@ const StudyVerseMain = () => {
   });
   const [peersList, setPeersList] = useState([]);
   const [selectedPeer, setSelectedPeer] = useState(null);
+  const [pdfModal, setPdfModal] = useState({ isOpen: false, url: null, numPages: 0, pageNumber: 1 });
+  const [pdfLoading, setPdfLoading] = useState(false);
+  
+  // Add states for raw content handling
+  const [rawContentModal, setRawContentModal] = useState({ 
+    isOpen: false, 
+    content: null, 
+    type: null, 
+    fileName: null,
+    convertedPdfUrl: null 
+  });
 
-  // Infinite scroll observer
+  // Infinite scroll observer - Fixed implementation
   useEffect(() => {
+    if (!hasMore || loading) return;
+    
     const options = {
       root: null,
       rootMargin: '100px',
@@ -46,7 +66,7 @@ const StudyVerseMain = () => {
 
     const scrollObserver = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting && hasMore && !loading) {
-        loadMorePosts();
+        loadMorePosts(ProfileData?._id);
       }
     }, options);
 
@@ -59,7 +79,7 @@ const StudyVerseMain = () => {
         scrollObserver.unobserve(loadMoreRef.current);
       }
     };
-  }, [hasMore, loading, loadMorePosts]);
+  }, [hasMore, loading, ProfileData?._id]);
 
   useEffect(() => {
     const lenis = new Lenis({
@@ -126,9 +146,6 @@ const StudyVerseMain = () => {
     if (ProfileData?._id) {
       fetchPosts(ProfileData._id);
     } 
-    // else {
-    //   usePostsStore.getState().error = "Faild To Loade Posts";
-    // }
   }
 
   useEffect(() => {
@@ -138,7 +155,7 @@ const StudyVerseMain = () => {
   useEffect(() => {
     const handler = ({ Fetch }) => {
       if (Fetch) {
-        fetchPosts(true);
+        fetchPosts(ProfileData._id, false, true); // Force refresh
       }
     };
 
@@ -147,15 +164,13 @@ const StudyVerseMain = () => {
     return () => {
       Socket.off("FetchAgain", handler);
     };
-  }, [fetchPosts]);
+  }, [fetchPosts, ProfileData]);
 
   const fetchPeersList = async () => {
     const id = ProfileData?._id;
     try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/userConnections/${id}`);
         if (res.data.ok) {
-            // setConnections(res.data.ConnectionNetWork);
-            // setConnectionsNetwork(res.data.Connections);
             setPeersList(res.data.Connections);
         }
     } catch (err) {
@@ -163,52 +178,46 @@ const StudyVerseMain = () => {
     }
   }
 
+  const handleShareToPeer = async (peerId) => {
+    if (!shareModalOpen.post) return;
 
-const handleShareToPeer = async (peerId) => {
-  if (!shareModalOpen.post) return;
+    try {
+      const Id = ProfileData?._id;
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/posts/share`,
+        {
+          postId: shareModalOpen.post._id,
+          recipientId: peerId,
+          senderId: Id,
+        },
+      );
+      
+      if (response.data.success) {
+        alert('Post shared successfully!');
+        setShareModalOpen({ isOpen: false, post: null });
 
-  try {
-    const Id = ProfileData?._id;
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/posts/share`,
-      {
-        postId: shareModalOpen.post._id,
-        recipientId: peerId,
-        senderId: Id,
-      },
-    );
-    
-    if (response.data.success) {
-      alert('Post shared successfully!');
-      setShareModalOpen({ isOpen: false, post: null });
+        Socket.emit("post-shared", {
+          postData: shareModalOpen.post,
+          recipientId: peerId,
+          senderId: Id,
+        });
 
-      // 👇 1. Emit socket for real-time notification
-      Socket.emit("post-shared", {
-        postData: shareModalOpen.post,
-        recipientId: peerId,
-        senderId: Id,
-      });
+        const chatId = Id > peerId ? `${Id}_${peerId}` : `${peerId}_${Id}`;
+        const messageData = {
+          senderId: Id,
+          text: "",
+          sharedPost: shareModalOpen.post,
+          timestamp: Date.now()
+        };
 
-      // 👇 2. Save the shared post as a message in Firebase
-      const chatId = Id > peerId ? `${Id}_${peerId}` : `${peerId}_${Id}`;
-      const messageData = {
-        senderId: Id,
-        text: "", // optional
-        sharedPost: shareModalOpen.post, // 👈 attach the full post object
-        timestamp: Date.now()
-      };
-
-      const messagesRef = ref(database, `chats/${chatId}/messages`);
-      await push(messagesRef, messageData);
+        const messagesRef = ref(database, `chats/${chatId}/messages`);
+        await push(messagesRef, messageData);
+      }
+    } catch (error) {
+      console.error("Error sharing post:", error);
+      alert('Failed to share post');
     }
-  } catch (error) {
-    console.error("Error sharing post:", error);
-    alert('Failed to share post');
-  }
-};
-
-
-// Remove the sharePostInChat function as it's not needed
+  };
 
   const handleSharePost = (post) => {
     setShareModalOpen({ isOpen: true, post });
@@ -412,6 +421,55 @@ const handleShareToPeer = async (peerId) => {
     return pendingLikes.has(postId);
   };
 
+  // PDF handling functions
+  const openPdfModal = (url) => {
+    setPdfModal({ isOpen: true, url, numPages: 0, pageNumber: 1 });
+    setPdfLoading(true);
+  };
+
+  const closePdfModal = () => {
+    setPdfModal({ isOpen: false, url: null, numPages: 0, pageNumber: 1 });
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }) => {
+    setPdfModal(prev => ({ ...prev, numPages }));
+    setPdfLoading(false);
+  };
+
+  const changePage = (offset) => {
+    setPdfModal(prev => ({ 
+      ...prev, 
+      pageNumber: Math.min(Math.max(prev.pageNumber + offset, 1), prev.numPages) 
+    }));
+  };
+
+  const previousPage = () => {
+    changePage(-1);
+  };
+
+  const nextPage = () => {
+    changePage(1);
+  };
+
+  // Raw content handling functions
+  const handleRawContent = (content, type, fileName) => {
+    setRawContentModal({ 
+      isOpen: true, 
+      content, 
+      type, 
+      fileName,
+      convertedPdfUrl: null 
+    });
+  };
+
+  const handleConversionComplete = (pdfUrl) => {
+    setRawContentModal(prev => ({ ...prev, convertedPdfUrl: pdfUrl }));
+  };
+
+  const closeRawContentModal = () => {
+    setRawContentModal({ isOpen: false, content: null, type: null, fileName: null, convertedPdfUrl: null });
+  };
+
   const Loading = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
@@ -487,32 +545,32 @@ const handleShareToPeer = async (peerId) => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8"> {/* Changed max-width to 4xl for single column */}
         <div className="text-center mb-12 md:mt-0 mt-30">
-          <div className="hidden md:inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl mb-6 shadow-lg">
-            <img src='/LOGO/StudyVerseIcon.png' alt="" />
+          <div className="hidden md:inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-600 to-amber-500 rounded-3xl mb-6 shadow-lg transform hover:scale-105 transition-transform duration-300">
+            <img src='/LOGO/StudyVerseIcon.png' alt="StudyVerse Logo" className="w-14 h-14" />
           </div>
-          <h1 className="text-4xl mt-5 md:mt-0 md:text-5xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl mt-5 md:mt-0 md:text-6xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent mb-4">
             StudyVerse Community
           </h1>
-          <p className="text-lg text-neutral-300 max-w-2xl mx-auto">
-            Discover, share and collaborate on the best study materials
+          <p className="text-xl text-neutral-300 max-w-3xl mx-auto mb-8">
+            Discover, share and collaborate on the best study materials from students worldwide
           </p>
-          <div className="mt-6 flex justify-center space-x-4">
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mt-8 flex justify-center space-x-4 flex-wrap gap-3">
+            <span className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 text-purple-300 text-sm border border-purple-500/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               Notes
             </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span className="inline-flex items-center px-4 py-2 rounded-full bg-amber-500/20 text-amber-300 text-sm border border-amber-500/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>
               Videos
             </span>
-            <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <span className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 text-sm border border-emerald-500/30">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               PDFs
@@ -538,18 +596,18 @@ const handleShareToPeer = async (peerId) => {
             </button>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 flex flex-col items-center justify-center"> {/* Changed from grid to space-y for single column feed */}
             {posts.map((post) => (
               <div 
                 key={post._id} 
-                className="bg-neutral-800/40 max-w-2xl mx-auto backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
+                className="bg-neutral-800/40 lg:w-2xl backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
               >
                 {/* Post Header */}
-                <div className="p-6 border-b border-neutral-700/30 relative ">
-                  <div className="flex items-center gap-4 ">
+                <div className="p-5 border-b border-neutral-700/30 relative">
+                  <div className="flex items-center gap-3">
                     <div className="relative">
                         <Link to={ProfileData?._id === post?.author?._id ? `/profile` : `/profile/${post?.author?.username}`}>
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg">
+                          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-amber-500 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
                               <img 
                                 src={post.author?.UserProfile?.avatar?.url} 
                                 alt={`${post.author?.firstName || ''} ${post.author?.lastName || ''}`} 
@@ -559,38 +617,38 @@ const handleShareToPeer = async (peerId) => {
                                   e.target.nextSibling.style.display = 'flex';
                                 }}
                               />
-                            <div className="hidden items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-amber-500 text-white font-semibold">
+                            <div className="hidden items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-amber-500 text-white font-semibold text-sm">
                               {(post.author?.firstName?.[0] || 'U') + (post.author?.lastName?.[0] || '')}
                             </div>
                           </div>
                         </Link>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-white truncate">
+                      <h3 className="font-bold text-white truncate text-sm">
                         {post.author?.firstName || 'Unknown'} {post.author?.lastName || 'User'}
                       </h3>
-                      <p className="text-sm text-neutral-400 flex items-center">
+                      <p className="text-xs text-neutral-400 flex items-center">
                         <span>{formatDate(post.updatedAt)}</span>
-                        <span className="mx-2">•</span>
+                        <span className="mx-1">•</span>
                         <span className="inline-flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                           Study Post
                         </span>
                       </p>
                     </div>
-                      <button onClick={() =>{ handleOpneGroupBtn(post._id, post?.author?.username); setOpenBtnGroup(!OpenBtnGroup)}} className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-700/50 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <button onClick={() =>{ handleOpneGroupBtn(post._id, post?.author?.username); setOpenBtnGroup(!OpenBtnGroup)}} className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-700/50 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
                         </svg>
                       </button>
                   </div>
                     <div className=''>
                       {OpenBtnGroup && ClickedGroupBtn.id === post?._id && (
-                        <div className='flex flex-col absolute right-2 bg-neutral-800 rounded-xl text-center'>
-                          <Link to={`/messages/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 rounded-tl-xl cursor-pointer rounded-tr-xl'>Message</Link>
-                          <Link to={ProfileData?._id === post?.author?._id ? `/profile` : `/profile/${post?.author?.username}`} className='hover:bg-neutral-700 w-full px-5 p-2 cursor-pointer'>Profile</Link>
+                        <div className='flex flex-col absolute right-2 top-14 bg-neutral-800 rounded-xl text-center z-10 shadow-lg border border-neutral-700/50'>
+                          <Link to={`/messages/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-4 py-2 rounded-tl-xl cursor-pointer rounded-tr-xl text-sm'>Message</Link>
+                          <Link to={ProfileData?._id === post?.author?._id ? `/profile` : `/profile/${post?.author?.username}`} className='hover:bg-neutral-700 w-full px-4 py-2 cursor-pointer text-sm'>Profile</Link>
                           <div className=''>
                             <PeerButtonManage className='rounded-bl-xl rounded-br-xl w-full' currentUser={ProfileData?._id} OtherUser={post?.author?._id} />
                           </div>
@@ -599,253 +657,347 @@ const handleShareToPeer = async (peerId) => {
                     </div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-5">
                   {post.heading && (
-                    <h2 className="text-2xl font-bold mb-4 text-white bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent">
+                    <h2 className="text-lg font-bold mb-3 text-white line-clamp-2">
                       {post.heading}
                     </h2>
                   )}
                   {post.description && (
-                    <p className="text-neutral-300 mb-6 leading-relaxed bg-neutral-800/30 rounded-xl p-4 border border-neutral-700/30">
-                      {post.description}
+                    <p className="text-neutral-300 mb-4 leading-relaxed text-sm bg-neutral-800/30 rounded-xl p-3 border border-neutral-700/30 line-clamp-3">
+                      {post?.description}
                     </p>
                   )}
                   
-                  {post.files?.url && (
-                    <div className="mb-6 rounded-2xl overflow-hidden border border-neutral-700/50 shadow-lg">
-                      {post.files.url.match(/\.(jpeg|jpg|gif|png|webp)$/) ? (
-                        <img
-                          src={post.files.url}
-                          alt={post.heading || 'Study material'}
-                          className="w-full h-auto max-h-96 object-cover"
-                          loading="lazy"
-                        />
-                      ) : post.files.url.match(/\.(mp4|webm|ogg)$/) ? (
-                        <div className='relative group'>
+                  {post.files?.url ? (
+                    <div className="mb-4 rounded-xl overflow-hidden border border-neutral-700/30">
+                      {post.files?.url.endsWith('.mp4') || post.files?.url.endsWith('.webm') || post.files?.url.endsWith('.mov') ? (
+                        <div className="relative aspect-video bg-black">
                           <video
-                            ref={el => {
-                              if (el) {
-                                videoRefs.current[post._id] = el;
-                              }
-                            }}
+                            ref={el => videoRefs.current[post._id] = el}
                             data-video-id={post._id}
-                            src={post.files.url}
-                            className="w-full h-auto max-h-96 object-contain cursor-pointer"
-                            muted
-                            loop
-                            playsInline
+                            className="w-full h-full object-cover cursor-pointer"
                             onClick={(e) => handleVideoClick(post._id, e)}
                             onPlay={() => handleVideoPlay(post._id)}
                             onPause={() => handleVideoPause(post._id)}
-                            poster={post.thumbnail || ''}
-                          />
-                          <div 
-                            className={`absolute inset-0 bg-black/40 flex items-center justify-center transition-opacity duration-300 ${activePost === post._id ? 'opacity-0' : 'opacity-100'}`}
-                            onClick={(e) => handleVideoClick(post._id, e)}
+                            muted
+                            loop
+                            playsInline
                           >
-                            <div className="bg-black/50 rounded-full p-4 backdrop-blur-sm border border-white/10 cursor-pointer">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={(e) => handleVideoClick(post._id, e)} 
-                            className="absolute bottom-4 left-4 bg-black/70 rounded-full px-3 py-1 text-sm text-white backdrop-blur-sm cursor-pointer"
-                          >
-                            Click to {activePost === post._id ? 'pause' : 'play'}
-                          </button>
-                          
-                          {activePost === post._id && (
-                            <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-black/70 rounded-full px-3 py-1 backdrop-blur-sm">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const video = videoRefs.current[post._id];
-                                  if (video) {
-                                    video.muted = !video.muted;
-                                  }
-                                }}
-                                className="text-white"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a9 9 0 010 12m-4.5-9.5L12 3v18l-4.5-4.5H4a1 1 0 01-1-1v-7a1 1 0 011-1h3.5z" />
+                            <source src={post.files.url} type="video/mp4" />
+                            Your browser does not support the video tag.
+                          </video>
+                          {activePost !== post._id && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                              <button className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                               </button>
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <div className="bg-gradient-to-br from-neutral-800 to-neutral-700 p-8 rounded-2xl text-center">
-                          <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/20 rounded-2xl mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
+                      ) : post.files?.url.endsWith('.pdf') ? (
+                        <div className="relative group cursor-pointer" onClick={() => openPdfModal(post.files.url)}>
+                          <div className="aspect-video bg-gradient-to-br from-purple-600/20 to-amber-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-purple-500/30">
+                            <div className="text-center p-6">
+                              <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600/20 rounded-2xl mb-4 border border-purple-500/30">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                              <h4 className="font-semibold text-white mb-2">PDF Document</h4>
+                              <p className="text-sm text-neutral-400">Click to view this study material</p>
+                            </div>
                           </div>
-                          <h4 className="text-lg font-semibold text-white mb-2">Study Document</h4>
-                          <p className="text-neutral-300 mb-4">This post contains a study document</p>
-                          <a
-                            href={post.files.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 rounded-full hover:from-amber-400 hover:to-amber-500 transition-all duration-300 text-white font-medium shadow-lg hover:shadow-amber-500/30"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            Download File
-                          </a>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-end justify-center p-4">
+                            <span className="text-white text-sm font-medium bg-purple-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                              View PDF
+                            </span>
+                          </div>
                         </div>
+                      ) : (
+                          <img 
+                            src={post.files.url} 
+                            alt={post.heading || 'Study material'} 
+                            className="w-full h-full max-h-100 object-cover rounded-xl"
+                            loading="lazy"
+                          />
                       )}
                     </div>
-                  )}
+                  ) : post.rawContent ? (
+                    <div 
+                      className="relative group cursor-pointer" 
+                      onClick={() => handleRawContent(post.rawContent, post.contentType, post.heading || 'Study Material')}
+                    >
+                      <div className="aspect-video bg-gradient-to-br from-amber-600/20 to-emerald-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-amber-500/30">
+                        <div className="text-center p-6">
+                          <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-600/20 rounded-2xl mb-4 border border-amber-500/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          <h4 className="font-semibold text-white mb-2">Text Content</h4>
+                          <p className="text-sm text-neutral-400">Click to view this study material</p>
+                        </div>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-end justify-center p-4">
+                        <span className="text-white text-sm font-medium bg-amber-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                          View Content
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
-                <div className="p-6 border-t border-neutral-700/30 bg-neutral-800/20">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-6">
-                     <button
-                        className={`flex items-center gap-2 cursor-pointer transition-all duration-300 ${
-                          VerifyLike(post._id, post?.likes)
-                            ? 'text-red-500 hover:text-red-400' 
-                            : 'text-neutral-400 hover:text-red-500'
-                        } ${isLikePending(post._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        onClick={() => !isLikePending(post?._id) && handleLike(post?._id, post?.author?._id)}
+                {/* Post Actions */}
+                <div className="p-4 border-t border-neutral-700/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      {/* <button 
+                        onClick={() => handleLike(post._id, post.author?._id)}
                         disabled={isLikePending(post._id)}
+                        className="flex items-center space-x-1.5 text-sm transition-all duration-300 hover:scale-105"
                       >
-                        <div className={`p-2 rounded-full transition-all duration-300 ${
-                          VerifyLike(post._id, post?.likes) 
-                            ? 'bg-red-500/20' 
-                            : 'bg-neutral-700/50 hover:bg-red-500/20'
-                        }`}>
+                        <div className={`p-1.5 rounded-lg transition-colors ${VerifyLike(post._id) ? 'bg-red-500/20 text-red-400' : 'hover:bg-neutral-700/50 text-neutral-400'}`}>
                           {isLikePending(post._id) ? (
-                            <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          ) : VerifyLike(post._id) ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                            </svg>
                           ) : (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              width="20"
-                              height="20"
-                              fill={VerifyLike(post._id, post?.likes) ? "currentColor" : "none"}
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            >
-                              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
                           )}
                         </div>
-                        <span className="text-sm text-neutral-400">
+                        <span className={`font-medium ${VerifyLike(post._id) ? 'text-red-400' : 'text-neutral-400'}`}>
                           {post.likes?.length || 0}
                         </span>
-                      </button>
-
-                      <button onClick={() => setCommentModel({id: post?._id, PostownerId: post?.author?._id ,status: true})} className="cursor-pointer flex items-center gap-2 text-neutral-400 hover:text-amber-400 transition-all duration-300">
-                        <div className="p-2 rounded-full bg-neutral-700/50 hover:bg-amber-500/20 transition-all duration-300">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      </button> */}
+                      <LikeComponent PostId={post._id} PostAuthorId={post.author?._id} LikeLength={post.likes?.length} CurrentUserId={ProfileData?._id} />
+                      <button 
+                        onClick={() => setCommentModel({ id: post._id, PostownerId: post.author?._id, status: true })}
+                        className="flex items-center space-x-1.5 text-sm text-neutral-400 hover:text-white transition-all duration-300 hover:scale-105"
+                      >
+                        <div className="p-1.5 rounded-lg hover:bg-neutral-700/50">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                           </svg>
                         </div>
+                        <span className="font-medium">{post.comments?.length || 0}</span>
                       </button>
 
                       <button 
                         onClick={() => handleSharePost(post)}
-                        className="flex items-center gap-2 text-neutral-400 hover:text-purple-400 transition-all duration-300"
+                        className="flex items-center space-x-1.5 text-sm text-neutral-400 hover:text-white transition-all duration-300 hover:scale-105"
                       >
-                        <div className="p-2 rounded-full bg-neutral-700/50 hover:bg-purple-500/20 transition-all duration-300">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="p-1.5 rounded-lg hover:bg-neutral-700/50">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                           </svg>
                         </div>
+                        <span className="font-medium">Share</span>
                       </button>
                     </div>
 
-                    <button className="flex items-center gap-2 text-neutral-400 hover:text-emerald-400 transition-all duration-300">
-                      <div className="p-2 rounded-full bg-neutral-700/50 hover:bg-emerald-500/20 transition-all duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                        </svg>
-                      </div>
-                      </button>
+                    <button className="text-neutral-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-neutral-700/50">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
             ))}
             
-            {/* Load More Trigger */}
-            <div ref={loadMoreRef} className="flex justify-center py-8">
-              {loading && (
-                <div className="flex items-center justify-center">
+            {/* Load More Ref */}
+            <div ref={loadMoreRef} className="h-10 flex items-center justify-center">
+              {loading && hasMore && (
+                <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
                   <span className="ml-3 text-neutral-400">Loading more posts...</span>
                 </div>
               )}
-              
-              {!hasMore && posts.length > 0 && (
-                <div className="text-center text-neutral-400 py-4">
-                  <p>You've reached the end! 🎉</p>
-                </div>
-              )}
             </div>
+            
+            {/* End of content message */}
+            {!hasMore && posts.length > 0 && (
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600/20 to-amber-500/20 rounded-2xl mb-4 border border-purple-500/30">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-white mb-2">You're all caught up!</h3>
+                <p className="text-neutral-400">You've seen all the latest study materials</p>
+              </div>
+            )}
           </div>
         )}
       </div>
-      {OpenCommentModel.status && <CommentModel open={OpenCommentModel.status} PostownerId={OpenCommentModel.PostownerId} CommentId={OpenCommentModel.id} onClose={() => setCommentModel({id:null, PostownerId: null, status:false})} />}
 
-      {shareModalOpen.isOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-neutral-800 rounded-2xl p-6 max-w-md w-full border border-neutral-700">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-white">Share Post</h3>
+      {/* PDF Modal */}
+      {pdfModal.isOpen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-neutral-800">
+              <h3 className="text-white font-semibold">PDF Viewer</h3>
               <button 
-                onClick={() => setShareModalOpen({ isOpen: false, post: null })}
-                className="text-neutral-400 hover:text-white"
+                onClick={closePdfModal}
+                className="p-2 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            
-            <div className="mb-4">
-              <p className="text-neutral-300">Select a peer to share with:</p>
-            </div>
-            
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {peersList.map(peer => (
-                <div 
-                  key={peer._id} 
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-neutral-700 cursor-pointer"
-                  onClick={() => handleShareToPeer(peer._id)}
-                >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center overflow-hidden">
-                    {peer.UserProfile?.avatar?.url ? (
-                      <img 
-                        src={peer.UserProfile.avatar.url} 
-                        alt={`${peer.firstName} ${peer.lastName}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white font-semibold">
-                        {peer.firstName?.[0]}{peer.lastName?.[0]}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-white font-medium">{peer.firstName} {peer.lastName}</p>
-                    <p className="text-neutral-400 text-sm">{peer.username}</p>
-                  </div>
+            <div className="p-4 overflow-auto max-h-[70vh]">
+              {pdfLoading && (
+                <div className="flex items-center justify-center h-64">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
                 </div>
-              ))}
-              
-              {peersList.length === 0 && (
-                <p className="text-neutral-400 text-center py-4">No peers found</p>
               )}
+              <Document
+                file={pdfModal.url}
+                onLoadSuccess={onDocumentLoadSuccess}
+                loading={<div className="text-white">Loading PDF...</div>}
+                className="flex justify-center"
+              >
+                <Page 
+                  pageNumber={pdfModal.pageNumber} 
+                  width={Math.min(800, window.innerWidth - 64)}
+                  loading={<div className="text-white">Loading page...</div>}
+                />
+              </Document>
+            </div>
+            <div className="p-4 border-t border-neutral-800 flex items-center justify-between">
+              <button 
+                onClick={previousPage}
+                disabled={pdfModal.pageNumber <= 1}
+                className="px-4 py-2 bg-neutral-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-700 transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-neutral-300">
+                Page {pdfModal.pageNumber} of {pdfModal.numPages}
+              </span>
+              <button 
+                onClick={nextPage}
+                disabled={pdfModal.pageNumber >= pdfModal.numPages}
+                className="px-4 py-2 bg-neutral-800 rounded-lg text-white disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-700 transition-colors"
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Raw Content Modal */}
+      {rawContentModal.isOpen && (
+        <RawToPdfConverter
+          content={rawContentModal.content}
+          type={rawContentModal.type}
+          fileName={rawContentModal.fileName}
+          isOpen={rawContentModal.isOpen}
+          onClose={closeRawContentModal}
+          onConversionComplete={handleConversionComplete}
+          convertedPdfUrl={rawContentModal.convertedPdfUrl}
+        />
+      )}
+
+      {/* Share Modal */}
+      {shareModalOpen.isOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-900 rounded-2xl max-w-md w-full border border-neutral-800">
+            <div className="p-6 border-b border-neutral-800">
+              <h3 className="text-xl font-bold text-white mb-2">Share with a peer</h3>
+              <p className="text-neutral-400">Select a peer to share this study material with</p>
+            </div>
+            <div className="p-4 max-h-64 overflow-y-auto">
+              {peersList.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-neutral-800 rounded-2xl mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-neutral-400">No peers found. Connect with others to share study materials.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {peersList.map((peer) => (
+                    <div 
+                      key={peer._id} 
+                      className={`flex items-center p-3 rounded-xl cursor-pointer transition-colors ${
+                        selectedPeer?._id === peer._id ? 'bg-purple-600/20 border border-purple-500/50' : 'hover:bg-neutral-800'
+                      }`}
+                      onClick={() => setSelectedPeer(peer)}
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-amber-500 rounded-xl overflow-hidden flex items-center justify-center mr-3">
+                        <img 
+                          src={peer.UserProfile?.avatar?.url} 
+                          alt={`${peer.firstName} ${peer.lastName}`}
+                          className="object-cover h-full w-full"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
+                        />
+                        <div className="hidden items-center justify-center w-full h-full bg-gradient-to-br from-purple-600 to-amber-500 text-white font-semibold text-sm">
+                          {(peer.firstName?.[0] || '') + (peer.lastName?.[0] || '')}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-white text-sm">
+                          {peer.firstName} {peer.lastName}
+                        </h4>
+                        <p className="text-xs text-neutral-400">@{peer.username}</p>
+                      </div>
+                      {selectedPeer?._id === peer._id && (
+                        <div className="w-5 h-5 bg-purple-500 rounded-full flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-neutral-800 flex justify-end space-x-3">
+              <button 
+                onClick={() => setShareModalOpen({ isOpen: false, post: null })}
+                className="px-4 py-2 text-neutral-300 hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={() => selectedPeer && handleShareToPeer(selectedPeer._id)}
+                disabled={!selectedPeer}
+                className="px-6 py-2 bg-gradient-to-r from-purple-600 to-amber-500 rounded-full hover:from-purple-500 hover:to-amber-400 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                Share
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Comment Model */}
+      {OpenCommentModel.status && (
+        <CommentModel
+          open={OpenCommentModel.status}
+          CommentId={OpenCommentModel.id} 
+          PostownerId={OpenCommentModel.PostownerId}
+          onClose={() => setCommentModel({ id: null, PostownerId: null, status: false })} 
+        />
       )}
     </div>
   );

@@ -18,23 +18,57 @@ const Lesson = () => {
     const [fullScreenVideo, setFullScreenVideo] = useState(null);
     const [videoStates, setVideoStates] = useState({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+    const [sortBy, setSortBy] = useState('newest');
+    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [showPost, setShowPost] = useState(false);
+    const [isScrolling, setIsScrolling] = useState(false);
+    const [hoveredLesson, setHoveredLesson] = useState(null);
+    const [showShareModal, setShowShareModal] = useState(null);
+    
     const videoRefs = useRef({});
     const loadMoreRef = useRef(null);
     const observer = useRef(null);
     const searchRef = useRef(null);
-    const [showPost, setShowPost] = useState(false);
+    const scrollTimeout = useRef(null);
     
-    // Filter lessons based on search query
+    // Available categories (you can fetch these from your backend)
+    const categories = ['all', 'mathematics', 'science', 'programming', 'history', 'arts', 'languages', 'business'];
+
+    // Filter lessons based on search query and category
     const filteredLessons = Lessons.filter(lesson => {
-        if (!searchQuery) return true;
+        if (!searchQuery && categoryFilter === 'all') return true;
+        
         const query = searchQuery.toLowerCase();
-        return (
+        const matchesSearch = !searchQuery || (
             lesson.heading?.toLowerCase().includes(query) ||
             lesson.description?.toLowerCase().includes(query) ||
             lesson.author?.firstName?.toLowerCase().includes(query) ||
             lesson.author?.lastName?.toLowerCase().includes(query) ||
-            lesson.author?.username?.toLowerCase().includes(query)
+            lesson.author?.username?.toLowerCase().includes(query) ||
+            (lesson.tags && lesson.tags.some(tag => tag.toLowerCase().includes(query)))
         );
+        
+        const matchesCategory = categoryFilter === 'all' || 
+                              (lesson.category && lesson.category.toLowerCase() === categoryFilter);
+        
+        return matchesSearch && matchesCategory;
+    });
+
+    // Sort lessons
+    const sortedLessons = [...filteredLessons].sort((a, b) => {
+        switch(sortBy) {
+            case 'newest':
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            case 'oldest':
+                return new Date(a.createdAt) - new Date(b.createdAt);
+            case 'most-liked':
+                return (b.likes?.length || 0) - (a.likes?.length || 0);
+            case 'most-viewed':
+                return (b.views || 0) - (a.views || 0);
+            default:
+                return 0;
+        }
     });
 
     // Infinite scroll observer
@@ -88,8 +122,16 @@ const Lesson = () => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
             
+            setIsScrolling(true);
+            if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+            
+            scrollTimeout.current = setTimeout(() => {
+                setIsScrolling(false);
+            }, 150);
+            
             if (currentScrollY > lastScrollY && currentScrollY > 100) {
                 setShowSearchBar(false);
+                setShowFilters(false);
             } else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
                 setShowSearchBar(true);
             }
@@ -101,6 +143,7 @@ const Lesson = () => {
         
         return () => {
             window.removeEventListener('scroll', handleScroll);
+            if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
         };
     }, [lastScrollY]);
 
@@ -361,6 +404,21 @@ const Lesson = () => {
         }));
     };
 
+    const shareLesson = (lessonId) => {
+        const lessonUrl = `${window.location.origin}/video?l=${lessonId}`;
+        if (navigator.share) {
+            navigator.share({
+                title: 'Check out this lesson on StudyVerse',
+                url: lessonUrl
+            }).catch(console.error);
+        } else {
+            navigator.clipboard.writeText(lessonUrl);
+            // Show a toast notification that link was copied
+            setShowShareModal(lessonId);
+            setTimeout(() => setShowShareModal(null), 2000);
+        }
+    };
+
     // Skeleton loader component
     const LessonSkeleton = () => (
         <div className="bg-neutral-800/40 backdrop-blur-sm rounded-2xl overflow-hidden shadow-xl border border-neutral-700/30 animate-pulse">
@@ -407,7 +465,7 @@ const Lesson = () => {
         <div className="lenis min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
             {/* Mobile Search Bar */}
             <div 
-                className={`md:hidden fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-700/50 ${showSearchBar ? 'translate-y-0' : '-translate-y-full'}`}
+                className={`md:hidden fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-700/50 ${showSearchBar ? 'translate-y-0' : '-translate-y-full'} ${isScrolling ? 'opacity-90' : 'opacity-100'}`}
             >
                 <nav className='h-16 flex items-center px-4'>
                     <img src="/LOGO/StudyVerseLogo2.png" className='h-10 object-contain' alt="StudyVerse" />
@@ -423,12 +481,49 @@ const Lesson = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <button className="ml-2 p-3 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl hover:from-blue-500 hover:to-cyan-400 transition-all duration-300">
+                        <button 
+                            className="ml-2 p-3 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl hover:from-blue-500 hover:to-cyan-400 transition-all duration-300"
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                             </svg>
                         </button>
                     </div>
+
+                    {/* Mobile Filters */}
+                    {showFilters && (
+                        <div className="mt-3 p-3 bg-neutral-800/80 rounded-xl border border-neutral-700/50 backdrop-blur-sm">
+                            <div className="mb-3">
+                                <label className="block text-sm font-medium text-neutral-300 mb-1">Sort by</label>
+                                <select 
+                                    value={sortBy}
+                                    onChange={(e) => setSortBy(e.target.value)}
+                                    className="w-full bg-neutral-700/50 border border-neutral-600/50 rounded-lg p-2 text-white text-sm"
+                                >
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="most-liked">Most Liked</option>
+                                    <option value="most-viewed">Most Viewed</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-300 mb-1">Category</label>
+                                <select 
+                                    value={categoryFilter}
+                                    onChange={(e) => setCategoryFilter(e.target.value)}
+                                    className="w-full bg-neutral-700/50 border border-neutral-600/50 rounded-lg p-2 text-white text-sm"
+                                >
+                                    {categories.map(category => (
+                                        <option key={category} value={category}>
+                                            {category.charAt(0).toUpperCase() + category.slice(1)}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -461,8 +556,55 @@ const Lesson = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="hidden md:flex items-center p-2 w-full lg:max-w-xl max-w-md">
-                        <div className="relative flex-1 group">
+                    
+                    <div className="hidden md:flex items-center gap-3">
+                        {/* Desktop Filters */}
+                        <div className="relative group">
+                            <button 
+                                className="flex items-center gap-2 px-3 py-2 bg-neutral-800/80 rounded-lg border border-neutral-700/50 hover:border-blue-500/50 transition-colors"
+                                onClick={() => setShowFilters(!showFilters)}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                                <span>Filters</span>
+                            </button>
+                            
+                            {showFilters && (
+                                <div className="absolute top-full right-0 mt-2 w-48 bg-neutral-800/95 backdrop-blur-md rounded-xl p-4 shadow-xl border border-neutral-700/50 z-10">
+                                    <div className="mb-3">
+                                        <label className="block text-sm font-medium text-neutral-300 mb-1">Sort by</label>
+                                        <select 
+                                            value={sortBy}
+                                            onChange={(e) => setSortBy(e.target.value)}
+                                            className="w-full bg-neutral-700/50 border border-neutral-600/50 rounded-lg p-2 text-white text-sm"
+                                        >
+                                            <option value="newest">Newest First</option>
+                                            <option value="oldest">Oldest First</option>
+                                            <option value="most-liked">Most Liked</option>
+                                            <option value="most-viewed">Most Viewed</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="block text-sm font-medium text-neutral-300 mb-1">Category</label>
+                                        <select 
+                                            value={categoryFilter}
+                                            onChange={(e) => setCategoryFilter(e.target.value)}
+                                            className="w-full bg-neutral-700/50 border border-neutral-600/50 rounded-lg p-2 text-white text-sm"
+                                        >
+                                            {categories.map(category => (
+                                                <option key={category} value={category}>
+                                                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        
+                        <div className="relative flex items-center p-2 w-full lg:max-w-xl max-w-md group">
                             <input
                                 type="text"
                                 className="w-full h-full bg-neutral-800/80 pl-5 pr-2 py-2 rounded-bl-full rounded-tl-full px-4 placeholder:text-neutral-400 text-white outline-none border border-r-0 border-neutral-700/50 focus:border-blue-500/50 transition-colors group-focus:border-blue-500/50"
@@ -470,13 +612,14 @@ const Lesson = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
+                            <button className="p-3 transition-all h-full duration-300 bg-neutral-800/80 rounded-tr-full rounded-br-full border border-neutral-700/50 border-l-0 group-focus:border-blue-500/50">
+                                <svg xmlns="http://www.w3.org/2000/svg" className='h-4 w-4' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                            </button>
                         </div>
-                        <button className="p-3 transition-all h-full duration-300 bg-neutral-800/80 rounded-tr-full rounded-br-full border border-neutral-700/50 border-l-0 group-focus:border-blue-500/50">
-                            <svg xmlns="http://www.w3.org/2000/svg" className='h-4 w-4' fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                        </button>
                     </div>
+                    
                     <div className="hidden md:block">
                         <div className='flex gap-3 items-center'>
                             <button
@@ -505,7 +648,16 @@ const Lesson = () => {
             </div>
             
             <div className="max-w-7xl pt-20 md:pt-8 mx-auto px-4 sm:px-6 lg:px-8">
-                {filteredLessons.length === 0 && !loading && searchQuery ? (
+                {/* Results Count */}
+                {searchQuery || categoryFilter !== 'all' ? (
+                    <div className="mb-6 text-neutral-400">
+                        {sortedLessons.length} {sortedLessons.length === 1 ? 'result' : 'results'} found
+                        {searchQuery && ` for "${searchQuery}"`}
+                        {categoryFilter !== 'all' && ` in ${categoryFilter}`}
+                    </div>
+                ) : null}
+
+                {sortedLessons.length === 0 && !loading && searchQuery ? (
                     <div className="text-center bg-neutral-800/40 rounded-3xl border border-neutral-700/30 backdrop-blur-sm py-12">
                         <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-700/30 rounded-3xl mb-6">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -517,13 +669,16 @@ const Lesson = () => {
                             Try different keywords or browse all lessons
                         </p>
                         <button 
-                            onClick={() => setSearchQuery('')}
+                            onClick={() => {
+                                setSearchQuery('');
+                                setCategoryFilter('all');
+                            }}
                             className="px-4 py-2 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-colors"
                         >
                             Clear Search
                         </button>
                     </div>
-                ) : filteredLessons.length === 0 && !loading ? (
+                ) : sortedLessons.length === 0 && !loading ? (
                     <div className="text-center bg-neutral-800/40 rounded-3xl border border-neutral-700/30 backdrop-blur-sm py-12">
                         <div className="inline-flex items-center justify-center w-24 h-24 bg-neutral-700/30 rounded-3xl mb-6">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -543,7 +698,7 @@ const Lesson = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {loading && filteredLessons.length === 0 && (
+                        {loading && sortedLessons.length === 0 && (
                             <>
                                 <LessonSkeleton />
                                 <LessonSkeleton />
@@ -554,10 +709,12 @@ const Lesson = () => {
                             </>
                         )}
 
-                        {filteredLessons.map((lesson) => (
+                        {sortedLessons.map((lesson) => (
                             <div 
                                 key={lesson._id}
                                 className="bg-neutral-800/40 backdrop-blur-sm relative rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-neutral-600/50 border border-neutral-700/30 group"
+                                onMouseEnter={() => setHoveredLesson(lesson._id)}
+                                onMouseLeave={() => setHoveredLesson(null)}
                             >
                                 <Link to={`/video?l=${lesson._id}`}>
                                     <div className="relative aspect-video overflow-hidden">
@@ -624,93 +781,93 @@ const Lesson = () => {
                                                     </div>
                                                     
                                                     <div className="flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent p-2">
-                                                        <div className="flex items-center space-x-3">
+                                                        <div className="flex items-center space-x-2">
                                                             <button 
-                                                                className="text-white hover:text-blue-300 cursor-pointer transition-colors"
+                                                                className="p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
                                                                 onClick={(e) => {
                                                                     e.preventDefault();
                                                                     togglePlayPause(lesson._id);
                                                                 }}
                                                             >
                                                                 {videoStates[lesson._id]?.playing ? (
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                                                     </svg>
                                                                 ) : (
-                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                                                     </svg>
                                                                 )}
                                                             </button>
                                                             
-                                                            <div className="flex items-center space-x-2">
-                                                                <button 
-                                                                    className="text-white cursor-pointer hover:text-blue-300 transition-colors"
-                                                                    onClick={(e) => {
-                                                                        e.preventDefault();
-                                                                        toggleMute(lesson._id);
-                                                                    }}
-                                                                >
-                                                                    {videoStates[lesson._id]?.muted || videoStates[lesson._id]?.volume === 0 ? (
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a9 9 0 010 12m-4.5-9.5L12 3v18l-4.5-4.5H4a1 1 0 01-1-1v-7a1 1 0 011-1h3.5z" />
-                                                                        </svg>
-                                                                    )}
-                                                                </button>
-                                                                <input
-                                                                    type="range"
-                                                                    min="0"
-                                                                    max="1"
-                                                                    step="0.1"
-                                                                    value={videoStates[lesson._id]?.muted ? 0 : (videoStates[lesson._id]?.volume || 1)}
-                                                                    onChange={(e) => handleVolumeChange(lesson._id, e)}
-                                                                    className="w-16 h-1 accent-blue-500 cursor-pointer"
-                                                                    onClick={(e) => e.stopPropagation()}
-                                                                />
+                                                            <div className="text-xs text-white">
+                                                                {videoStates[lesson._id]?.currentTime ? (
+                                                                    <>
+                                                                        {Math.floor(videoStates[lesson._id].currentTime / 60)}:
+                                                                        {Math.floor(videoStates[lesson._id].currentTime % 60).toString().padStart(2, '0')}
+                                                                        {' / '}
+                                                                        {Math.floor(videoStates[lesson._id].duration / 60)}:
+                                                                        {Math.floor(videoStates[lesson._id].duration % 60).toString().padStart(2, '0')}
+                                                                    </>
+                                                                ) : (
+                                                                    '0:00 / 0:00'
+                                                                )}
                                                             </div>
-                                                            
-                                                            <span className="text-xs text-neutral-300">
-                                                                {videoStates[lesson._id]?.currentTime 
-                                                                    ? `${Math.floor(videoStates[lesson._id].currentTime / 60)}:${Math.floor(videoStates[lesson._id].currentTime % 60).toString().padStart(2, '0')}`
-                                                                    : '0:00'
-                                                                } / {videoStates[lesson._id]?.duration 
-                                                                    ? `${Math.floor(videoStates[lesson._id].duration / 60)}:${Math.floor(videoStates[lesson._id].duration % 60).toString().padStart(2, '0')}`
-                                                                    : '0:00'
-                                                                }
-                                                            </span>
                                                         </div>
                                                         
-                                                        {/* Fullscreen Button */}
-                                                        <button 
-                                                            className="text-white hover:text-blue-300 transition-colors"
-                                                            onClick={(e) => {
-                                                                e.preventDefault();
-                                                                toggleFullScreen(lesson._id);
-                                                            }}
-                                                        >
-                                                            {fullScreenVideo === lesson._id ? (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9V5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H9zm0 0v9a1 1 0 001 1h4a1 1 0 001-1V9zm0 0h4m-4 0H9m10 0V5a1 1 0 00-1-1h-4a1 1 0 00-1 1v4a1 1 0 001 1h4a1 1 0 001-1zm0 0v9a1 1 0 01-1 1h-4a1 1 0 01-1-1V9zm0 0h-4" />
+                                                        <div className="flex items-center space-x-2">
+                                                            <button 
+                                                                className="p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    toggleMute(lesson._id);
+                                                                }}
+                                                            >
+                                                                {videoStates[lesson._id]?.muted || !videoStates[lesson._id]?.volume ? (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                                                                    </svg>
+                                                                ) : (
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a9 9 0 010 12m-4.5-9.5L12 3v18l-4.5-4.5H4a1 1 0 01-1-1v-7a1 1 0 011-1h3.5z" />
+                                                                    </svg>
+                                                                )}
+                                                            </button>
+                                                            
+                                                            <button 
+                                                                className="p-1.5 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    toggleFullScreen(lesson._id);
+                                                                }}
+                                                            >
+                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                                                                 </svg>
-                                                            ) : (
-                                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V6a2 2 0 012-2h2M4 16v2a2 2 0 002 2h2m8-16h2a2 2 0 012 2v2m-4 8h2a2 2 0 012 2v2" />
-                                                                </svg>
-                                                            )}
-                                                        </button>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
                                         ) : (
-                                            <div className="w-full h-full bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                            <div className="w-full h-full bg-gradient-to-r from-purple-600/20 to-amber-500/20 flex items-center justify-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                 </svg>
+                                            </div>
+                                        )}
+                                        
+                                        {lesson.category && (
+                                            <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+                                                {lesson.category}
+                                            </div>
+                                        )}
+                                        
+                                        {lesson.duration && (
+                                            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+                                                {lesson.duration}
                                             </div>
                                         )}
                                     </div>
@@ -722,7 +879,7 @@ const Lesson = () => {
                                             <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-r from-purple-600 to-amber-500">
                                                 <img 
                                                     src={lesson.author?.UserProfile?.avatar?.url || '/default-avatar.png'} 
-                                                    alt={lesson.author?.firstName || 'User'} 
+                                                    alt={lesson.author?.firstName || 'User'}
                                                     className="h-full w-full object-cover"
                                                 />
                                             </div>
@@ -730,35 +887,56 @@ const Lesson = () => {
                                         
                                         <div className="flex-1 min-w-0">
                                             <Link to={`/video?l=${lesson._id}`}>
-                                                <h3 className="font-semibold text-white truncate hover:text-blue-300 transition-colors">
-                                                    {lesson.heading || 'Untitled Lesson'}
+                                                <h3 className="font-semibold text-white line-clamp-2 leading-tight group-hover:text-blue-400 transition-colors">
+                                                    {lesson.heading}
                                                 </h3>
                                             </Link>
                                             
-                                            <Link to={`/profile/${lesson.author?.username}`} className="block">
-                                                <p className="text-sm text-neutral-400 hover:text-white transition-colors">
+                                            <div className="flex items-center text-neutral-400 text-sm mt-1">
+                                                <Link 
+                                                    to={`/profile/${lesson.author?.username}`}
+                                                    className="hover:text-white transition-colors truncate"
+                                                >
                                                     {lesson.author?.firstName} {lesson.author?.lastName}
-                                                </p>
-                                            </Link>
+                                                </Link>
+                                                <span className="mx-1">•</span>
+                                                <span>{formatDate(lesson.createdAt)}</span>
+                                            </div>
                                             
-                                            <p className="text-xs text-neutral-500 mt-1">
-                                                {formatDate(lesson.createdAt)}
-                                            </p>
+                                            {lesson.description && (
+                                                <p className="text-neutral-400 text-sm mt-2 line-clamp-2">
+                                                    {lesson.description}
+                                                </p>
+                                            )}
+                                            
+                                            {lesson.tags && lesson.tags.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {lesson.tags.slice(0, 3).map((tag, index) => (
+                                                        <span 
+                                                            key={index} 
+                                                            className="text-xs bg-neutral-700/50 text-neutral-300 px-2 py-1 rounded-full"
+                                                        >
+                                                            #{tag}
+                                                        </span>
+                                                    ))}
+                                                    {lesson.tags.length > 3 && (
+                                                        <span className="text-xs text-neutral-500">
+                                                            +{lesson.tags.length - 3} more
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     
-                                    <p className="text-sm text-neutral-300 mt-3 line-clamp-2">
-                                        {lesson.description || 'No description provided.'}
-                                    </p>
-                                    
-                                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-700/50">
-                                        <button
-                                            className={`flex items-center space-x-1 transition-all duration-300 ${VerifyLike(lesson._id, lesson.likes) ? 'text-red-500' : 'text-neutral-400 hover:text-red-400'}`}
+                                    <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-700/30">
+                                        <button 
+                                            className={`flex items-center gap-1.5 transition-all duration-200 ${VerifyLike(lesson._id, lesson.likes) ? 'text-red-500' : 'text-neutral-400 hover:text-red-400'}`}
                                             onClick={() => handleLike(lesson._id, lesson.author?._id)}
                                             disabled={isLikePending(lesson._id)}
                                         >
                                             {isLikePending(lesson._id) ? (
-                                                <svg className="animate-spin h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <svg className="h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                 </svg>
@@ -771,49 +949,63 @@ const Lesson = () => {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                                 </svg>
                                             )}
-                                            <span className="text-sm">{lesson.likes?.length || 0}</span>
+                                            <span className="text-sm font-medium">
+                                                {lesson.likes?.length || 0}
+                                            </span>
+                                        </button>
+                                        
+                                        <button 
+                                            className="flex items-center gap-1.5 text-neutral-400 hover:text-blue-400 transition-colors"
+                                            onClick={() => shareLesson(lesson._id)}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                                            </svg>
+                                            <span className="text-sm font-medium">Share</span>
                                         </button>
                                         
                                         <Link 
                                             to={`/video?l=${lesson._id}`}
-                                            className="text-neutral-400 hover:text-blue-400 transition-colors flex items-center space-x-1"
+                                            className="flex items-center gap-1.5 text-neutral-400 hover:text-green-400 transition-colors"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
-                                            <span className="text-sm">{lesson.comments?.length || 0}</span>
+                                            <span className="text-sm font-medium">
+                                                {lesson.comments?.length || 0}
+                                            </span>
                                         </Link>
-                                        
-                                        <button className="text-neutral-400 hover:text-green-400 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                                            </svg>
-                                        </button>
-                                        
-                                        <button className="text-neutral-400 hover:text-amber-400 transition-colors">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                                            </svg>
-                                        </button>
                                     </div>
                                 </div>
+                                
+                                {/* Share Modal */}
+                                {showShareModal === lesson._id && (
+                                    <div className="absolute top-4 right-4 bg-neutral-800/95 backdrop-blur-sm p-3 rounded-lg border border-neutral-700/50 shadow-xl z-10 animate-fadeIn">
+                                        <div className="flex items-center gap-2 text-sm text-green-400">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Link copied to clipboard!
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
                 )}
 
+                {/* Load More */}
                 {hasMore && (
-                    <div ref={loadMoreRef} className="py-8 flex justify-center">
+                    <div ref={loadMoreRef} className="mt-8 flex justify-center">
                         {loading ? (
-                            <div className="flex items-center justify-center space-x-2">
-                                <div className="w-4 h-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full animate-bounce"></div>
-                                <div className="w-4 h-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                <div className="w-4 h-4 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                            <div className="flex items-center justify-center py-4">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                                <span className="ml-3 text-neutral-400">Loading more lessons...</span>
                             </div>
                         ) : (
                             <button 
                                 onClick={loadMoreLesson}
-                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full hover:from-blue-500 hover:to-cyan-400 transition-all duration-300 transform hover:-translate-y-0.5 shadow-lg hover:shadow-blue-500/30 font-medium"
+                                className="px-6 py-3 bg-neutral-800/50 backdrop-blur-sm rounded-full border border-neutral-700/50 hover:bg-neutral-700/50 transition-colors text-white font-medium"
                             >
                                 Load More
                             </button>
@@ -822,14 +1014,15 @@ const Lesson = () => {
                 )}
             </div>
 
+            {/* Upload Modal */}
             {showPost && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                     <div className="relative bg-neutral-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                         <button 
-                            className="absolute top-4 right-4 text-neutral-400 hover:text-white transition-colors z-10"
-                            onClick={() => setShowPost(!showPost)}
+                            className="absolute top-4 right-4 p-2 rounded-full bg-neutral-800 hover:bg-neutral-700 transition-colors z-10"
+                            onClick={() => setShowPost(false)}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>

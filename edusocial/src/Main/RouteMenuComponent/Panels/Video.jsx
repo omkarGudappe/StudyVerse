@@ -5,6 +5,7 @@ import { UserDataContextExport } from '../CurrentUserContexProvider';
 import Socket from '../../../SocketConnection/Socket';
 import Lenis from "@studio-freight/lenis";
 import axios from 'axios';
+import LikeComponent from '../SmallComponents/LikeComponent';
 
 const Video = () => {
     const { id } = useParams();
@@ -56,10 +57,8 @@ const Video = () => {
         
         setIsLoadingLesson(true);
         try {
-            // Try to get from store first
             let lessonData = getLessonById(id);
             
-            // If not in store, fetch from server
             if (!lessonData) {
                 await fetchLesson(ProfileData?._id);
                 lessonData = getLessonById(id);
@@ -72,10 +71,8 @@ const Video = () => {
                 setIsLiked(lessonData.likes?.includes(ProfileData?._id) || false);
                 fetchRelatedLessons(lessonData.author?._id, lessonData._id);
                 
-                // Load user notes if available
                 loadUserNotes(lessonData._id);
                 
-                // Reset video state
                 if (videoRef.current) {
                     videoRef.current.currentTime = 0;
                     setIsPlaying(false);
@@ -90,7 +87,6 @@ const Video = () => {
         }
     }, [getLessonById, fetchLesson, ProfileData]);
 
-    // Load user notes for this lesson
     const loadUserNotes = async (lessonId) => {
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/lessons/notes/${lessonId}`, {
@@ -106,7 +102,6 @@ const Video = () => {
         }
     };
 
-    // Save user notes
     const saveUserNotes = async () => {
         try {
             await axios.post(`${import.meta.env.VITE_API_URL}/lessons/notes`, {
@@ -121,7 +116,6 @@ const Video = () => {
         }
     };
 
-    // Add timestamp to notes
     const addTimestamp = () => {
         if (!videoRef.current) return;
         
@@ -131,11 +125,9 @@ const Video = () => {
         setUserNotes(prev => prev + note);
         setSavedTimestamps(prev => [...prev, { time: timestamp, note: '' }]);
         
-        // Auto-save notes
         setTimeout(saveUserNotes, 1000);
     };
 
-    // Jump to specific timestamp
     const jumpToTimestamp = (time) => {
         if (videoRef.current) {
             videoRef.current.currentTime = time;
@@ -504,7 +496,7 @@ const Video = () => {
             setIsLiked(newLikeStatus);
             setLikeCount(prev => newLikeStatus ? prev + 1 : prev - 1);
             
-            Socket.emit("Handle-user-like", { 
+            Socket.emit("Handle-user-like", {
                 lessonId: lesson._id, 
                 userId: ProfileData._id, 
                 type: "like", 
@@ -834,7 +826,7 @@ const Video = () => {
                                     </div>
                                     
                                     <div className="flex items-center space-x-3">
-                                        <button 
+                                        {/* <button 
                                             onClick={handleLike}
                                             className={`flex items-center space-x-1 px-4 py-2 rounded-full transition-all duration-300 ${isLiked ? 'bg-gradient-to-r from-purple-600 to-amber-500 text-white' : 'bg-neutral-700/50 text-neutral-300 hover:bg-neutral-700/70'}`}
                                         >
@@ -842,7 +834,8 @@ const Video = () => {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                             </svg>
                                             <span>{likeCount}</span>
-                                        </button>
+                                        </button> */}
+                                        <LikeComponent PostId={lesson?._id} PostAuthorId={lesson?.author?._id}  CurrentUserId={ProfileData?._id} />
                                         
                                         <button 
                                             onClick={() => setShowShareModal(true)}

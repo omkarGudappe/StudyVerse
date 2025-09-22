@@ -5,6 +5,7 @@ import { useNotesStore } from '../../../StateManagement/StoreNotes';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
 import { auth } from '../../../Auth/AuthProviders/FirebaseSDK';
 
+
 const NotesTitle = ({ open, onClose , editor }) => {
   const [title, setTitle] = useState('');
   const [IsLoading, setIsLoading] = useState(false);
@@ -30,6 +31,12 @@ const NotesTitle = ({ open, onClose , editor }) => {
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/Notes/usernotes`,{ title, NoteId, uid:userId, content } );
         if(res.data.ok){
             setNotes({ title, id: NoteId });
+            Navigate(`/notes/${NoteId}` , {
+                state:{
+                    content:content,
+                    Id: NoteId,
+                },
+            });
             onClose();
         }else {
             console.log(res.data.message);

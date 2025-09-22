@@ -360,7 +360,6 @@ export const usePostsStore = create((set, get) => ({
           hasMore: response.data.pagination.hasMore,
           lastFetched: Date.now()
         }));
-        
         return response.data.posts;
       } else {
         throw new Error(response.data.message || 'Failed to fetch posts');
