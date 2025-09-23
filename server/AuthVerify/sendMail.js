@@ -54,7 +54,7 @@ console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
           
           <hr style="margin:20px 0;border:none;border-top:1px solid #eee;">
           <p style="text-align:center;font-size:12px;color:#888;">
-            &copy; ${new Date().getFullYear()} Your App Name. All rights reserved.
+            &copy; ${new Date().getFullYear()} StudyVerse. All rights reserved.
           </p>
         </div>
       `,

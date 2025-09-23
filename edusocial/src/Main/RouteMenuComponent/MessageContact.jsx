@@ -21,10 +21,10 @@ const MessageContact = ({ open, onClose }) => {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [createError, setCreateError] = useState(null);
   const [groups, setGroups] = useState([]);
-  const [activeTab, setActiveTab] = useState('contacts'); // 'contacts', 'groups', or 'search'
-  const [modalSearchTerm, setModalSearchTerm] = useState(""); // Search term for modal
-  const [modalSearchResults, setModalSearchResults] = useState([]); // Search results for modal
-  const [isModalSearching, setIsModalSearching] = useState(false); // Loading state for modal search
+  const [activeTab, setActiveTab] = useState('contacts');
+  const [modalSearchTerm, setModalSearchTerm] = useState("");
+  const [modalSearchResults, setModalSearchResults] = useState([]);
+  const [isModalSearching, setIsModalSearching] = useState(false);
 
   // Debounced search function for main search
   useEffect(() => {
@@ -179,10 +179,6 @@ const MessageContact = ({ open, onClose }) => {
         setModalSearchTerm("");
         setModalSearchResults([]);
         
-        // Show success notification
-        // You could implement a toast notification system here
-        
-        // 4️⃣ Refresh groups
         Socket.emit("SendContactUsers", { ID: CreatorId });
       } else {
         throw new Error(res.data.message);

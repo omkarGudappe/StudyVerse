@@ -261,7 +261,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
         type: uploadFile.resource_type,
       },
       visibility: visibility,
-      contentType: contentType,
+      contentType: 'post',
     });
 
     return res.json({

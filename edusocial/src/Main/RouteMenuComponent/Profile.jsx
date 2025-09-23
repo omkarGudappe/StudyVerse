@@ -90,7 +90,7 @@ const Profile = () => {
   return (
     <div className="min-h-screen relative bg-neutral-950 text-amber-100 py-8 px-4 md:px-8 flex flex-col justify-between">
       <div className="fixed top-4 right-4 z-10 flex flex-col gap-3 md:flex-row md:gap-4">
-        <Link to='/quiz' className="bg-gradient-to-r from-purple-600 to-amber-500 rounded-full h-12 w-12 flex justify-center items-center hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-110">
+        <Link to='/challenges' className="bg-gradient-to-r from-purple-600 to-amber-500 rounded-full h-12 w-12 flex justify-center items-center hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-110">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
               width="24" height="24" fill="none" stroke="currentColor"
               strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"

@@ -25,6 +25,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/Notes/usernotes/${ID}`)
                 if (res.data.ok) {
                     setNotes(res.data.notes);
+                    console.log("Checking backend data", res.data.notes)
                 } else {
                     throw new Error(res.data.message || "Failed to fetch notes");
                 }
@@ -42,9 +43,12 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
         if (!window.confirm("Are you sure you want to delete this note?")) return;
         
         setDeletingId(noteId);
+        const uid = ProfileData?._id;
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL}/Notes/delete/${noteId}`);
-            setNotes(prev => prev.filter(note => note.NoteId !== noteId));
+            const res =  await axios.delete(`${import.meta.env.VITE_API_URL}/Notes/delete/${noteId}?userId=${uid}`);
+            if(res.data.ok){
+                setNotes(prev => prev.filter(note => note.NoteId !== noteId));
+            }
         } catch (err) {
             setError(err.response?.data?.message || "Failed to delete note");
             console.error("Error deleting note:", err);
@@ -63,7 +67,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
     };
 
     const truncateText = (text, maxLength = 100) => {
-        if (text.length <= maxLength) return text;
+        if (text?.length <= maxLength) return text;
         return text.substring(0, maxLength) + '...';
     };
 
@@ -150,24 +154,29 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     </div>
                 </div>
             </button>
-            <button
-                onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleDeleteNote(note.NoteId);
-                }}
-                disabled={deletingId === note.NoteId}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
-                title="Delete note"
-            >
-                {deletingId === note.NoteId ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
-                ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                )}
-            </button>
+            <div className='flex flex-col gap-5'>
+                <button
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteNote(note.NoteId);
+                    }}
+                    disabled={deletingId === note.NoteId}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                    title="Delete note"
+                >
+                    {deletingId === note.NoteId ? (
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
+                    ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    )}
+                </button>
+                <button>
+                    share
+                </button>
+            </div>
         </motion.div>
     );
 
@@ -183,7 +192,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                 <div className="mb-6">
                     <h2 className="text-2xl font-bold text-white mb-2">Your Notes</h2>
                     <p className="text-neutral-400">
-                        {Notes.length} note{Notes.length !== 1 ? 's' : ''} created
+                        {Notes?.length} note{Notes?.length !== 1 ? 's' : ''} created
                     </p>
                 </div>
 
@@ -204,7 +213,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                             </button>
                         </div>
                     </div>
-                ) : Notes.length > 0 ? (
+                ) : Notes?.length > 0 ? (
                     <div className="grid gap-4">
                         {Notes.map((note, index) => (
                             <NoteCard key={note.NoteId} note={note} index={index} />

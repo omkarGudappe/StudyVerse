@@ -111,7 +111,7 @@ const UserSchema = new mongoose.Schema({
         },
 
         currentYear: { 
-            type: Number, 
+            type: String, 
             default: null 
         }
     },

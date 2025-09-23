@@ -25,6 +25,32 @@ Router.get('/:userName' , async (req, res) => {
     }
 })
 
+Router.delete('/delete/:noteId', async (req, res) => {
+    const { noteId } = req.params;
+    const uid = req.query.userId;
+
+    if(!noteId) {
+        return res.status(404).json({message: "Somthing went wrong , Please try again"});
+    }
+
+    try{
+      const Track =  await Notes.findOneAndUpdate(
+        uid,
+        { $pull: {Notes: {NoteId: noteId}}},
+        {new: true}
+      );
+
+      if(!Track) {
+        return res.status(404).json({message: "User Not found"});
+      }
+
+      res.json({ok: true, message: "Note is deleted"});
+    }catch(err){
+        res.status(500).json({message: "Surver is busy"});
+        console.log(err.message);
+    }
+})
+
 Router.put('/update/:Id' , async(req, res) => {
     const { Id } = req.params;
     const { content } = req.body;
@@ -35,8 +61,8 @@ Router.put('/update/:Id' , async(req, res) => {
 
     try{
         await Notes.findByIdAndUpdate(
-            Id,
-            { content },
+            {_id: Id},
+            { Notes: {content} },
             {new: true}
         );
         res.json({ok: true})
@@ -54,23 +80,37 @@ Router.post('/usernotes' , async (req , res) =>{
     }
     
     try{
-        const FindUser = await User.findOne({ firebaseUid: uid });
+        const FindUser = await User.findOne({_id: uid});
 
         if(!FindUser) {
+            console.log("Missing");
             return res.status(404).json({message:"User Not Found"});
         }
 
-        const NewNote = await Notes.create({
+        const NewNoteCreate = {
             title,
             NoteId,
-            author: FindUser._id,
             content: content,
-        })
+        };
+        const FirstFindUserNotes = await Notes.findOneAndUpdate(
+            {_id: uid},
+            {$push: {Notes: NewNoteCreate}}
+        )
 
-        if(NewNote) {
-            return res.json({ok: true, message: "New Notes is created"});
+        if(FirstFindUserNotes){
+            return res.json({message: "User Found And Updated"});
+        }else{
+            const NewNote = await Notes.create({
+                author: FindUser._id,
+                Notes: {$push: {NewNoteCreate}},
+            })
+
+            if(NewNote) {
+                return res.json({ok: true, message: "New Notes is created"});
+            }
         }
     }catch(err){
+        console.log(err.message);
         return res.status(500).json({ message: err.message });
     }
 })

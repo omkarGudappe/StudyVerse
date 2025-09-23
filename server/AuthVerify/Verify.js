@@ -3,6 +3,7 @@ const Router = express.Router();
 const sendMail = require('./sendMail').sendMail;
 const crypto = require("crypto");
 const User = require('../Db/User');
+const jwt = require('./AuthMiddleware');
 
 
 let otpStore = {};
@@ -16,6 +17,7 @@ Router.post('/verify' , async (req , res) => {
         otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
 
         const Data = await sendMail(email , "Your OTP Code" , otp);
+        console.log("My otp" , otp);
 
         console.log(Data.status);
 
@@ -42,15 +44,16 @@ Router.post('/verify-otp' , (req , res) => {
             throw new Error("OTP not found or expired");
         }
 
+        console.log("Cheking Otp", storedOtp.otp , "and" , otp);
+
         if(storedOtp.otp !== otp){
             throw new Error("Invalid OTP");
         }
 
-        const token = jwt.sign(
-            { id: check._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
-        );
+        // const token = jwt.sign(
+        //     process.env.JWT_SECRET,
+        //     { expiresIn: "7d" }
+        // );
 
         delete otpStore[email];
 
@@ -74,16 +77,16 @@ Router.post('/google-signin' , async(req , res) => {
             return res.json({ exist: false });
         }
         
-        const token = jwt.sign(
-            { id: check._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
-        );
+        // const token = jwt.sign(
+        //     { id: check._id },
+        //     process.env.JWT_SECRET,
+        //     { expiresIn: "7d" }
+        // );
 
         return res.json({
             exist: true,
             user: check,
-            token, // send token to frontend
+            token,
         });
 
     }catch(err){

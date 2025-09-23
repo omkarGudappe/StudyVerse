@@ -302,7 +302,6 @@ export const usePostsStore = create((set, get) => ({
     )
   })),
 
-  // Remove a comment from a post
   removeCommentFromPost: (postId, commentId) => set((state) => ({
     posts: state.posts.map(post =>
       post._id === postId
@@ -360,6 +359,7 @@ export const usePostsStore = create((set, get) => ({
           hasMore: response.data.pagination.hasMore,
           lastFetched: Date.now()
         }));
+        console.log("get respinse ", response.data.posts);
         return response.data.posts;
       } else {
         throw new Error(response.data.message || 'Failed to fetch posts');

@@ -30,6 +30,7 @@ import Lesson from "../Main/RouteMenuComponent/Lesson";
 import Video from "../Main/RouteMenuComponent/Panels/Video";
 import NotificationSetting from "../Main/RouteMenuComponent/Settings/NotificationSetting";
 import Privacy from "../Main/RouteMenuComponent/Settings/Privacy";
+import Challenges from "../Main/RouteMenuComponent/Challenges";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -159,7 +160,16 @@ const PageRoute = () => {
                }
             />
             <Route
-              path="/quiz"
+              path="/challenges"
+               element={
+                <MenuWrapper>
+                  {/* <DeailyQuiz/> */}
+                  <Challenges/>
+                </MenuWrapper>
+               }
+            />
+            <Route
+              path="/challenges/quiz"
                element={
                 <MenuWrapper>
                   <DeailyQuiz/>

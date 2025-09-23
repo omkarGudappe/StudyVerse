@@ -18,8 +18,11 @@ export const UserDataContextExport = () => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setFirebaseUid(user.uid);
+        console.log("developer checking 1")
+        // const localDeveloptFUID = '5pIWwVGDdfROltHBqIENjrBrOl23';
+        // setFirebaseUid(localDeveloptFUID);
       } else {
-        setFirebaseUid(null);
+        console.log("developer checking 2")
       }
     });
     return () => unsubscribe();
@@ -27,6 +30,7 @@ export const UserDataContextExport = () => {
 
   useEffect(() => {
     if (!FirebaseUid) return;
+    
     const FetchDataFromBackEnd = async () => {
       try {
         setLoading(true);

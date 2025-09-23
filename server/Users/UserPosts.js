@@ -5,6 +5,7 @@ const User = require('../Db/User');
 const AuthMiddleware = require('../AuthVerify/AuthMiddleware');
 const userSocketMap = require('../SocketConnection/socketMap');
 const { getIo } = require('../SocketConnection/socketInstance'); // Import the getter
+const Group = require('../Db/GroupChat');
 
 Router.get('/:id', async (req, res) => {
     const { id } = req.params;
@@ -49,6 +50,7 @@ Router.get('/:id', async (req, res) => {
                 totalPages: Math.ceil(totalPosts / limit)
             }
         });
+        console.log( "one",AllPosts);
     } catch (error) {
         res.status(500).json({ ok: false, message: error.message });
     }
@@ -262,7 +264,10 @@ Router.post('/share', async (req, res) => {
     
     const recipient = await User.findById(recipientId);
     if (!recipient) {
-      return res.status(404).json({ error: 'Recipient not found' });
+        const GroupRecipient = await Group.findById(recipientId);
+        if(!GroupRecipient){
+            return res.status(404).json({ error: 'Recipient not found' });
+        }
     }
     
     await Posts.findByIdAndUpdate(

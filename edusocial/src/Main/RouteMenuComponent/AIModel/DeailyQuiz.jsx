@@ -19,7 +19,7 @@ const DailyQuiz = () => {
   const [userAnswers, setUserAnswers] = useState({}); // Store user answers
   const [quizStarted, setQuizStarted] = useState(false); // Track if quiz has started
 
-  const Education = ProfileData?.education?.split(',') || [];
+  // const Education = ProfileData?.education?.split(',') || [];
   console.log(userAnswers);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const DailyQuiz = () => {
 
     let Level = "";
     if(ProfileData?.education?.standard){
-      Level = `${ProfileData?.education?.standard} ${ProfileData?.education?.stream}`
+      Level =  `${ProfileData?.education?.standard} ${ProfileData?.education?.stream ? ProfileData?.education?.stream : ""}`
     } else if(ProfileData?.education?.degree){
       Level = `${ProfileData?.education?.degree} ${ProfileData?.education?.field}`
     }
@@ -47,7 +47,6 @@ const DailyQuiz = () => {
         });
 
         if (res.data.ok && res.data.quiz) {
-          // Initialize userAnswers object with empty values
           const initialAnswers = {};
           res.data.quiz.forEach((question, index) => {
             initialAnswers[index] = {
