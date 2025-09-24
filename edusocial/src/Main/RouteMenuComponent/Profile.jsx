@@ -57,8 +57,19 @@ const Profile = () => {
     setMyPeeredCount(UserProfileData?.MyConnections?.length);
   }, [UserProfileData])
 
-  // const Education = UserProfileData?.education?.split(',') || [];
-  console.log("For cheking education ", UserProfileData);
+  const scrollTo = (value, offset) => {
+    const element = document.getElementById(value);
+    if(element){
+      console.log(value);
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  }
 
   if (loading) {
     return (
@@ -192,10 +203,10 @@ const Profile = () => {
               </p>
               
               <div className="grid grid-cols-3 gap-4 border-t border-neutral-700 pt-4">
-                <div className="flex flex-col items-center">
+                <a href="#UserPost" onClick={(e) => {e.preventDefault(); scrollTo('UserPost', 20)} } className="flex flex-col items-center select-none">
                   <span className="text-xl font-bold">{NotesLength}</span>
                   <p className="text-sm text-gray-400">Notes sent</p>
-                </div>
+                </a>
                 <div onClick={() => setOpenPeerConnectionsModel(!OpenPeerConnectionsModel)} className="flex cursor-pointer flex-col items-center">
                   <span className="text-xl font-bold">{MyPeeredCount}</span>
                   <p className="text-sm text-gray-400">Peers</p>

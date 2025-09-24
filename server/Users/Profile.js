@@ -64,12 +64,8 @@ Router.post('/userdetail', upload.none(), async (req, res) => {
 Router.post('/profile', upload.single('image'), async (req, res) => {
     const { bio, FUid, username } = req.body;
 
-    if (!bio || !FUid || !username) {
-        return res.status(400).json({ message: "Bio, User ID and Username are required", code: "MISSING_FIELDS" });
-    }
-
-    if (!req.file) {
-        return res.status(400).json({ message: "No file uploaded", code: "NO_FILE_UPLOADED" });
+    if (!FUid || !username) {
+        return res.status(400).json({ message: "Username are required", code: "MISSING_FIELDS" });
     }
 
     try {
@@ -78,20 +74,25 @@ Router.post('/profile', upload.single('image'), async (req, res) => {
             return res.status(400).json({ message: "Username is already taken", code: "USERNAME_TAKEN" });
         }
 
-        const result = await cloudinary.uploader.upload(req.file.path, {
-            folder: "studyverse/profiles",
-        });
+        const data = {
+            username,
+            "UserProfile.description": bio,
+        }
+
+         if (req.file) {
+            const uploadResult = await cloudinary.uploader.upload(req.file.path, {
+                folder: "studyverse/profiles",
+            });
+
+            data["UserProfile.avatar"] = {
+                url: uploadResult.secure_url,
+                publicId: uploadResult.public_id,
+            };
+        }
 
         const updatedUser = await User.findOneAndUpdate(
             { firebaseUid: FUid },
-            {
-                username,
-                "UserProfile.description": bio,
-                "UserProfile.avatar": {
-                    url: result.secure_url,
-                    publicId: result.public_id,
-                }
-            },
+            data,
             { new: true }
         );
 
@@ -261,7 +262,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
         type: uploadFile.resource_type,
       },
       visibility: visibility,
-      contentType: 'post',
+      contentType: contentType,
     });
 
     return res.json({
@@ -291,7 +292,25 @@ Router.get('/search', async (req, res) => {
         })
         .select('firstName lastName education firebaseUid username UserProfile')
 
-        res.json({ message: "Search results", users });
+        const Notes = await Posts.find({
+            contentType: 'note',
+            $or: [
+                { heading: { $regex: query, $options: "i" },
+                  description: { $regex: query, $options: "i" }
+                },
+            ]
+        })
+
+        const Lesson = await Posts.find({
+            contentType: 'lesson',
+             $or: [
+                { heading: { $regex: query, $options: "i" },
+                  description: { $regex: query, $options: "i" }
+                },
+            ]
+        })
+
+        res.json({ message: "Search results", users, Lesson, Notes });
     } catch (err) {
         console.error("Error searching users:", err);
         res.status(500).json({ message: "Internal server error" });

@@ -16,10 +16,9 @@ const DailyQuiz = () => {
   const [reviewMode, setReviewMode] = useState(false);
   const [streak, setStreak] = useState(0);
   const [showHint, setShowHint] = useState(false);
-  const [userAnswers, setUserAnswers] = useState({}); // Store user answers
-  const [quizStarted, setQuizStarted] = useState(false); // Track if quiz has started
+  const [userAnswers, setUserAnswers] = useState({});
+  const [quizStarted, setQuizStarted] = useState(false);
 
-  // const Education = ProfileData?.education?.split(',') || [];
   console.log(userAnswers);
 
   useEffect(() => {
@@ -78,7 +77,7 @@ const DailyQuiz = () => {
     if (selectedOption !== null) return;
     
     setSelectedOption(option);
-    setQuizStarted(true); // Mark quiz as started
+    setQuizStarted(true);
     
     const currentQuestion = dailyQuizzes[currentQuestionIndex];
     const isCorrect = option === currentQuestion.answer;
@@ -87,7 +86,6 @@ const DailyQuiz = () => {
       setScore(prev => prev + 1);
     }
     
-    // Store the user's answer
     setUserAnswers(prev => ({
       ...prev,
       [currentQuestionIndex]: {
@@ -107,18 +105,15 @@ const DailyQuiz = () => {
       setShowResult(false);
       setShowHint(false);
     } else {
-      // Quiz completed - send answers to backend
       sendAnswersToBackend();
       setQuizCompleted(true);
       setReviewMode(true);
       
-      // Update streak if score is perfect
       if (score === dailyQuizzes.length) {
         const newStreak = streak + 1;
         setStreak(newStreak);
         localStorage.setItem('quizStreak', newStreak.toString());
       } else {
-        // Reset streak if not perfect
         setStreak(0);
         localStorage.setItem('quizStreak', '0');
       }
@@ -144,12 +139,10 @@ const DailyQuiz = () => {
       console.log('Answers submitted successfully');
     } catch (error) {
       console.error('Error submitting answers:', error);
-      // You might want to implement retry logic or error handling here
     }
   };
 
   const handlePreviousQuestion = () => {
-    // Only allow going back in review mode after quiz is completed
     if (reviewMode && currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
       setSelectedOption(userAnswers[currentQuestionIndex - 1]?.chosenAnswer || null);
@@ -167,7 +160,6 @@ const DailyQuiz = () => {
     setShowHint(false);
     setQuizStarted(false);
     
-    // Reset user answers
     const resetAnswers = {};
     dailyQuizzes.forEach((_, index) => {
       resetAnswers[index] = {
@@ -381,7 +373,6 @@ const DailyQuiz = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 p-4 md:p-6">
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <motion.h1 
             initial={{ y: -20, opacity: 0 }}
@@ -553,7 +544,6 @@ const DailyQuiz = () => {
             })}
           </div>
 
-          {/* Hint Section */}
           {currentQuestion.hint && !showResult && !reviewMode && (
             <div className="mb-6">
               <button
@@ -606,7 +596,6 @@ const DailyQuiz = () => {
           )}
         </motion.div>
 
-        {/* Score and Next Button */}
         <div className="text-center">
           <div className="inline-flex items-center bg-neutral-700/50 px-4 py-2 rounded-full mb-4 border border-neutral-600/50">
             <span className="text-neutral-400 text-sm mr-2">Score:</span>

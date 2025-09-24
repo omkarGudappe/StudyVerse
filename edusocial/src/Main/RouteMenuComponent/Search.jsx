@@ -19,23 +19,32 @@ const Search = ({ searchClicked, onClose }) => {
         return;
       }
 
-      const FindFriend = async () => {
-        try {
-          setIsLoading(true);
-          setError(null);
-          const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${searchTerm}`);
-          const Data = res.data;
-          if (Data.users) {
-            setSearchResults(Data.users);
+      // In Search.jsx, update the FindFriend function:
+        const FindFriend = async () => {
+          try {
+            setIsLoading(true);
+            setError(null);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${searchTerm}`);
+            const Data = res.data;
+            
+            // Set the search results with the expected structure
+            setSearchResults({
+              users: Data.users || [],
+              notes: Data.Notes || [],
+              lessons: Data.Lesson || []
+            });
+                        console.log(Data.users , "users");
+            console.log(Data.Lesson, "Lesson");
+            console.log(Data.Notes, "Notes");
+            
+          } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.message || "Failed to search");
+            setSearchResults({ users: [], notes: [], lessons: [] });
+          } finally {
+            setIsLoading(false);
           }
-        } catch (err) {
-          console.error(err);
-          setError(err.response?.data?.message || "Failed to search users");
-          setSearchResults([]);
-        } finally {
-          setIsLoading(false);
-        }
-      };
+        };
       
       FindFriend();
     }, 500);

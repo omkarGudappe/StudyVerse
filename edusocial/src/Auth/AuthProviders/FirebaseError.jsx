@@ -11,6 +11,7 @@ const firebaseAuthErrors = {
   "auth/requires-recent-login": "Please log in again to continue.",
   "auth/network-request-failed": "Network error. Please check your connection.",
   "auth/too-many-requests": "Too many attempts. Please try again later.",
+  "auth/popup-blocked": "Popup was blocked. Please allow popups for this site.",
   "auth/internal-error": "Something went wrong. Please try again.",
 };
 

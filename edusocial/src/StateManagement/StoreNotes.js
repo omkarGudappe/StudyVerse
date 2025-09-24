@@ -255,7 +255,8 @@ export const useNotesStore = create(
   )
 );
 
-// Store for posts
+
+// In StoreNotes.js - Update the usePostsStore
 export const usePostsStore = create((set, get) => ({
   posts: [],
   loading: false,
@@ -265,22 +266,25 @@ export const usePostsStore = create((set, get) => ({
   page: 1,
   limit: DEFAULT_LIMIT,
   lastFetched: null,
+  // Add a new state to track if data is already loaded
+  isDataLoaded: false,
 
-  // Clear all posts
   clearPosts: () => set({ 
     posts: [], 
     page: 1, 
     hasMore: true, 
     initialLoading: false,
-    lastFetched: null 
+    lastFetched: null,
+    isDataLoaded: false // Reset when explicitly clearing
   }),
 
-  // Add a new post
+  // Add this method to mark data as loaded
+  setDataLoaded: (loaded = true) => set({ isDataLoaded: loaded }),
+
   addPost: (newPost) => set((state) => ({
     posts: [newPost, ...state.posts]
   })),
 
-  // Update post likes
   updatePostLikes: (postId, likes) => set((state) => ({
     posts: state.posts.map(post =>
       post._id === postId
@@ -289,45 +293,25 @@ export const usePostsStore = create((set, get) => ({
     )
   })),
 
-  // Add a comment to a post
-  addCommentToPost: (postId, comment) => set((state) => ({
-    posts: state.posts.map(post =>
-      post._id === postId
-        ? { 
-            ...post, 
-            comments: post.comments ? [...post.comments, comment] : [comment],
-            commentCount: (post.commentCount || 0) + 1
-          }
-        : post
-    )
-  })),
-
-  removeCommentFromPost: (postId, commentId) => set((state) => ({
-    posts: state.posts.map(post =>
-      post._id === postId
-        ? { 
-            ...post, 
-            comments: post.comments ? post.comments.filter(c => c._id !== commentId) : [],
-            commentCount: Math.max(0, (post.commentCount || 0) - 1)
-          }
-        : post
-    )
-  })),
-
-  // Delete a post
-  deletePost: (postId) => set((state) => ({
-    posts: state.posts.filter(post => post._id !== postId)
-  })),
-
-  // Fetch posts with pagination and caching
+  // Modify fetchPosts to prevent unnecessary fetches
   fetchPosts: async (userId, loadMore = false, forceRefresh = false) => {
     const currentState = get();
     
+    // Prevent fetching if data is already loaded and not forcing refresh
+    if (!forceRefresh && !loadMore && currentState.isDataLoaded && currentState.posts.length > 0) {
+      console.log("Posts already loaded, skipping fetch");
+      set({ initialLoading: false, loading: false });
+      return currentState.posts;
+    }
+    
     if (loadMore && !currentState.hasMore) return;
     
-    // Return cached data if it's still valid and not forcing refresh
+    // Enhanced cache check - only use cache for 2 minutes instead of 5
+    const CACHE_THRESHOLD = 2 * 60 * 1000; // 2 minutes
     if (!forceRefresh && !loadMore && currentState.posts.length > 0 && 
-        currentState.lastFetched && (Date.now() - currentState.lastFetched) < CACHE_DURATION) {
+        currentState.lastFetched && (Date.now() - currentState.lastFetched) < CACHE_THRESHOLD) {
+      console.log("Using cached posts");
+      set({ initialLoading: false, loading: false });
       return currentState.posts;
     }
 
@@ -357,9 +341,9 @@ export const usePostsStore = create((set, get) => ({
           initialLoading: false,
           page: pageToLoad,
           hasMore: response.data.pagination.hasMore,
-          lastFetched: Date.now()
+          lastFetched: Date.now(),
+          isDataLoaded: true
         }));
-        console.log("get respinse ", response.data.posts);
         return response.data.posts;
       } else {
         throw new Error(response.data.message || 'Failed to fetch posts');
@@ -372,7 +356,6 @@ export const usePostsStore = create((set, get) => ({
     }
   },
 
-  // Load more posts
   loadMorePosts: (userId) => {
     const state = get();
     if (state.hasMore && !state.loading) {
@@ -380,11 +363,149 @@ export const usePostsStore = create((set, get) => ({
     }
   },
 
-  // Refresh posts
   refreshPosts: (userId) => {
     get().fetchPosts(userId, false, true);
+  },
+
+  refreshIfNeeded: async (userId) => {
+    const state = get();
+    if (!state.isDataLoaded || state.posts.length === 0) {
+      return state.fetchPosts(userId, false, false);
+    }
+    console.log("Data already loaded, skipping refresh");
+    return state.posts;
   }
 }));
+
+// export const usePostsStore = create((set, get) => ({
+//   posts: [],
+//   loading: false,
+//   initialLoading: true,
+//   error: null,
+//   hasMore: true,
+//   page: 1,
+//   limit: DEFAULT_LIMIT,
+//   lastFetched: null,
+
+//   // Clear all posts
+//   clearPosts: () => set({ 
+//     posts: [], 
+//     page: 1, 
+//     hasMore: true, 
+//     initialLoading: false,
+//     lastFetched: null 
+//   }),
+
+//   // Add a new post
+//   addPost: (newPost) => set((state) => ({
+//     posts: [newPost, ...state.posts]
+//   })),
+
+//   // Update post likes
+//   updatePostLikes: (postId, likes) => set((state) => ({
+//     posts: state.posts.map(post =>
+//       post._id === postId
+//         ? { ...post, likes }
+//         : post
+//     )
+//   })),
+
+//   // Add a comment to a post
+//   addCommentToPost: (postId, comment) => set((state) => ({
+//     posts: state.posts.map(post =>
+//       post._id === postId
+//         ? { 
+//             ...post, 
+//             comments: post.comments ? [...post.comments, comment] : [comment],
+//             commentCount: (post.commentCount || 0) + 1
+//           }
+//         : post
+//     )
+//   })),
+
+//   removeCommentFromPost: (postId, commentId) => set((state) => ({
+//     posts: state.posts.map(post =>
+//       post._id === postId
+//         ? { 
+//             ...post, 
+//             comments: post.comments ? post.comments.filter(c => c._id !== commentId) : [],
+//             commentCount: Math.max(0, (post.commentCount || 0) - 1)
+//           }
+//         : post
+//     )
+//   })),
+
+//   // Delete a post
+//   deletePost: (postId) => set((state) => ({
+//     posts: state.posts.filter(post => post._id !== postId)
+//   })),
+
+//   // Fetch posts with pagination and caching
+//   fetchPosts: async (userId, loadMore = false, forceRefresh = false) => {
+//     const currentState = get();
+    
+//     if (loadMore && !currentState.hasMore) return;
+    
+//     // Return cached data if it's still valid and not forcing refresh
+//     if (!forceRefresh && !loadMore && currentState.posts.length > 0 && 
+//         currentState.lastFetched && (Date.now() - currentState.lastFetched) < CACHE_DURATION) {
+//       return currentState.posts;
+//     }
+
+//     set({ 
+//       loading: true, 
+//       error: null, 
+//       initialLoading: !loadMore 
+//     });
+
+//     try {
+//       if (!userId) {
+//         set({ loading: false, initialLoading: false });
+//         return;
+//       }
+      
+//       const pageToLoad = loadMore ? currentState.page + 1 : 1;
+//       const response = await axios.get(
+//         `${API_BASE_URL}/posts/${userId}?page=${pageToLoad}&limit=${currentState.limit}`
+//       );
+      
+//       if (response.data.ok) {
+//         set((state) => ({
+//           posts: loadMore 
+//             ? [...state.posts, ...response.data.posts] 
+//             : response.data.posts,
+//           loading: false,
+//           initialLoading: false,
+//           page: pageToLoad,
+//           hasMore: response.data.pagination.hasMore,
+//           lastFetched: Date.now()
+//         }));
+//         console.log("get respinse ", response.data.posts);
+//         return response.data.posts;
+//       } else {
+//         throw new Error(response.data.message || 'Failed to fetch posts');
+//       }
+//     } catch (err) {
+//       console.error("Error fetching posts:", err);
+//       const errorMsg = err.response?.data?.message || "Failed to load posts.";
+//       set({ error: errorMsg, loading: false, initialLoading: false });
+//       throw err;
+//     }
+//   },
+
+//   // Load more posts
+//   loadMorePosts: (userId) => {
+//     const state = get();
+//     if (state.hasMore && !state.loading) {
+//       state.fetchPosts(userId, true);
+//     }
+//   },
+
+//   // Refresh posts
+//   refreshPosts: (userId) => {
+//     get().fetchPosts(userId, false, true);
+//   }
+// }));
 
 // Store for lessons
 export const useLessonStore = create((set, get) => ({

@@ -60,6 +60,58 @@ const Menu = () => {
     return () => Socket.off("Length");
   }, [])
 
+  const handleOpenPanel = (string) => {
+    if(string === 'notes'){
+      setOpenUserNotes(!OpenUserNotes)
+      setMessageContactClick(false);
+      setOpenNotification(false);
+      setSearchClicked(false);
+    }else if(string === 'message') {
+      setMessageContactClick(!MessageContactClick);
+      setOpenUserNotes(false)
+       setOpenNotification(false);
+      setSearchClicked(false);
+    } else if(string === 'search'){
+      setSearchClicked(!searchClicked);
+      setMessageContactClick(false);
+      setOpenUserNotes(false)
+       setOpenNotification(false);
+    } else if (string === 'notification') {
+      setOpenNotification(!NotificationOpen);
+      setSearchClicked(false);
+      setMessageContactClick(false);
+      setOpenUserNotes(false)
+    }
+  }
+
+   useEffect(() => {
+    const isAnyModalOpen = showPost || searchClicked || NotificationOpen || 
+                          MessageContactClick || OpenUserNotes || showMoreMenu;
+
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.body.style.height = 'auto';
+    }
+
+    // Cleanup function
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.body.style.height = 'auto';
+    };
+  }, [showPost, searchClicked, NotificationOpen, MessageContactClick, OpenUserNotes, showMoreMenu]);
+
+   useEffect(() => {
+    setShowPost(false);
+    setSearchClicked(false);
+    setOpenNotification(false);
+    setMessageContactClick(false);
+    setOpenUserNotes(false);
+    setShowMoreMenu(false);
+  }, [location.pathname]);
+
   const mainMenuItems = [
     {
       id: "home",
@@ -79,7 +131,8 @@ const Menu = () => {
           <line x1="16.5" y1="16.5" x2="21" y2="21" />
         </svg>
       ),
-      action: () => setSearchClicked(!searchClicked)
+      // action: () => setSearchClicked(!searchClicked)
+      action: () => handleOpenPanel('search'),
     },
     {
       id: "upload",
@@ -120,7 +173,8 @@ const Menu = () => {
           <circle cx="12" cy="19" r="1.6"/>
         </svg>
       ),
-      action: () => setOpenNotification(!NotificationOpen),
+      // action: () => setOpenNotification(!NotificationOpen),
+      action: () => handleOpenPanel('notification'),
     },
     {
       id: "messages",
@@ -130,7 +184,8 @@ const Menu = () => {
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       ),
-      action: () => setMessageContactClick(!MessageContactClick),
+      // action: () => setMessageContactClick(!MessageContactClick),
+      action: () => handleOpenPanel('message')
     },
     {
       id: "profile",
@@ -178,7 +233,8 @@ const Menu = () => {
           <path d="M8 15h6" />
         </svg>
       ),
-      action: () => setOpenUserNotes(!OpenUserNotes),
+      // action: () => setOpenUserNotes(!OpenUserNotes),
+      action: () => handleOpenPanel('notes')
     },
     {
       id: "settings",

@@ -26,7 +26,6 @@ const MessageContact = ({ open, onClose }) => {
   const [modalSearchResults, setModalSearchResults] = useState([]);
   const [isModalSearching, setIsModalSearching] = useState(false);
 
-  // Debounced search function for main search
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm.trim() === "") {
@@ -145,7 +144,6 @@ const MessageContact = ({ open, onClose }) => {
       const memberIds = selectedMembers.map(member => member._id);
       const memberUids = selectedMembers.map(member => member.firebaseUid);
 
-      // 1️⃣ Create group in your backend (MongoDB)
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/group/create`, {
         name: groupName,
         createdBy: CreatorId,
@@ -155,14 +153,12 @@ const MessageContact = ({ open, onClose }) => {
       if (res.data.ok) {
         const group = res.data.group;
 
-        // 2️⃣ Create group in Firebase
         const groupRef = ref(database, `groupChats/${group._id}`);
 
         const membersObject = {};
         memberUids.forEach(uid => {
           membersObject[uid] = true;
         });
-        // also add creator
         if (CreatorUid) membersObject[CreatorUid] = true;
 
         await set(groupRef, {
@@ -172,7 +168,6 @@ const MessageContact = ({ open, onClose }) => {
           createdAt: serverTimestamp(),
         });
 
-        // 3️⃣ UI reset
         setGroupName("");
         setSelectedMembers([]);
         setShowGroupModal(false);
@@ -191,7 +186,6 @@ const MessageContact = ({ open, onClose }) => {
     }
   };
 
-  // User card component for reusability
   const UserCard = ({ user, isGroup = false, onClick, showCheckbox = false, isSelected = false }) => {
     const displayName = isGroup ? user.name : `${user.firstName} ${user.lastName}`;
     const username = isGroup ? `${user.members?.length || 0} members` : user.username;
@@ -265,7 +259,6 @@ const MessageContact = ({ open, onClose }) => {
     );
   };
 
-  // Render content based on active tab
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -351,7 +344,6 @@ const MessageContact = ({ open, onClose }) => {
       );
     }
 
-    // Empty states
     if (activeTab === 'contacts' && contacts.length === 0) {
       return (
         <div className="text-center py-12 text-neutral-400">
@@ -397,7 +389,6 @@ const MessageContact = ({ open, onClose }) => {
           onClearSearch={clearSearch}
       >
         <div className="p-6 h-auto lenis">
-          {/* Create Group Button */}
           <div className="mb-6">
             <motion.button
               whileHover={{ scale: 1.02 }}
@@ -412,7 +403,6 @@ const MessageContact = ({ open, onClose }) => {
             </motion.button>
           </div>
           
-          {/* Navigation Tabs */}
           <div className="flex mb-6 bg-neutral-800 rounded-xl p-1">
             <button
               onClick={() => setActiveTab('contacts')}
@@ -448,12 +438,10 @@ const MessageContact = ({ open, onClose }) => {
             )}
           </div>
           
-          {/* Content Area */}
           {renderContent()}
         </div>
       </MessagesPanel>
 
-      {/* Group Creation Modal */}
       <AnimatePresence>
         {showGroupModal && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -538,7 +526,6 @@ const MessageContact = ({ open, onClose }) => {
                       <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-purple-500"></div>
                     </div>
                   ) : modalSearchTerm && modalSearchResults.length > 0 ? (
-                    // Show search results when searching
                     modalSearchResults.map(user => (
                       <div 
                         key={user._id} 
@@ -558,7 +545,6 @@ const MessageContact = ({ open, onClose }) => {
                       </div>
                     ))
                   ) : contacts.length > 0 ? (
-                    // Show contacts when not searching
                     contacts.map(contact => (
                       <div 
                         key={contact._id} 

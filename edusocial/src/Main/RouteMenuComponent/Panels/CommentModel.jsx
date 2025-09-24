@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react'
 import axios from 'axios';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
 
-const CommentModel = ({ open, CommentId, onClose, PostownerId }) => {
+const CommentModel = ({ open, postId, onClose, PostownerId }) => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newComment, setNewComment] = useState("");
@@ -17,7 +17,7 @@ const CommentModel = ({ open, CommentId, onClose, PostownerId }) => {
             }
 
             const res = await axios.post(
-                `${import.meta.env.VITE_API_URL}/posts/comments/${CommentId}`,
+                `${import.meta.env.VITE_API_URL}/posts/comments/${postId}`,
                 {
                     userId: ProfileData._id,
                     comment: newComment.trim(),
@@ -38,10 +38,10 @@ const CommentModel = ({ open, CommentId, onClose, PostownerId }) => {
     useEffect(() => {
         const FetchComments = async () => {
             try {
-                if (!CommentId || !open) return;
+                if (!postId || !open) return;
                 
                 setLoading(true);
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/posts/comments/${CommentId}`);
+                const res = await axios.get(`${import.meta.env.VITE_API_URL}/posts/comments/${postId}`);
                 
                 console.log('API Response:', res.data);
                 
@@ -71,7 +71,7 @@ const CommentModel = ({ open, CommentId, onClose, PostownerId }) => {
             setComments([]);
             setNewComment("");
         }
-    }, [CommentId, open]);
+    }, [postId, open]);
 
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) {

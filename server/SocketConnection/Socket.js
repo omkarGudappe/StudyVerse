@@ -136,7 +136,6 @@ module.exports = function (io) {
     socket.on("acceptRequest", async ({ Id, fromID }) => {
       try {
         if (!Id || !fromID) {
-          console.log("Accept Request From Frontend", Id, " and ", fromID);
           return console.log("Missing Requirment");
         }
 

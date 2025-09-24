@@ -9,13 +9,18 @@ import CommentModel from './Panels/CommentModel';
 import PeerButtonManage from './SmallComponents/PeerButtonManage';
 import { ref, push } from "firebase/database";
 import { database } from "../../Auth/AuthProviders/FirebaseSDK";
-import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import RawToPdfConverter from './Panels/RawToPdfConverter';
 import LikeComponent from './SmallComponents/LikeComponent';
+import { pdfjs } from 'react-pdf';
+import * as PdfJs from 'pdfjs-dist';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Use the worker from pdfjs-dist
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.js',
+  import.meta.url
+).toString();
 
 const StudyVerseMain = () => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -49,12 +54,12 @@ const StudyVerseMain = () => {
   const [selectedMembers, setSelectedMembers] = useState([]);
 
   const [rawContentModal, setRawContentModal] = useState({ 
-    isOpen: false, 
-    content: null, 
-    type: null, 
-    fileName: null,
-    convertedPdfUrl: null 
-  });
+  isOpen: false, 
+  content: null, 
+  type: null, 
+  fileName: null,
+  convertedPdfUrl: null 
+});
 
   useEffect(() => {
     if (!hasMore || loading) return;
@@ -136,11 +141,15 @@ const StudyVerseMain = () => {
     };
   }, [lastScrollY]);
 
-  useEffect(() => {
-    return () => {
-      usePostsStore.getState().clearPosts();
-    };
-  }, []);
+ useEffect(() => {
+  const fetchData = async () => {
+    if (ProfileData?._id) {
+      await usePostsStore.getState().refreshIfNeeded(ProfileData._id);
+    }
+  };
+  
+  fetchData();
+}, [ProfileData?._id]);
 
   const FetchPostsFromBack = () => {
     if (ProfileData?._id) {
@@ -170,18 +179,33 @@ const StudyVerseMain = () => {
   }, [fetchPosts, ProfileData]);
 
   useEffect(() => {
-    const handler = ({ Fetch }) => {
-      if (Fetch) {
-        fetchPosts(ProfileData._id, false, true);
-      }
-    };
+  const handler = ({ Fetch }) => {
+    if (Fetch) {
+      // Only refresh if needed, don't force full refresh
+      usePostsStore.getState().refreshIfNeeded(ProfileData._id);
+    }
+  };
 
-    Socket.on("FetchAgain", handler);
+  Socket.on("FetchAgain", handler);
 
-    return () => {
-      Socket.off("FetchAgain", handler);
-    };
-  }, [fetchPosts, ProfileData]);
+  return () => {
+    Socket.off("FetchAgain", handler);
+  };
+}, [ProfileData?._id]);
+
+  // useEffect(() => {
+  //   const handler = ({ Fetch }) => {
+  //     if (Fetch) {
+  //       fetchPosts(ProfileData._id, false, true);
+  //     }
+  //   };
+
+  //   Socket.on("FetchAgain", handler);
+
+  //   return () => {
+  //     Socket.off("FetchAgain", handler);
+  //   };
+  // }, [fetchPosts, ProfileData]);
 
   const fetchPeersList = async () => {
     const id = ProfileData?._id;
@@ -280,6 +304,28 @@ const StudyVerseMain = () => {
       Socket.off("post-like-updated", handler);
     };
   }, []);
+
+  // Add this function to your component
+// Improved file type detection
+const getFileType = (url) => {
+  if (!url) return 'unknown';
+  
+  const lowerUrl = url.toLowerCase();
+  
+  // Always check extension first
+  if (lowerUrl.endsWith('.pdf')) return 'pdf';
+  if (lowerUrl.endsWith('.mp4') || lowerUrl.endsWith('.webm') || lowerUrl.endsWith('.mov')) return 'video';
+  if (lowerUrl.match(/\.(jpg|jpeg|png|gif|webp)$/)) return 'image';
+  if (lowerUrl.endsWith('.txt') || lowerUrl.endsWith('.text')) return 'text';
+  
+  // For Cloudinary raw uploads with PDF in URL, treat as PDF
+  if (url.includes('/raw/upload/') && url.includes('.pdf')) return 'pdf';
+  
+  // For other raw uploads, treat as text
+  if (url.includes('/raw/upload/')) return 'text';
+  
+  return 'unknown';
+};
 
   useEffect(() => {
     if (posts.length > 0 && ProfileData?._id) {
@@ -569,18 +615,26 @@ const StudyVerseMain = () => {
   };
 
   const handleRawContent = (content, type, fileName) => {
-    setRawContentModal({ 
-      isOpen: true, 
-      content, 
-      type, 
-      fileName,
-      convertedPdfUrl: null 
-    });
-  };
+  setRawContentModal({ 
+    isOpen: true, 
+    content, 
+    type: 'text', // Force text type for URL content
+    fileName,
+    convertedPdfUrl: null 
+  });
+};
 
   const handleConversionComplete = (pdfUrl) => {
-    setRawContentModal(prev => ({ ...prev, convertedPdfUrl: pdfUrl }));
-  };
+  setRawContentModal(prev => ({ ...prev, convertedPdfUrl: pdfUrl }));
+  
+  // Also update the PDF modal to show the converted PDF
+  setPdfModal({ 
+    isOpen: true, 
+    url: pdfUrl, 
+    numPages: 0, 
+    pageNumber: 1 
+  });
+};
 
   const closeRawContentModal = () => {
     setRawContentModal({ isOpen: false, content: null, type: null, fileName: null, convertedPdfUrl: null });
@@ -817,7 +871,9 @@ const StudyVerseMain = () => {
                           <Link to={`/messages/${ClickedGroupBtn.username}`} className='hover:bg-neutral-700 w-full px-4 py-2 rounded-tl-xl cursor-pointer rounded-tr-xl text-sm'>Message</Link>
                           <Link to={ProfileData?._id === post?.author?._id ? `/profile` : `/profile/${post?.author?.username}`} className='hover:bg-neutral-700 w-full px-4 py-2 cursor-pointer text-sm'>Profile</Link>
                           <div className=''>
-                            <PeerButtonManage className='rounded-bl-xl rounded-br-xl w-full' currentUser={ProfileData?._id} OtherUser={post?.author?._id} />
+                            {ProfileData?._id === post?.author?._id ? null : (
+                              <PeerButtonManage className='rounded-bl-xl rounded-br-xl w-full' currentUser={ProfileData?._id} OtherUser={post?.author?._id} />
+                            )}
                           </div>
                         </div>
                       )}
@@ -832,13 +888,14 @@ const StudyVerseMain = () => {
                   )}
                   {post.description && (
                     <p className="text-neutral-300 mb-4 leading-relaxed text-sm bg-neutral-800/30 rounded-xl p-3 border border-neutral-700/30 line-clamp-3">
-                      {post?.description}
+                      {post?.files?.url}
                     </p>
                   )}
                   
                   {post.files?.url ? (
                     <div className="mb-4 rounded-xl overflow-hidden border border-neutral-700/30">
                       {post.files?.url.endsWith('.mp4') || post.files?.url.endsWith('.webm') || post.files?.url.endsWith('.mov') ? (
+                        // Video handling code - keep your existing video code
                         <div className="relative aspect-video bg-black">
                           <video
                             ref={el => videoRefs.current[post._id] = el}
@@ -865,7 +922,9 @@ const StudyVerseMain = () => {
                             </div>
                           )}
                         </div>
-                      ) : post.files?.url.endsWith('.pdf') ? (
+                      ) : post.files?.url.endsWith('.pdf') || 
+                          (post.files?.url.includes('/raw/upload/') && post.files?.url.endsWith('.pdf')) ? (
+                        // PDF handling - both direct PDFs and raw uploaded PDFs
                         <div className="relative group cursor-pointer" onClick={() => openPdfModal(post.files.url)}>
                           <div className="aspect-video bg-gradient-to-br from-purple-600/20 to-amber-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-purple-500/30">
                             <div className="text-center p-6">
@@ -884,13 +943,61 @@ const StudyVerseMain = () => {
                             </span>
                           </div>
                         </div>
+                      ) : post.files?.url.includes('/raw/upload/') && 
+                          !post.files?.url.endsWith('.pdf') && 
+                          !post.files?.url.match(/\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/i) ? (
+                        // Text file handling - only if it's raw upload AND not any other known file type
+                        <div 
+                          className="relative group cursor-pointer" 
+                          onClick={() => handleRawContent(post.files.url, 'text', post.heading || 'Study Material')}
+                        >
+                          <div className="aspect-video bg-gradient-to-br from-green-600/20 to-blue-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-green-500/30">
+                            <div className="text-center p-6">
+                              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600/20 rounded-2xl mb-4 border border-green-500/30">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                              <h4 className="font-semibold text-white mb-2">Text Document</h4>
+                              <p className="text-sm text-neutral-400">Click to view this text content</p>
+                            </div>
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-end justify-center p-4">
+                            <span className="text-white text-sm font-medium bg-green-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                              View Text
+                            </span>
+                          </div>
+                        </div>
                       ) : (
-                          <img 
-                            src={post.files.url} 
-                            alt={post.heading || 'Study material'} 
-                            className="w-full h-full max-h-100 object-cover rounded-xl"
-                            loading="lazy"
-                          />
+                        <img 
+                          src={post.files.url} 
+                          alt={post.heading || 'Study material'} 
+                          className="w-full h-full max-h-100 object-cover rounded-xl"
+                          loading="lazy"
+                          onError={(e) => {
+                            // If image fails to load, treat it as text content
+                            e.target.style.display = 'none';
+                            const fallbackDiv = e.target.nextSibling;
+                            if (fallbackDiv && fallbackDiv.classList.contains('fallback-text')) {
+                              fallbackDiv.style.display = 'flex';
+                            }
+                          }}
+                        />
+
+                        // <div 
+                        //   className="fallback-text hidden aspect-video bg-gradient-to-br from-green-600/20 to-blue-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-green-500/30 cursor-pointer"
+                        //   onClick={() => handleRawContent(post.files.url, 'text', post.heading || 'Study Material')}
+                        // >
+                        //   <div className="text-center p-6">
+                        //     <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600/20 rounded-2xl mb-4 border border-green-500/30">
+                        //       <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        //         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        //       </svg>
+                        //     </div>
+                        //     <h4 className="font-semibold text-white mb-2">Text Content</h4>
+                        //     <p className="text-sm text-neutral-400">Click to view this content</p>
+                        //   </div>
+                        // </div>
                       )}
                     </div>
                   ) : post.rawContent ? (
@@ -1172,7 +1279,7 @@ const StudyVerseMain = () => {
                   <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               )}
-              <Document
+              {/* <Document
                 file={pdfModal.url}
                 onLoadSuccess={onDocumentLoadSuccess}
                 onLoadError={() => setPdfLoading(false)}
@@ -1191,7 +1298,7 @@ const StudyVerseMain = () => {
                     </div>
                   }
                 />
-              </Document>
+              </Document> */}
             </div>
           </div>
         </div>
@@ -1209,10 +1316,11 @@ const StudyVerseMain = () => {
       )}
 
       {OpenCommentModel.status && (
-        <CommentModel 
+        <CommentModel
+          open={OpenCommentModel.status}
           postId={OpenCommentModel.id} 
           PostownerId={OpenCommentModel.PostownerId}
-          setCommentModel={setCommentModel}
+          onClose={() => setCommentModel({status: false , PostownerId: null , id: null})}
         />
       )}
     </div>

@@ -198,7 +198,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
     }
 
     return (
-        <div className="py-8 mt-8">
+        <div id="UserPost" className="py-8 mt-8">
             <div className='border-b border-neutral-700/50 mb-8 pb-4'>
                 <h2 className="text-2xl md:text-3xl font-bold px-4 text-amber-100 flex items-center gap-3">
                     <div className="p-2 bg-purple-500/10 rounded-xl">

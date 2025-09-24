@@ -28,7 +28,7 @@ console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
           
           <!-- Logo -->
           <div style="text-align:center;margin-bottom:20px;">
-            <img src="http://localhost:5173/LOGO/StudyVerseLogo.png" alt="Logo" style="width:120px;">
+            <img src="https://study-verse-rose.vercel.app/LOGO/StudyVerseLogo2.png" alt="Logo" style="width:120px;">
           </div>
           
           <!-- Heading -->

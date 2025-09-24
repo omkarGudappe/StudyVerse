@@ -1,62 +1,3 @@
-// import React from "react";
-// import UsesOfStudyVerse from "./UsesOfStudyVerse";
-
-// const StartingPage = () => {
-//   return (
-//     <div className=" bg-neutral-900">
-//       <div className="flex justify-center items-center h-screen text-white">
-//         <nav className="flex bg-neutral-800 fixed top-0 w-full h-16 items-center px-12">
-//           <a href="/">
-//             <img src="/LOGO/StudyVerseLogo2.png" className="w-50" alt="Logo" />
-//           </a>
-//           <div className="flex justify-center items-center ml-auto gap-x-3">
-//             <a
-//               href="/login"
-//               className="text-white  hover:bg-blue-500 p-2 text-center rounded-lg w-19 "
-//             >
-//               Log In
-//             </a>
-//             <a
-//               href="/signup"
-//               className="text-white text-center ml-4 bg-neutral-600 rounded-lg p-2 w-19"
-//             >
-//               Sign In
-//             </a>
-//           </div>
-//         </nav>
-//         <div className="flex justify-center items-center h-full gap-y-6">
-//           <div className="flex flex-col gap-y-6 max-w-2xl p-6">
-//             <h1 className="text-4xl font-medium">
-//               A social learning platform where students connect, learn, and grow
-//               together.
-//             </h1>
-//             <p className="text-lg">
-//               StudyVerse is a modern learning social network built for students.
-//               Discover lessons, create and share notes, post teaching videos, and
-//               connect with classmates or peers worldwide. Whether you’re revising
-//               for exams or exploring new skills, StudyVerse makes learning
-//               engaging, social, and fun.
-//             </p>
-//             <div className="flex gap-x-3 w-2xl">
-//               <input className="border w-full border-gray-300 p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter Email" />
-//               <button className="bg-blue-500 w-20 text-white p-2 rounded-lg mr-4 hover:scale-105 text-center cursor-pointer active:scale-95">Sign In</button>
-//             </div>
-//           </div>
-//           <div className="flex items-center justify-center">
-//               <img src="/Images/Student.png" className="w-lg" alt="" />
-//           </div>
-//         </div>
-//       </div>
-//       {/* <UsesOfStudyVerse/> */}
-//     </div>
-//   );
-// };
-
-// export default StartingPage;
-
-
-
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -64,7 +5,6 @@ import { Link } from "react-router-dom";
 const StartingPage = () => {
   return (
     <div className="bg-neutral-900 min-h-screen">
-      {/* Navigation */}
       <nav className="flex items-center justify-between h-20 px-4 md:px-12 bg-neutral-800/80 backdrop-blur-sm fixed top-0 w-full z-50 border-b border-neutral-700">
         <Link to="/" className="flex items-center overflow-hidden h-1/2 w-auto">
           <img 
@@ -89,7 +29,6 @@ const StartingPage = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
       <div className="flex flex-col lg:flex-row items-center justify-center min-h-screen pt-16 pb-10 px-4 sm:mt-10 mt-10 md:px-8 lg:px-16 gap-8 lg:gap-16">
         <motion.div 
           className="flex flex-col gap-6 max-w-2xl text-center lg:text-left"
@@ -153,7 +92,6 @@ const StartingPage = () => {
         </motion.div>
       </div>
 
-      {/* Features Preview */}
       <FeaturesPreview />
     </div>
   );
@@ -232,7 +170,6 @@ const FeaturesPreview = () => {
           ))}
         </div>
 
-        {/* CTA Section */}
         <motion.div 
           className="text-center mt-16 p-8 bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-2xl border border-purple-500/30"
           initial={{ opacity: 0, y: 20 }}

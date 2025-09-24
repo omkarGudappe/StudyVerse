@@ -1,127 +1,15 @@
-// import React, { useState, useEffect } from 'react'
-// import { FcGoogle } from 'react-icons/fc';
-// import { auth, googleProvider } from './FirebaseSDK';
-// import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-// import { useNavigate } from 'react-router-dom';
-
-// const GoogleProvider = ({ onSuccess, onError, isJustSignIn }) => {
-//     const [Loading, setLoading] = useState(false);
-//     const Navigate = useNavigate();
-//     const [JustSignIn, setJustSignedIn] = useState(false);
-
-//     useEffect(() => {
-//         const FetchBackend = async () => {
-//             if (JustSignIn && auth.currentUser) {
-//                 try {
-//                     const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/google-signin`, {
-//                         method: "POST",
-//                         headers: {
-//                             "Content-Type": "application/json",
-//                         },
-//                         body: JSON.stringify({
-//                             uid: auth.currentUser.uid,
-//                         }),
-//                     });
-                    
-//                     const data = await response.json();
-//                     console.log("Backend response:", data);
-                    
-//                     if (data.exist === true) {
-//                         if (data.token) {
-//                             localStorage.setItem("token", data.token);
-//                         }
-//                         isJustSignIn(false); // Tell parent this is NOT a new Google sign-in
-//                         Navigate('/home');
-//                     } else {
-//                         isJustSignIn(true); // Tell parent this IS a new Google sign-in
-//                         Navigate('/fillprofile');
-//                     }
-//                 } catch (error) {
-//                     console.log("Error checking user:", error.message);
-//                     onError && onError({ error: error.message });
-//                     // Fallback navigation
-//                     Navigate('/fillprofile');
-//                 }
-//             }
-//         };
-        
-//         FetchBackend();
-//     }, [JustSignIn, Navigate, onError, isJustSignIn]);
-
-//     const handleGoogleSignIn = async (e) => {
-//         e.preventDefault();
-//         if (Loading) return;
-//         try {
-//             setLoading(true);
-//             const result = await signInWithPopup(auth, googleProvider);
-//             const credential = GoogleAuthProvider.credentialFromResult(result);
-//             const token = credential.accessToken;
-//             const user = result.user;
-
-//             if (onSuccess) {
-//                 onSuccess({
-//                     user,
-//                     token,
-//                     provider: 'google',
-//                 })
-//             }
-//             setJustSignedIn(true);
-//         } catch (err) {
-//             if (onError) {
-//                 onError({
-//                     error: err.message,
-//                     provider: 'google',
-//                 })
-//             }
-//         } finally {
-//             setLoading(false);
-//         }
-//     }
-
-//     return (
-//         <>
-//             <div className=''>
-//                 <div className='Border position-absolute top-50 start-50 translate-middle'>
-//                     <div className='p-5'>
-//                         <button onClick={handleGoogleSignIn} className="flex bg-neutral-800 p-2 items-center justify-center cursor-pointer rounded-5 px-24">
-//                             {Loading ? (
-//                                 <span className="mr-2">Loading...</span>
-//                             ) : (
-//                                 <>
-//                                     <FcGoogle className='mr-2.5 font-bold text-2xl lg:text-3xl xl:text-3xl ' />
-//                                     Sign in with Google
-//                                 </>
-//                             )}
-//                         </button>
-//                     </div>
-//                 </div>
-//             </div>
-//         </>
-//     )
-// }
-
-// export default GoogleProvider
-
-
-
-
-
-
-
-
-
 import React, { useState, useEffect } from 'react'
 import { FcGoogle } from 'react-icons/fc';
 import { auth, googleProvider } from './FirebaseSDK';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import getFirebaseErrorMessage from './FirebaseError';
 
 const GoogleProvider = ({ onSignInStatus, onError }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
 
-    // Clear error after 5 seconds
     useEffect(() => {
         if (error) {
             const timer = setTimeout(() => {
@@ -142,7 +30,6 @@ const GoogleProvider = ({ onSignInStatus, onError }) => {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // Check if user exists in our database
             const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/google-signin`, {
                 method: "POST",
                 headers: {
@@ -163,53 +50,27 @@ const GoogleProvider = ({ onSignInStatus, onError }) => {
             const data = await response.json();
 
             if (data.exist === true) {
-                // Existing user - store token and navigate to home
                 if (data.token) {
                     localStorage.setItem("token", data.token);
                 }
                 onSignInStatus && onSignInStatus(false);
                 navigate('/home');
             } else {
-                // New user - navigate to profile setup
                 onSignInStatus && onSignInStatus(true);
                 navigate('/fillprofile');
             }
 
-        } catch (err) {
-            console.error("Google sign-in error:", err);
-            
+        } catch (err) {            
             let errorMessage = "Failed to sign in with Google. Please try again.";
             
             if (err.code) {
-                switch (err.code) {
-                    case 'auth/popup-closed-by-user':
-                        errorMessage = "Sign-in was cancelled. Please try again.";
-                        break;
-                    case 'auth/popup-blocked':
-                        errorMessage = "Popup was blocked. Please allow popups for this site.";
-                        break;
-                    case 'auth/network-request-failed':
-                        errorMessage = "Network error. Please check your internet connection.";
-                        break;
-                    case 'auth/too-many-requests':
-                        errorMessage = "Too many attempts. Please try again later.";
-                        break;
-                    case 'auth/user-disabled':
-                        errorMessage = "This account has been disabled.";
-                        break;
-                    default:
-                        errorMessage = err.message || errorMessage;
-                }
+                errorMessage = getFirebaseErrorMessage(err);
             } else if (err.message.includes('Network Error')) {
                 errorMessage = "Network error. Please check your internet connection.";
             }
 
             setError(errorMessage);
             onError && onError(errorMessage);
-            
-            setTimeout(() => {
-                navigate('/fillprofile');
-            }, 2000);
         } finally {
             setLoading(false);
         }
