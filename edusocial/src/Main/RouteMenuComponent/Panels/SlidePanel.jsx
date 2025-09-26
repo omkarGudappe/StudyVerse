@@ -30,7 +30,6 @@ const SlidePanel = ({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="p-6 border-b border-neutral-700">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { UserDataContextExport } from './CurrentUserContexProvider';
+import axios from 'axios';
 
 const Challenges = () => {
+  const { ProfileData } = UserDataContextExport();
   const [activeTab, setActiveTab] = useState('flashcards');
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({
@@ -11,8 +14,9 @@ const Challenges = () => {
     streak: 5,
     points: 1250
   });
+  const [quizzes, setQuizzes] = useState([]);
+  const [quizHistory, setQuizHistory] = useState([]); 
 
-  // Mock flashcard sets data
   const flashcardSets = [
     { 
       id: 1, 
@@ -52,56 +56,67 @@ const Challenges = () => {
     }
   ];
 
-  // Mock quiz data
-  const quizzes = [
-    { 
-      id: 1, 
-      title: 'Web Development Fundamentals', 
-      questions: 15, 
-      time: 30, 
-      completed: true, 
-      score: 85,
-      category: 'Web Dev',
-      difficulty: 'Medium'
-    },
-    { 
-      id: 2, 
-      title: 'Data Structures & Algorithms', 
-      questions: 20, 
-      time: 45, 
-      completed: false, 
-      score: 0,
-      category: 'CS',
-      difficulty: 'Hard'
-    },
-    { 
-      id: 3, 
-      title: 'Modern JavaScript ES6+', 
-      questions: 25, 
-      time: 35, 
-      completed: true, 
-      score: 92,
-      category: 'Programming',
-      difficulty: 'Medium'
-    },
-    { 
-      id: 4, 
-      title: 'UI/UX Design Principles', 
-      questions: 18, 
-      time: 25, 
-      completed: false, 
-      score: 0,
-      category: 'Design',
-      difficulty: 'Easy'
-    }
-  ];
+  useEffect(() => {
+    console.log("Fetching quiz data for user:", ProfileData?._id);
+    if(!ProfileData?._id) return;
+    
+    const fetchQuizzes = async () => {
+      try {
+        console.log("Fetching quiz history...");
+        const userId = ProfileData._id;
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/quiz/${userId}`);
+
+        if(res.data.ok) {
+          setQuizHistory(res.data.quizHistory || []);
+          setStats(prevStats => ({
+            ...prevStats,
+            quizzesCompleted: res.data.totalCompleted || 0
+          }));
+          console.log("Quiz history loaded:", res.data.quizHistory);
+        }
+      } catch(err) {
+        console.log("Error fetching quiz history:", err.message);
+      }
+    };
+    
+    fetchQuizzes();
+  }, [ProfileData]);
+
+   const transformQuizHistory = () => {
+    return quizHistory.map((session, index) => ({
+      id: session.sessionId || index + 1,
+      title: `Daily Quiz - ${new Date(session.date).toLocaleDateString()}`,
+      questions: session.totalQuestions || 0,
+      time: Math.ceil((session.totalQuestions || 0) * 1.5),
+      completed: true,
+      score: session.score || 0,
+      category: 'Daily Challenge',
+      difficulty: getOverallDifficulty(session.questions),
+      sessionData: session 
+    }));
+  };
+
+  const getOverallDifficulty = (questions) => {
+    if (!questions || questions.length === 0) return 'Medium';
+    
+    const difficulties = questions.map(q => q.difficulty);
+    const difficultyCount = {
+      easy: difficulties.filter(d => d.toLowerCase().includes('easy')).length,
+      medium: difficulties.filter(d => d.toLowerCase().includes('medium')).length,
+      hard: difficulties.filter(d => d.toLowerCase().includes('hard')).length
+    };
+    
+    if (difficultyCount.hard > difficultyCount.easy && difficultyCount.hard > difficultyCount.medium) 
+      return 'Hard';
+    if (difficultyCount.medium >= difficultyCount.easy && difficultyCount.medium >= difficultyCount.hard) 
+      return 'Medium';
+    return 'Easy';
+  };
 
   const handleCreateFlashcard = () => {
     setIsLoading(true);
-    // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
-      // Handle flashcard creation logic here
       console.log('Creating new flashcard set...');
     }, 1000);
   };
@@ -176,7 +191,7 @@ const Challenges = () => {
     </motion.div>
   );
 
-  const QuizCard = ({ quiz }) => (
+   const QuizCard = ({ quiz }) => (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -232,7 +247,8 @@ const Challenges = () => {
         </div>
         
         <Link 
-          to={quiz.completed ? '/challenges/quiz/review' : '/challenges/quiz'}
+          to={quiz.completed ? `/challenges/quiz/review/${quiz.id}` : '/challenges/quiz'}
+          state={quiz.completed ? { quizSession: quiz.sessionData } : null}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
             quiz.completed 
               ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 

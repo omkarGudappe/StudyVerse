@@ -53,7 +53,6 @@ const Privacy = () => {
     getCurrentPrivacySettings();
   }, [id]);
 
-  // Check for changes between current and original settings
   useEffect(() => {
     if (Object.keys(originalSettings).length > 0) {
       const changed = Object.keys(settings).some(key => 
@@ -146,7 +145,6 @@ const Privacy = () => {
           </div>
         </nav>
       <div className="max-w-4xl mx-auto py-8 px-4">
-        {/* Header Section */}
         <div className="flex items-center gap-5 mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -165,7 +163,6 @@ const Privacy = () => {
         
         <div className='border-b border-neutral-700 mb-8'></div>
 
-        {/* Error message for fetch failure */}
         {fetchError && (
           <div className="bg-red-500/20 border border-red-500/30 text-red-200 p-4 rounded-xl mb-6 flex items-start">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
@@ -184,7 +181,6 @@ const Privacy = () => {
           </div>
         )}
 
-        {/* Save Status Message */}
         {saveStatus.message && (
           <div className={`p-4 rounded-xl mb-6 flex items-start ${
             saveStatus.type === 'success' 
@@ -217,9 +213,7 @@ const Privacy = () => {
           </div>
         )}
 
-        {/* Settings Panel */}
         <div className="backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl border border-neutral-700/30">
-          {/* Account Privacy Section */}
           <div className="px-6 py-8 space-y-8">
             <div className="space-y-6">
               <div className="flex items-center gap-3">
@@ -300,7 +294,6 @@ const Privacy = () => {
               </div>
             </div>
 
-            {/* Privacy Preferences Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500/20 rounded-xl">
@@ -312,7 +305,6 @@ const Privacy = () => {
                 <h2 className="text-xl font-semibold">Privacy Preferences</h2>
               </div>
               
-              {/* Online Status */}
               <div className="flex items-center justify-between p-4 bg-neutral-800/30 rounded-2xl border border-neutral-700/30 hover:border-neutral-600/50 transition-colors">
                 <div className="space-y-1">
                   <h3 className="font-medium">Show Online Status</h3>
@@ -332,7 +324,6 @@ const Privacy = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="px-6 py-5 bg-neutral-800/60 border-t border-neutral-700/30 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
             <button 
               onClick={handleReset}

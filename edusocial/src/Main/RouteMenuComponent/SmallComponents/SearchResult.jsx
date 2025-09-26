@@ -7,7 +7,6 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
   const { ProfileData } = UserDataContextExport();
   const [activeTab, setActiveTab] = useState('users');
 
-  // Filter data based on active tab
   const usersData = searchResults.users || [];
   const notesData = searchResults.notes || [];
   const lessonsData = searchResults.lessons || [];
@@ -34,7 +33,6 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
     return `${count} ${type}${count !== 1 ? 's' : ''} found`;
   };
 
-  // Enhanced User Card Component
   const UserCard = ({ user, index }) => (
     <motion.div
       key={user._id || index}
@@ -297,7 +295,6 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
         </motion.div>
       ) : (
         <>
-          {/* Enhanced Tab Navigation */}
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -328,7 +325,6 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
             ))}
           </motion.div>
 
-          {/* Content */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}

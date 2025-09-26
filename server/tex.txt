@@ -1285,3 +1285,41 @@ const StudyVerseMain = () => {
 };
 
 export default StudyVerseMain;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Extracted Text Content (1265076 characters)
+
+%PDF-1.4
+%����
+4 0 obj
+<<
+/Type /XObject
+/Width 1800
+/BitsPerComponent 8
+/Height 2360
+/DL 163701
+/Filter [ /DCTDecode ]
+/Subtype /Image
+/Length 163701
+/ColorSpace /DeviceRGB
+>>
+stream
+����JFIFHH��C		
+
+
+
+
+	
+��C��	8"��	

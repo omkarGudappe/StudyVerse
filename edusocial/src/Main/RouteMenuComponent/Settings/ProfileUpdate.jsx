@@ -36,7 +36,6 @@ const ProfileUpdate = () => {
 
     const userId = auth.currentUser?.uid;
 
-    // Function to map database education level to form values
     const mapEducationLevel = (dbLevel) => {
         switch (dbLevel) {
             case "school":
@@ -56,7 +55,6 @@ const ProfileUpdate = () => {
 
     useEffect(() => {
         if (ProfileData) {
-            // Map the education level from database to form values
             const educationLevel = mapEducationLevel(ProfileData.education?.level);
             
             setFormData(prev => ({
@@ -82,25 +80,6 @@ const ProfileUpdate = () => {
         }
     }, [ProfileData]);
 
-    // const handleInputChange = (e) => {
-    //     const { name, value, files } = e.target;
-        
-    //     if (name === 'profileImage') {
-    //         setFormData(prev => ({ ...prev, profileImage: files[0] }));
-    //     } else if (name.startsWith('education.')) {
-    //         const educationField = name.split('.')[1];
-    //         setFormData(prev => ({
-    //             ...prev,
-    //             education: {
-    //                 ...prev.education,
-    //                 [educationField]: value
-    //             }
-    //         }));
-    //     } else {
-    //         setFormData(prev => ({ ...prev, [name]: value }));
-    //     }
-    // };
-
     const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     
@@ -109,7 +88,6 @@ const ProfileUpdate = () => {
     } else if (name.startsWith('education.')) {
         const educationField = name.split('.')[1];
         
-        // If education level is being changed, clear all education fields
         if (educationField === 'level') {
             setFormData(prev => ({
                 ...prev,
@@ -165,7 +143,6 @@ const ProfileUpdate = () => {
                 formDataToSend.append("image", formData.profileImage);
             }
 
-            // Append education data
             formDataToSend.append("education[level]", formData.education.level);
             formDataToSend.append("education[standard]", formData.education.standard || "");
             formDataToSend.append("education[stream]", formData.education.stream || "");
@@ -398,12 +375,10 @@ const ProfileUpdate = () => {
 
             <div className="py-8 px-2">
                 <div className="max-w-4xl mx-auto">
-                    {/* Header */}
                     <div className="text-center mb-8">
                         <p className="text-neutral-400">Update your personal information and preferences</p>
                     </div>
 
-                    {/* Success/Error Messages */}
                     {successMessage && (
                         <div className="bg-green-600 text-white p-4 rounded-lg mb-6">
                             {successMessage}
@@ -416,7 +391,6 @@ const ProfileUpdate = () => {
                     )}
 
                     <form onSubmit={handleSubmit} className="rounded-2xl p-3">
-                        {/* Profile Image Section */}
                         <div className="mb-8 flex items-center justify-center flex-col">
                             <h2 className="text-xl font-semibold mb-4 text-purple-300">Profile Picture</h2>
                             <div className="flex flex-col justify-center items-center gap-6">
@@ -528,7 +502,6 @@ const ProfileUpdate = () => {
                             </div>
                         </div>
 
-                        {/* Profile Details Section */}
                         <div className="mb-8">
                             <h2 className="text-xl font-semibold mb-4 text-purple-300">Profile Details</h2>
                             <div className="space-y-4">
@@ -561,7 +534,6 @@ const ProfileUpdate = () => {
                             </div>
                         </div>
 
-                        {/* Education Section */}
                         <div className="mb-8">
                             <h2 className="text-xl font-semibold mb-4 text-purple-300">Education</h2>
                             <div className="mb-4">
@@ -586,7 +558,6 @@ const ProfileUpdate = () => {
                             {renderEducationFields()}
                         </div>
 
-                        {/* Submit Button */}
                         <div className="flex justify-center">
                             <button
                                 type="submit"

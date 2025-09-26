@@ -18,11 +18,12 @@ const DailyQuiz = () => {
   const [showHint, setShowHint] = useState(false);
   const [userAnswers, setUserAnswers] = useState({});
   const [quizStarted, setQuizStarted] = useState(false);
+  const [sessionId, setSessionId] = useState(null); // ADD THIS
 
   console.log(userAnswers);
 
   useEffect(() => {
-    if (!ProfileData && !ProfileData._id) return;
+    if (!ProfileData || !ProfileData._id) return;
 
     let Level = "";
     if(ProfileData?.education?.standard){
@@ -57,6 +58,8 @@ const DailyQuiz = () => {
           
           setUserAnswers(initialAnswers);
           setDailyQuizzes(res.data.quiz);
+          setSessionId(res.data.sessionId);
+          console.log("my session", res.data.sessionId );
           const savedStreak = localStorage.getItem('quizStreak');
           if (savedStreak) setStreak(parseInt(savedStreak));
         } else {
@@ -73,7 +76,7 @@ const DailyQuiz = () => {
     GetQuizFromAI();
   }, [ProfileData]);
 
-  const handleOptionSelect = (option) => {
+  const handleOptionSelect = async (option) => {
     if (selectedOption !== null) return;
     
     setSelectedOption(option);
@@ -86,14 +89,18 @@ const DailyQuiz = () => {
       setScore(prev => prev + 1);
     }
     
-    setUserAnswers(prev => ({
-      ...prev,
+    const updatedAnswers = {
+      ...userAnswers,
       [currentQuestionIndex]: {
         chosenAnswer: option,
         isCorrect: isCorrect,
         timestamp: new Date().toISOString()
       }
-    }));
+    };
+    setUserAnswers(updatedAnswers);
+    
+    // Send to backend immediately WITH SESSION ID
+    await sendIndividualAnswerToBackend(currentQuestion._id, option);
     
     setShowResult(true);
   };
@@ -105,7 +112,7 @@ const DailyQuiz = () => {
       setShowResult(false);
       setShowHint(false);
     } else {
-      sendAnswersToBackend();
+      completeQuizSession(); // USE NEW FUNCTION
       setQuizCompleted(true);
       setReviewMode(true);
       
@@ -120,27 +127,99 @@ const DailyQuiz = () => {
     }
   };
 
-  const sendAnswersToBackend = async () => {
+  // UPDATED: Add sessionId to answer submission
+  const sendIndividualAnswerToBackend = async (questionId, chosenAnswer) => {
+    if (!sessionId) {
+      console.error('No sessionId available');
+      return;
+    }
+    
     try {
-      const answersToSend = dailyQuizzes.map((question, index) => ({
-        questionId: question._id,
-        chosenAnswer: userAnswers[index]?.chosenAnswer || '',
-        isCorrect: userAnswers[index]?.isCorrect || false,
-        timestamp: userAnswers[index]?.timestamp || new Date().toISOString()
-      }));
-
-      await axios.post(`${import.meta.env.VITE_API_URL}/user/quiz/submit-answers`, {
-        userId: ProfileData._id,
-        answers: answersToSend,
-        totalScore: score,
-        quizLength: dailyQuizzes.length
+      await axios.post(`${import.meta.env.VITE_API_URL}/user/AI/answer-quiz`, {
+        chosenAnswer: chosenAnswer,
+        uid: ProfileData._id,
+        questionId: questionId,
+        sessionId: sessionId
       });
-      
-      console.log('Answers submitted successfully');
+      console.log('Answer submitted successfully');
     } catch (error) {
-      console.error('Error submitting answers:', error);
+      console.error('Error submitting answer:', error);
+      
+      if (error.response?.status === 400 && 
+          error.response?.data?.message?.includes('cannot be modified')) {
+        console.warn('Answer already submitted and cannot be modified');
+      }
     }
   };
+
+  // NEW FUNCTION: Complete quiz session (replaces sendAnswersToBackend)
+  const completeQuizSession = async () => {
+    if (!sessionId) {
+      console.error('No sessionId available');
+      return;
+    }
+    
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/user/AI/complete-quiz`, {
+        uid: ProfileData._id,
+        sessionId: sessionId,
+        score: score
+      });
+      
+      if (response.data.ok) {
+        console.log('Quiz completed successfully');
+      } else {
+        console.error('Failed to complete quiz');
+      }
+    } catch (error) {
+      console.error('Error completing quiz:', error);
+      
+      if (error.response?.status === 400 && 
+          error.response?.data?.message?.includes('cannot be modified')) {
+        setError('This quiz has already been completed and answers cannot be modified.');
+        setQuizCompleted(true);
+      }
+    }
+  };
+
+  // UPDATED: Fix quiz status checking
+  useEffect(() => {
+    const checkQuizStatus = async () => {
+      if (!ProfileData || !ProfileData._id) return;
+      
+      try {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/user/AI/quiz-status/${ProfileData._id}`
+        );
+        
+        // FIX: Use todayCompleted instead of completed
+        if (response.data.exists && response.data.todayCompleted) {
+          setQuizCompleted(true);
+          setReviewMode(true);
+          setScore(response.data.score || 0);
+          
+          // Load today's quiz for review
+          const quizRes = await axios.post(`${import.meta.env.VITE_API_URL}/user/AI/generate-quiz`, {
+            subject: 'include any subject according to student level',
+            level: `${ProfileData?.education?.standard || ''} ${ProfileData?.education?.stream || ''}` || 'General knowledge',
+            uid: ProfileData._id
+          });
+          
+          if (quizRes.data.ok && quizRes.data.quiz) {
+            setDailyQuizzes(quizRes.data.quiz);
+            setSessionId(quizRes.data.sessionId);
+            if (response.data.hasTodayQuiz) {
+              console.log('Quiz already completed today, loading for review');
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking quiz status:', error);
+      }
+    };
+    
+    checkQuizStatus();
+  }, [ProfileData]);
 
   const handlePreviousQuestion = () => {
     if (reviewMode && currentQuestionIndex > 0) {
@@ -159,6 +238,7 @@ const DailyQuiz = () => {
     setShowResult(false);
     setShowHint(false);
     setQuizStarted(false);
+    setSessionId(null); 
     
     const resetAnswers = {};
     dailyQuizzes.forEach((_, index) => {
@@ -169,6 +249,26 @@ const DailyQuiz = () => {
       };
     });
     setUserAnswers(resetAnswers);
+    
+    if (ProfileData?._id) {
+      let Level = "";
+      if(ProfileData?.education?.standard){
+        Level =  `${ProfileData?.education?.standard} ${ProfileData?.education?.stream ? ProfileData?.education?.stream : ""}`
+      } else if(ProfileData?.education?.degree){
+        Level = `${ProfileData?.education?.degree} ${ProfileData?.education?.field}`
+      }
+      
+      axios.post(`${import.meta.env.VITE_API_URL}/user/AI/generate-quiz`, {
+        subject: 'include any subject according to student level',
+        level: Level || 'General knowledge',
+        uid: ProfileData._id
+      }).then(res => {
+        if (res.data.ok && res.data.quiz) {
+          setDailyQuizzes(res.data.quiz);
+          setSessionId(res.data.sessionId);
+        }
+      });
+    }
   };
 
   const toggleHint = () => {

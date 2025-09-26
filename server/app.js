@@ -77,6 +77,7 @@ const server = http.createServer(app);
 const AI = require('./SendAi/GenerateQuiz');
 const { setIo } = require('./SocketConnection/socketInstance');
 const Group = require('./Users/UserGroups');
+const Quize = require("./Users/Quize");
 
 app.use(cors({
   origin: [
@@ -124,6 +125,7 @@ app.use('/api/posts', Posts);
 app.use('/api/Notes', Notes)
 app.use('/api/user/AI', AI);
 app.use('/api/group', Group);
+app.use('/api/quiz', Quize);
 
 const port = process.env.PORT || 4000
 connectDB();

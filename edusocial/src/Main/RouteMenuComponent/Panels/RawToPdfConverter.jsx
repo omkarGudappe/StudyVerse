@@ -1,4 +1,3 @@
-// Enhanced RawToPdfConverter.jsx
 import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 
@@ -29,17 +28,13 @@ const RawToPdfConverter = ({
       let extractedText = '';
       
       if (urlOrContent.startsWith('http')) {
-        // It's a URL - check if it's PDF or text
         if (urlOrContent.endsWith('.pdf') || urlOrContent.includes('.pdf')) {
-          // Use Cloudinary's text extraction feature
           extractedText = await extractTextFromPDF(urlOrContent);
         } else {
-          // It's a text file - fetch directly
           const response = await fetch(urlOrContent);
           extractedText = await response.text();
         }
       } else {
-        // It's already text content
         extractedText = urlOrContent;
       }
       
@@ -55,7 +50,6 @@ const RawToPdfConverter = ({
 
   const extractTextFromPDF = async (pdfUrl) => {
     try {
-      // Method 1: Try Cloudinary's OCR/text extraction
       const cloudinaryUrl = pdfUrl.replace('/upload/', '/upload/fl_attachment:study-material.txt/');
       
       const response = await fetch(cloudinaryUrl);
@@ -66,7 +60,6 @@ const RawToPdfConverter = ({
         }
       }
       
-      // Method 2: Use a PDF text extraction service
       return await extractWithPDFLib(pdfUrl);
       
     } catch (error) {
@@ -75,12 +68,10 @@ const RawToPdfConverter = ({
   };
 
   const extractWithPDFLib = async (pdfUrl) => {
-    // Simple client-side PDF text extraction
     try {
       const response = await fetch(pdfUrl);
       const arrayBuffer = await response.arrayBuffer();
       
-      // Basic PDF structure parsing (simplified)
       const uint8Array = new Uint8Array(arrayBuffer);
       const pdfText = extractTextFromPDFBytes(uint8Array);
       
@@ -91,21 +82,19 @@ const RawToPdfConverter = ({
   };
 
   const extractTextFromPDFBytes = (uint8Array) => {
-    // Simple PDF text extraction (basic implementation)
     const decoder = new TextDecoder('iso-8859-1');
     const pdfString = decoder.decode(uint8Array);
     
-    // Extract text between text operators
     const textMatches = pdfString.match(/\((.*?)\)/g);
     if (textMatches) {
       return textMatches.map(match => 
-        match.slice(1, -1) // Remove parentheses
-            .replace(/\\\(/g, '(') // Unescape characters
+        match.slice(1, -1)
+            .replace(/\\\(/g, '(')
             .replace(/\\\)/g, ')')
             .replace(/\\n/g, '\n')
             .replace(/\\r/g, '\r')
             .replace(/\\t/g, '\t')
-      ).join(' ').substring(0, 5000); // Limit length
+      ).join(' ').substring(0, 5000);
     }
     
     return null;
@@ -123,27 +112,23 @@ const RawToPdfConverter = ({
       const margin = 15;
       const maxWidth = pageWidth - (2 * margin);
       
-      // Clean and format the text
       const cleanText = text
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
         .replace(/\t/g, '    ')
-        .replace(/[^\x20-\x7E\n\r]/g, '') // Remove non-printable characters
-        .substring(0, 50000); // Limit text length
+        .replace(/[^\x20-\x7E\n\r]/g, '')
+        .substring(0, 50000);
       
-      // Add title
       doc.setFontSize(16);
       doc.text(fileName || 'Study Material', margin, 20);
       doc.setFontSize(11);
       
-      // Split text into lines
       const lines = doc.splitTextToSize(cleanText, maxWidth);
       
       let yPosition = 35;
       const lineHeight = 6;
       const pageHeight = doc.internal.pageSize.getHeight();
       
-      // Add text line by line
       for (let i = 0; i < lines.length; i++) {
         if (yPosition + lineHeight > pageHeight - margin) {
           doc.addPage();
@@ -154,7 +139,6 @@ const RawToPdfConverter = ({
         yPosition += lineHeight;
       }
       
-      // Add footer
       const totalPages = doc.internal.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
@@ -243,7 +227,6 @@ const RawToPdfConverter = ({
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Text Preview */}
               <div className="bg-neutral-900/50 rounded-xl p-4 max-h-96 overflow-y-auto">
                 <div className="text-sm text-neutral-400 mb-2">
                   Extracted Text Content ({textContent.length} characters)
@@ -258,7 +241,6 @@ const RawToPdfConverter = ({
                 )}
               </div>
               
-              {/* Action Buttons */}
               <div className="flex justify-center space-x-4 flex-wrap gap-3">
                 <button
                   onClick={downloadPdf}

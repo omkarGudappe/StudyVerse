@@ -68,7 +68,6 @@ const NotificationSetting = () => {
       ...prev,
       [setting]: !prev[setting]
     }));
-    // Clear any previous save status when user makes changes
     setSaveStatus({ type: '', message: '' });
     console.log(settings , "Setting ");
   };
@@ -106,7 +105,6 @@ const NotificationSetting = () => {
     }
   };
 
-  // Show loading state while fetching settings
   if (loading && Object.keys(settings).length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center">
@@ -134,7 +132,6 @@ const NotificationSetting = () => {
           </div>
         </nav>
       <div className="max-w-4xl mx-auto  py-8 px-4">
-        {/* Header Section */}
         <div className="flex items-center gap-5 mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -153,7 +150,6 @@ const NotificationSetting = () => {
         
         <div className='border-b border-neutral-700 mb-8'></div>
 
-        {/* Error message for fetch failure */}
         {fetchError && (
           <div className="bg-red-500/20 border border-red-500/30 text-red-200 p-4 rounded-xl mb-6 flex items-start">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
@@ -172,7 +168,6 @@ const NotificationSetting = () => {
           </div>
         )}
 
-        {/* Save Status Message */}
         {saveStatus.message && (
           <div className={`p-4 rounded-xl mb-6 flex items-start ${
             saveStatus.type === 'success' 
@@ -197,10 +192,8 @@ const NotificationSetting = () => {
           </div>
         )}
 
-        {/* Settings Panel */}
         <div className="backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl border border-neutral-700/30">
           <div className="px-6 py-8 space-y-8">
-            {/* Likes & Reactions Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 rounded-xl">
@@ -229,7 +222,6 @@ const NotificationSetting = () => {
               </div>
             </div>
 
-            {/* Comments Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-amber-500/20 rounded-xl">
@@ -258,7 +250,6 @@ const NotificationSetting = () => {
               </div>
             </div>
 
-            {/* Connections Section */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-500/20 rounded-xl">
@@ -278,7 +269,6 @@ const NotificationSetting = () => {
                   <h3 className="font-medium">Peer requests</h3>
                   <p className="text-sm text-neutral-400">Accept all peer requests automatically</p>
                   
-                  {/* Show message when account is private */}
                   {settings.accountType === 'private' && (
                     <div className="mt-2 p-2 bg-neutral-700/30 rounded-lg">
                       <p className="text-xs text-amber-400">
@@ -305,7 +295,6 @@ const NotificationSetting = () => {
             </div>
           </div>
 
-          {/* Action Buttons */}
           <div className="px-6 py-5 bg-neutral-800/60 border-t border-neutral-700/30 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-4">
             <button 
               onClick={handleCancel}

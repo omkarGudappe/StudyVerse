@@ -1252,8 +1252,7 @@ const ResizableImage = Image.extend({
 
       {/* Main Toolbar */}
       <div className="bg-neutral-800 border-b border-purple-700 px-4 py-2 sticky top-0 z-10">
-        <div className="flex lg:flex-wrap lg:overflow-x-hidden lg:overflow-y-hidden scroll-smooth scroll-mt-4 overflow-x-auto overflow-y-hidden items-center gap-2">
-          {/* Document Actions */}
+        <div className="flex lg:flex-wrap lg:overflow-x-hidden scroll-smooth scroll-mt-4 overflow-x-auto items-center gap-2">
           <div className="flex items-center gap-2 mr-2 ">
             <ToolbarButton title="Save" onClick={() => setSavedStatus("saving")}>
               <FaSave />
@@ -1418,28 +1417,28 @@ const ResizableImage = Image.extend({
             <ToolbarButton title="Text Case">
               <TbLetterCaseToggle />
             </ToolbarButton>
-            <div className="absolute z-100 left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+            <div className="absolute z-20 left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
               <button 
                 onClick={() => editor.chain().focus().setTextCase("uppercase").run()}
-                className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <LuCaseSensitive /> UPPERCASE
               </button>
               <button 
                 onClick={() => editor.chain().focus().setTextCase("lowercase").run()}
-                className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <LuCaseSensitive /> lowercase
               </button>
               <button 
                 onClick={() => editor.chain().focus().setTextCase("capitalize").run()}
-                className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <LuCaseSensitive /> Capitalize
               </button>
               <button 
                 onClick={() => editor.chain().focus().unsetTextCase().run()}
-                className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <BiReset /> Normal Case
               </button>
@@ -1765,7 +1764,7 @@ const ResizableImage = Image.extend({
         )}
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-5xl mx-auto px-4 py-6 z-5">
         <EditorContent editor={editor} className="min-h-[70vh] text-wrap" />
       </div>
 

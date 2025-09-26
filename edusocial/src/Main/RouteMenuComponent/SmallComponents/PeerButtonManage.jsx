@@ -136,7 +136,6 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
         if (auth.currentUser) {
             const title = 'cancelRequest';
             Socket.emit("Send-Cancel-Request", { Id: OtherUser, fromID: currentUser, title: title });
-            // Optimistic UI update
             setPeerStatus({
                 peeread: false,
                 requested: false,

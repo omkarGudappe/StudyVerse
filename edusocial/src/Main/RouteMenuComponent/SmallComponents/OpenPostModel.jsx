@@ -54,7 +54,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
     return (
         <div className="fixed inset-0 z-50 flex md:items-center justify-center bg-black bg-opacity-90 backdrop-blur-md">
             <div className={`relative w-full max-w-6xl max-h-[90vh] bg-neutral-950 rounded-lg overflow-hidden flex ${isMobile ? 'flex-col h-full' : 'flex-row'}`}>
-                {/* Close button */}
                 <button 
                     onClick={onClose}
                     className="absolute top-4 right-4 z-10 text-white bg-neutral-800 rounded-full p-2 hover:bg-neutral-700 transition-colors"
@@ -64,10 +63,8 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                     </svg>
                 </button>
                 
-                {/* Mobile layout */}
                 {isMobile ? (
                     <div className="w-full h-full flex flex-col">
-                        {/* Header with back button and title */}
                         <div className="flex items-center p-3 border-b border-neutral-800 bg-neutral-950">
                             <button 
                                 onClick={onClose}
@@ -83,7 +80,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                             </h2>
                         </div>
                         
-                        {/* Tab navigation */}
                         <div className="flex border-b border-neutral-800 bg-neutral-950">
                             <button 
                                 className={`flex-1 py-3 text-center font-medium ${activeTab === 'post' ? 'text-white border-b-2 border-white' : 'text-neutral-400'}`}
@@ -99,11 +95,9 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                             </button>
                         </div>
                         
-                        {/* Content based on active tab */}
                         <div className="flex-1 overflow-y-auto">
                             {activeTab === 'post' ? (
                                 <>
-                                    {/* Post content section */}
                                     <div className="flex items-center justify-center bg-black aspect-square">
                                         {loading ? (
                                             <div className="w-full h-full bg-neutral-900 animate-pulse"></div>
@@ -122,18 +116,15 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                         )}
                                     </div>
                                     
-                                    {/* Action buttons - Fixed at bottom */}
                                     <div className="sticky bottom-0 bg-neutral-950 border-t border-neutral-800 p-3">
                                         <div className="flex justify-between items-center mb-3">
                                             <div className="flex space-x-4">
-                                                {/* Like button */}
                                                 <button className="text-white hover:text-red-500 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                                     </svg>
                                                 </button>
                                                 
-                                                {/* Comment button */}
                                                 <button 
                                                     className="text-white hover:text-blue-500 transition-colors"
                                                     onClick={() => setActiveTab('comments')}
@@ -143,7 +134,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                                     </svg>
                                                 </button>
                                                 
-                                                {/* Share button */}
                                                 <button className="text-white hover:text-green-500 transition-colors">
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -151,7 +141,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                                 </button>
                                             </div>
                                             
-                                            {/* Like count */}
                                             {loading ? (
                                                 <div className="h-4 w-10 bg-neutral-800 animate-pulse rounded"></div>
                                             ) : (
@@ -161,7 +150,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                             )}
                                         </div>
                                         
-                                        {/* Add comment input */}
                                         <div className="flex space-x-2">
                                             <input 
                                                 type="text" 
@@ -180,9 +168,7 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                         </div>
                                     </div>
                                     
-                                    {/* Post details */}
                                     <div className="p-4">
-                                        {/* Author info */}
                                         <div className="flex items-center space-x-3 mb-3">
                                             {loading ? (
                                                 <>
@@ -209,7 +195,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                             )}
                                         </div>
                                         
-                                        {/* Post caption */}
                                         <div>
                                             {loading ? (
                                                 <div className="space-y-2">
@@ -224,7 +209,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                             )}
                                         </div>
                                         
-                                        {/* Post date */}
                                         {loading ? (
                                             <div className="h-3 w-24 bg-neutral-800 animate-pulse rounded mt-2"></div>
                                         ) : (
@@ -235,7 +219,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                     </div>
                                 </>
                             ) : (
-                                /* Comments tab */
                                 <div className="p-4">
                                     <h4 className="text-white font-semibold mb-4">Comments ({post?.comments?.length || 0})</h4>
                                     
@@ -288,9 +271,7 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                         </div>
                     </div>
                 ) : (
-                    /* Desktop layout */
                     <>
-                        {/* Post content section */}
                         <div className="md:w-7/12 bg-black flex items-center justify-center p-4">
                             {loading ? (
                                 <div className="w-full h-96 bg-neutral-900 animate-pulse rounded"></div>
@@ -309,9 +290,7 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                             )}
                         </div>
                         
-                        {/* Details section */}
                         <div className="md:w-5/12 flex flex-col border-l border-neutral-800">
-                            {/* Author info */}
                             <div className="p-4 border-b border-neutral-800 flex items-center space-x-3">
                                 {loading ? (
                                     <>
@@ -338,7 +317,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                 )}
                             </div>
                             
-                            {/* Post caption */}
                             <div className="p-4 border-b border-neutral-800">
                                 {loading ? (
                                     <div className="space-y-2">
@@ -353,7 +331,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                 )}
                             </div>
                             
-                            {/* Comments section */}
                             <div className="flex-1 overflow-y-auto p-4">
                                 <h4 className="text-white font-semibold mb-4">Comments</h4>
                                 
@@ -403,25 +380,21 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                 )}
                             </div>
                             
-                            {/* Action buttons and metrics */}
                             <div className="p-4 border-t border-neutral-800">
                                 <div className="flex justify-between mb-4">
                                     <div className="flex space-x-4">
-                                        {/* Like button */}
                                         <button className="text-white hover:text-red-500 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                                             </svg>
                                         </button>
                                         
-                                        {/* Comment button */}
                                         <button className="text-white hover:text-blue-500 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                                             </svg>
                                         </button>
                                         
-                                        {/* Share button */}
                                         <button className="text-white hover:text-green-500 transition-colors">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -430,7 +403,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                     </div>
                                 </div>
                                 
-                                {/* Likes count */}
                                 {loading ? (
                                     <div className="h-4 w-20 bg-neutral-800 animate-pulse rounded mb-2"></div>
                                 ) : (
@@ -439,7 +411,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                     </p>
                                 )}
                                 
-                                {/* Post date */}
                                 {loading ? (
                                     <div className="h-3 w-24 bg-neutral-800 animate-pulse rounded"></div>
                                 ) : (
@@ -449,7 +420,6 @@ const OpenPostModal = ({ open, onClose, Id }) => {
                                 )}
                             </div>
                             
-                            {/* Add comment input */}
                             <div className="p-4 border-t border-neutral-800">
                                 <div className="flex space-x-2">
                                     <input 

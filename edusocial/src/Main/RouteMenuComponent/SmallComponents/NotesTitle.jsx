@@ -19,10 +19,6 @@ const NotesTitle = ({ open, onClose , editor }) => {
 
     setLoading(true);
     setIsLoading(true);
-    // if (title.trim()) {
-    //   setTitle('');
-    //   onClose();
-    // }
     const userId = ProfileData?._id || FirebaseUid || auth.currentUser?.uid || ProfileData?.Uid
     const NoteId = title +"_"+ Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const content = editor.getJSON();
