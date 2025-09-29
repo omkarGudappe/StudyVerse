@@ -65,7 +65,6 @@ module.exports = function (io) {
 
     socket.on("Send-Cancel-Request", async ({ Id, fromID, title }) => {
       try {
-        console.log("title", title);
         if (!Id || !fromID) {
           return console.log("Missing Requirment");
         }
@@ -81,7 +80,6 @@ module.exports = function (io) {
           const { setting } = GetCheckAutoRequestAcceptIsEnableOrNot;
 
           if (setting.acceptAllPeersRequest) {
-            console.log("Check is on");
             await User.findByIdAndUpdate(fromID, {
               $addToSet: { MyConnections: Id },
             });
@@ -92,7 +90,6 @@ module.exports = function (io) {
               { new: true }
             );
           } else {
-            console.log("check is off");
             await User.findByIdAndUpdate(
               Id,
               { $addToSet: { connectionRequests: fromID } },
@@ -449,5 +446,22 @@ module.exports = function (io) {
         socket.broadcast.emit("FetchAgain", { Fetch: true });
       }
     });
+
+    socket.on('OnlineStatus' , ({ CurrentUserId, OtherUserId }) => {
+      try{
+        if(!CurrentUserId || !OtherUserId) return;
+        console.log("Check data is correct for online status", CurrentUserId, "and", OtherUserId);
+        const OnlineStatus =  userSocketMap.get(OtherUserId);
+        const CurrentUserSocketId = userSocketMap.get(CurrentUserId);
+        if(OnlineStatus){
+          console.log('True Online Status')
+          io.to(CurrentUserSocketId).emit('UserOnlineStatus', ({Online: true}))
+        }else{
+          console.log('none')
+        }
+      }catch(err){
+        console.log("Error from the Online status", err.message);
+      }
+    })
   });
 };

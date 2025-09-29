@@ -79,7 +79,6 @@ const ProfileBio = () => {
       setProfileData(prev => ({ ...prev, [name]: value }));
     }
 
-    // Clear general error when user interacts with form
     if (error.message) {
       setError({ message: "", code: "", type: "" });
     }
@@ -93,29 +92,28 @@ const ProfileBio = () => {
     };
     let isValid = true;
 
-    // Validate image
-    if (!profileData.image) {
-      newFieldErrors.image = "Profile image is required";
-      isValid = false;
-    }
+    // // Validate image
+    // if (!profileData.image) {
+    //   newFieldErrors.image = "Profile image is required";
+    //   isValid = false;
+    // }
 
-    // Validate bio
-    if (!profileData.bio.trim()) {
-      newFieldErrors.bio = "Bio is required";
-      isValid = false;
-    } else if (profileData.bio.trim().length < 10) {
-      newFieldErrors.bio = "Bio must be at least 10 characters long";
-      isValid = false;
-    }
+    // // Validate bio
+    // if (!profileData.bio.trim()) {
+    //   newFieldErrors.bio = "Bio is required";
+    //   isValid = false;
+    // } else if (profileData.bio.trim().length < 10) {
+    //   newFieldErrors.bio = "Bio must be at least 10 characters long";
+    //   isValid = false;
+    // }
 
-    // Validate username
     if (!profileData.username.trim()) {
       newFieldErrors.username = "Username is required";
       isValid = false;
     } else {
-      const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+      const usernameRegex = /^[a-zA-Z0-9@]{3,20}$/;
       if (!usernameRegex.test(profileData.username)) {
-        newFieldErrors.username = "Username must be 3-20 characters (letters, numbers, underscores only)";
+        newFieldErrors.username = "Username must be 3-20 characters (letters numbers,@ only)";
         isValid = false;
       }
     }
@@ -208,6 +206,13 @@ const ProfileBio = () => {
     }
   };
 
+  const removeAtSymbol = (str) => {
+    if (str.startsWith('@')) {
+        return str.slice(1);
+    }
+    return str;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -235,7 +240,7 @@ const ProfileBio = () => {
       setLoading(true);
       setError({ message: "", code: "", type: "" });
 
-      const userName = "@" + profileData.username;
+      const userName = "@" + removeAtSymbol(profileData.username);
       const formData = new FormData();
       formData.append("bio", profileData.bio.trim());
       formData.append("image", profileData.image);
@@ -243,7 +248,7 @@ const ProfileBio = () => {
       formData.append("FUid", Fid);
 
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/profile`, formData, {
-        timeout: 30000, // 30 second timeout for image upload
+        // timeout: 60000,
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -256,7 +261,6 @@ const ProfileBio = () => {
       const result = res.data;
 
       if (result.code === "PROFILE_UPDATED") {
-        // Success - clear form and navigate
         setProfileData({
           bio: "",
           image: null,

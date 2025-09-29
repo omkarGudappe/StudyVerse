@@ -46,6 +46,7 @@ const Messages = () => {
     status: false,
     id: null
   });
+  const [OnlineStatus, setOnlieStatus] = useState();
   
   // Check if device is mobile
   useEffect(() => {
@@ -447,6 +448,36 @@ const Messages = () => {
     }
   }
 
+  // const handleCheckOnlineState = (Id) => {
+  //   if(!Id) return;
+  //   Socket.emit('OnlineStatus', ({Id}));
+  // }
+
+  useEffect(() => {
+    Socket.on('UserOnlineStatus' , ({Online}) => {
+      if(Online){
+        setOnlieStatus('Online');
+      }else {
+        setOnlieStatus('no');
+      }
+    })
+
+    return () => {
+      Socket.off('UserOnlineStatus');
+    }
+  }, [])
+
+  useEffect(() => {
+    if(!otherUser && !ProfileData) return;
+    const CurrentUserId = ProfileData?._id;
+    const OtherUserId = otherUser?._id;
+    console.log("check for frontend data is correct or not" , CurrentUserId, "and", OtherUserId);
+    setOnlieStatus('');
+    Socket.emit('OnlineStatus', ({ CurrentUserId, OtherUserId }));
+
+  } , [otherUser?._id, ProfileData?._id])
+
+
   const removeFile = () => {
     setSelectedFile(null);
     setPreviewImage(null);
@@ -529,7 +560,7 @@ const Messages = () => {
               {isGroupChat ? groupData.name : `${otherUser.firstName} ${otherUser.lastName}`}
             </h2>
             <p className="text-neutral-400 text-sm">
-              {isGroupChat ? `${groupData.members?.length || 0} members` : 'Online'}
+              {isGroupChat ? `${groupData.members?.length || 0} members` : OnlineStatus}
             </p>
           </div>
         </div>

@@ -5,7 +5,8 @@ const UserChat = new mongoose.Schema({
     OtherUser: [
         {
             User2: { type: mongoose.Schema.Types.ObjectId, ref: "User" , required: true },
-            ChatId: { type: String, required: true }
+            ChatId: { type: String, required: true },
+            LastSeen: { type: Date },
         }
     ],
 })

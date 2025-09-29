@@ -112,6 +112,7 @@ import { useNotesStore } from "../../StateManagement/StoreNotes";
 import { LuCaseSensitive } from "react-icons/lu";
 import Superscript from "@tiptap/extension-superscript";
 import Subscript from "@tiptap/extension-subscript";
+import { UserDataContextExport } from "./CurrentUserContexProvider";
 
 const Mention = Node.create({
   name: 'mention',
@@ -660,6 +661,7 @@ const NotesEditor = ({content , Id}) => {
   // const { notes, isLoading } = StoreNotes();
   const [OpenNotesTitleModel, setOpenNotesTitleModel] = useState(false);
   const [EditorContentData, setEditorContentData] = useState(content || null);
+  const { ProfileData } = UserDataContextExport();
   
   // Update date every minute
   useEffect(() => {
@@ -953,8 +955,8 @@ const ResizableImage = Image.extend({
       }
       setShowTableControls(inTable);
       
-      // Auto-save after 2 seconds of inactivity
       if(Id) {
+        const userId = ProfileData?._id;
        clearTimeout(window.autoSaveTimeout);
        window.autoSaveTimeout = setTimeout(async () => {
         try {
@@ -963,6 +965,7 @@ const ResizableImage = Image.extend({
 
           const res = await axios.put(`${import.meta.env.VITE_API_URL}/Notes/update/${Id}`, {
             content: jsonContent,
+            userId, 
           });
 
           if(res.data.ok){

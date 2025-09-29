@@ -105,7 +105,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
             <div className="flex justify-center items-center py-16">
                 <div className="flex flex-col items-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-600 mb-4"></div>
-                    <p className="text-amber-100">Loading posts...</p>
+                    <p className=" text-white">Loading posts...</p>
                 </div>
             </div>
         );
@@ -113,7 +113,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
 
     if (error) {
         return (
-            <div className="text-center py-16 text-amber-100">
+            <div className="text-center py-16  text-white">
                 <div className="bg-neutral-900/80 rounded-2xl p-8 max-w-md mx-auto border border-neutral-700/50">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -138,7 +138,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
         return (
             <div className="py-8 mt-8">
                 <div className='border-b border-neutral-700/50 mb-8 pb-4'>
-                    <h2 className="text-2xl md:text-3xl font-bold px-4 text-amber-100 flex items-center gap-3">
+                    <h2 className="text-2xl md:text-3xl font-bold px-4  text-white flex items-center gap-3">
                         <div className="p-2 bg-purple-500/10 rounded-xl">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -157,7 +157,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
                                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                             </svg>
                         </div>
-                        <h3 className="text-xl font-semibold mb-3 text-amber-100">This account is private</h3>
+                        <h3 className="text-xl font-semibold mb-3  text-white">This account is private</h3>
                         <p className="text-neutral-400 mb-6 max-w-md mx-auto">Connect with this user to view their study materials and posts.</p>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 opacity-40 blur-xs mt-8">
@@ -189,7 +189,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
                     </div>
-                    <h3 className="text-xl font-semibold mb-3 text-amber-100">No posts yet</h3>
+                    <h3 className="text-xl font-semibold mb-3  text-white">No posts yet</h3>
                     <p className="text-neutral-400 mb-2">This user hasn't shared any study materials.</p>
                     <p className="text-neutral-500 text-sm">Check back later for new content</p>
                 </div>
@@ -200,7 +200,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
     return (
         <div id="UserPost" className="py-8 mt-8">
             <div className='border-b border-neutral-700/50 mb-8 pb-4'>
-                <h2 className="text-2xl md:text-3xl font-bold px-4 text-amber-100 flex items-center gap-3">
+                <h2 className="text-2xl md:text-3xl font-bold px-4 text-white flex items-center gap-3">
                     <div className="p-2 bg-purple-500/10 rounded-xl">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -220,7 +220,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
                     >
                         <div className="p-5">
                             {post.heading && (
-                                <h3 className="text-lg font-semibold text-amber-100 mb-3 line-clamp-2 group-hover:text-purple-200 transition-colors">{post.heading}</h3>
+                                <h3 className="text-lg font-semibold  text-white mb-3 line-clamp-2 group-hover:text-purple-200 transition-colors">{post.heading}</h3>
                             )}
                             
                             <p className="text-xs text-neutral-400 mb-3 flex items-center">

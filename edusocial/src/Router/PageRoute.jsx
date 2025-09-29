@@ -31,6 +31,7 @@ import Video from "../Main/RouteMenuComponent/Panels/Video";
 import NotificationSetting from "../Main/RouteMenuComponent/Settings/NotificationSetting";
 import Privacy from "../Main/RouteMenuComponent/Settings/Privacy";
 import Challenges from "../Main/RouteMenuComponent/Challenges";
+import QuizReview from "../Main/RouteMenuComponent/SmallComponents/QuizReview";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -175,6 +176,14 @@ const PageRoute = () => {
                   <DeailyQuiz/>
                 </MenuWrapper>
                }
+            />
+            <Route
+              path="/challenges/quiz/review/:id"
+              element={
+                <MenuWrapper>
+                  <QuizReview/>
+                </MenuWrapper>
+              }
             />
             <Route
               path="/profile/:userName"

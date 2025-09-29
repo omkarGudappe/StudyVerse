@@ -149,11 +149,11 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
     }
 
     if (isLoading) {
-        return <button className={`${className} flex items-center py-2 bg-blue-600 p-2`}><span className="ml-5 loader"></span></button>
+        return <button className={`${className} flex items-center py-2 bg-blue-600 p-2`}>Loading...</button>
     }
 
     if (!CurrentUserConnections || !OtherUserConnections) {
-        return <button className={`${className} flex  items-center py-2 bg-blue-600 p-2`}><span className="loader"></span></button>
+        return <button className={`${className} flex  items-center py-2 bg-blue-600 p-2`}>Loading...</button>
     }
 
     return (

@@ -11,6 +11,7 @@ const SettingePage = () => {
 
   const handleLogout = () => {
     Logout();
+    localStorage.removeItem('token');
     Navigate('/');
     setIsOpenModel(false);
   };

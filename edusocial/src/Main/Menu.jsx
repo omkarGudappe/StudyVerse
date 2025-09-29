@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Post from './RouteMenuComponent/Post';
 import { motion, AnimatePresence } from 'framer-motion';
 import Search from "./RouteMenuComponent/Search";
@@ -21,6 +21,39 @@ const Menu = () => {
   const [OpenUserNotes, setOpenUserNotes] = useState(false);
   const location = useLocation();
   const [NotificationLength, setNotificationsLenght] = useState();
+  const [PreviosActive, setPreviosActive] = useState(activeBtn);
+  const navigate = useNavigate();
+
+    useEffect(() => {
+    const checkSession = async () => {
+      const token = localStorage.getItem("token");
+      console.log("Befour getting");
+      if (!token){
+        navigate("/"); return
+      };
+      console.log("Found token, verifying session...", token);
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-session`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          navigate("/home");
+          console.log("Session valid, navigating to home.");
+        } else {
+          navigate("/");
+          localStorage.removeItem("token");
+          console.log("Session invalid, please log in again.");
+        }
+      } catch (err) {
+        localStorage.removeItem("token");
+        console.log("Session verification error:", err.message);
+      }
+    };
+  
+    checkSession();
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -143,7 +176,7 @@ const Menu = () => {
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       ),
-      action: () => setShowPost(true)
+      action: () => {setPreviosActive(activeBtn);setShowPost(true)}
     },
     {
       id: "createNotes",
@@ -174,7 +207,7 @@ const Menu = () => {
         </svg>
       ),
       // action: () => setOpenNotification(!NotificationOpen),
-      action: () => handleOpenPanel('notification'),
+      action: () => {setPreviosActive(activeBtn); handleOpenPanel('notification');},
     },
     {
       id: "messages",
@@ -185,7 +218,7 @@ const Menu = () => {
         </svg>
       ),
       // action: () => setMessageContactClick(!MessageContactClick),
-      action: () => handleOpenPanel('message')
+      action: () => {setPreviosActive(activeBtn);handleOpenPanel('message')}
     },
     {
       id: "profile",
@@ -234,7 +267,7 @@ const Menu = () => {
         </svg>
       ),
       // action: () => setOpenUserNotes(!OpenUserNotes),
-      action: () => handleOpenPanel('notes')
+      action: () => {setPreviosActive(activeBtn); handleOpenPanel('notes')}
     },
     {
       id: "settings",
@@ -263,6 +296,7 @@ const Menu = () => {
   ]
 
   const handleMenuItemClick = (itemId, action) => {
+    setPreviosActive(activeBtn);
     setActiveBtn(itemId);
     if (action) {
       action();
@@ -317,13 +351,13 @@ const Menu = () => {
 
   return (
     <>
-      <Search searchClicked={searchClicked} onClose={() => setSearchClicked(!searchClicked)} />
-      <Notification open={NotificationOpen} onClose={() => setOpenNotification(!NotificationOpen)} ProfileData={ProfileData} />
-      <MessageContact open={MessageContactClick} onClose={() => setMessageContactClick(false)} />
-      <UsersNotes open={OpenUserNotes} onClose={() => setOpenUserNotes(!OpenUserNotes)} ProfileData={ProfileData} from="desktop" />
+      <Search searchClicked={searchClicked} onClose={() => {setActiveBtn(PreviosActive);setSearchClicked(!searchClicked)}} />
+      <Notification open={NotificationOpen} onClose={() => {setActiveBtn(PreviosActive);setOpenNotification(!NotificationOpen)}} ProfileData={ProfileData} />
+      <MessageContact open={MessageContactClick} onClose={() => {setActiveBtn(PreviosActive);setMessageContactClick(false)}} />
+      <UsersNotes open={OpenUserNotes} onClose={() => {setActiveBtn(PreviosActive);setOpenUserNotes(!OpenUserNotes)}} ProfileData={ProfileData} from="desktop" />
 
       <motion.div 
-        className="hidden z-50 md:flex h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-neutral-700 sticky top-0 flex-col"
+        className="hidden select-none z-50 md:flex h-screen bg-gradient-to-b from-neutral-900 to-neutral-800 border-r border-neutral-700 sticky top-0 flex-col"
         animate={{ width: searchClicked ? 80 : NotificationOpen ? 80 : MessageContactClick ? 80 : OpenUserNotes ? 80 : 320 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
@@ -396,7 +430,7 @@ const Menu = () => {
         <div className="p-4 border-t border-neutral-700">
           <div className="space-y-2">
             {desktopOnlyItems.map((item) => (
-                 <Link
+                <Link
                   key={item.id}
                   to={getRoutePath(item.id)}
                   onClick={() => handleMenuItemClick(item.id, item.action)}
@@ -539,7 +573,7 @@ const Menu = () => {
         </AnimatePresence>
       </div>
 
-      {showPost && <Post ModelCloseClicked={() => setShowPost(false)} />}
+      {showPost && <Post ModelCloseClicked={() => {setActiveBtn(PreviosActive);setShowPost(false)}} />}
     </>
   );
 };

@@ -10,13 +10,14 @@ const Challenges = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({
     flashcardsCreated: 12,
-    quizzesCompleted: 8,
+    quizzesCompleted: 0,
     streak: 5,
     points: 1250
   });
-  const [quizzes, setQuizzes] = useState([]);
-  const [quizHistory, setQuizHistory] = useState([]); 
+  const [quizHistory, setQuizHistory] = useState([]);
+  const [loadingQuizzes, setLoadingQuizzes] = useState(true);
 
+  // Mock flashcard sets data
   const flashcardSets = [
     { 
       id: 1, 
@@ -60,8 +61,9 @@ const Challenges = () => {
     console.log("Fetching quiz data for user:", ProfileData?._id);
     if(!ProfileData?._id) return;
     
-    const fetchQuizzes = async () => {
+    const fetchQuizHistory = async () => {
       try {
+        setLoadingQuizzes(true);
         console.log("Fetching quiz history...");
         const userId = ProfileData._id;
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/quiz/${userId}`);
@@ -72,34 +74,48 @@ const Challenges = () => {
             ...prevStats,
             quizzesCompleted: res.data.totalCompleted || 0
           }));
-          console.log("Quiz history loaded:", res.data.quizHistory);
+          console.log("Quiz history loaded:", res.data.quizHistory?.length, "quizzes");
+        } else {
+          console.log("No quiz data found");
+          setQuizHistory([]);
         }
       } catch(err) {
         console.log("Error fetching quiz history:", err.message);
+        setQuizHistory([]);
+      } finally {
+        setLoadingQuizzes(false);
       }
     };
     
-    fetchQuizzes();
+    fetchQuizHistory();
   }, [ProfileData]);
 
-   const transformQuizHistory = () => {
+  // Transform quiz history for display
+  const transformQuizHistory = () => {
     return quizHistory.map((session, index) => ({
-      id: session.sessionId || index + 1,
-      title: `Daily Quiz - ${new Date(session.date).toLocaleDateString()}`,
-      questions: session.totalQuestions || 0,
-      time: Math.ceil((session.totalQuestions || 0) * 1.5),
+      id: session.sessionId || `session-${index + 1}`,
+      title: `Daily Quiz - ${new Date(session.date).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      })}`,
+      questions: session.totalQuestions || (session.questions ? session.questions.length : 0),
+      time: Math.ceil((session.totalQuestions || (session.questions ? session.questions.length : 0)) * 1.5),
       completed: true,
       score: session.score || 0,
       category: 'Daily Challenge',
       difficulty: getOverallDifficulty(session.questions),
-      sessionData: session 
+      sessionData: session,
+      date: session.date
     }));
   };
 
   const getOverallDifficulty = (questions) => {
     if (!questions || questions.length === 0) return 'Medium';
     
-    const difficulties = questions.map(q => q.difficulty);
+    const difficulties = questions.map(q => q.difficulty).filter(Boolean);
+    if (difficulties.length === 0) return 'Medium';
+    
     const difficultyCount = {
       easy: difficulties.filter(d => d.toLowerCase().includes('easy')).length,
       medium: difficulties.filter(d => d.toLowerCase().includes('medium')).length,
@@ -119,18 +135,6 @@ const Challenges = () => {
       setIsLoading(false);
       console.log('Creating new flashcard set...');
     }, 1000);
-  };
-
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner': return 'from-green-500 to-emerald-400';
-      case 'easy': return 'from-green-500 to-emerald-400';
-      case 'intermediate': return 'from-yellow-500 to-amber-400';
-      case 'medium': return 'from-yellow-500 to-amber-400';
-      case 'advanced': return 'from-red-500 to-pink-400';
-      case 'hard': return 'from-red-500 to-pink-400';
-      default: return 'from-purple-500 to-blue-400';
-    }
   };
 
   const getDifficultyBadgeColor = (difficulty) => {
@@ -191,7 +195,7 @@ const Challenges = () => {
     </motion.div>
   );
 
-   const QuizCard = ({ quiz }) => (
+  const QuizCard = ({ quiz }) => (
     <motion.div
       whileHover={{ y: -5, scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -217,7 +221,7 @@ const Challenges = () => {
         </div>
       </div>
       
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {quiz.completed ? (
             <>
@@ -247,11 +251,11 @@ const Challenges = () => {
         </div>
         
         <Link 
-          to={quiz.completed ? `/challenges/quiz/review/${quiz.id}` : '/challenges/quiz'}
+          to={quiz.completed ? `/challenges/quiz/review/${quiz.id}` : '/daily-quiz'}
           state={quiz.completed ? { quizSession: quiz.sessionData } : null}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
             quiz.completed 
-              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' 
+              ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 border border-emerald-500/30' 
               : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400'
           }`}
         >
@@ -261,8 +265,11 @@ const Challenges = () => {
     </motion.div>
   );
 
+  const displayQuizzes = transformQuizHistory();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 text-white">
+      {/* Navigation Header */}
       <nav className="sticky top-0 z-40 bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-700/50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -302,7 +309,9 @@ const Challenges = () => {
         </div>
       </nav>
 
+      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Tab Navigation */}
         <div className="flex space-x-1 bg-neutral-800/50 rounded-2xl p-1 backdrop-blur-sm border border-neutral-700/30 mb-8">
           <button
             onClick={() => setActiveTab('flashcards')}
@@ -336,6 +345,7 @@ const Challenges = () => {
           </button>
         </div>
 
+        {/* Tab Content */}
         <AnimatePresence mode="wait">
           {activeTab === 'flashcards' ? (
             <motion.div
@@ -345,6 +355,7 @@ const Challenges = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Flashcards Header */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className="bg-gradient-to-br from-purple-600/20 to-amber-400/20 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-500/30"
@@ -388,6 +399,7 @@ const Challenges = () => {
                 </div>
               </motion.div>
 
+              {/* Flashcards Grid */}
               <div>
                 <h3 className="text-xl font-semibold text-white mb-6">Your Flashcard Sets</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -405,6 +417,7 @@ const Challenges = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
+              {/* Quizzes Header */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className="bg-gradient-to-br from-amber-600/20 to-orange-400/20 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-amber-500/30"
@@ -423,7 +436,7 @@ const Challenges = () => {
                       </div>
                     </div>
                     <p className="text-neutral-300 mb-4">
-                      Test your knowledge with personalized daily quizzes. Compete with friends and track your progress!
+                      Test your knowledge with personalized daily quizzes. Review your past attempts and track your progress!
                     </p>
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-2">
@@ -434,10 +447,14 @@ const Challenges = () => {
                         <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                         <span className="text-neutral-300">Progress tracking</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                        <span className="text-neutral-300">Review past attempts</span>
+                      </div>
                     </div>
                   </div>
                   <Link 
-                    to="/challenges/quiz"
+                    to="/daily-quiz"
                     className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-amber-500/25"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -448,18 +465,53 @@ const Challenges = () => {
                 </div>
               </motion.div>
 
+              {/* Quizzes Grid */}
               <div>
-                <h3 className="text-xl font-semibold text-white mb-6">Available Quizzes</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {quizzes.map((quiz) => (
-                    <QuizCard key={quiz.id} quiz={quiz} />
-                  ))}
-                </div>
+                <h3 className="text-xl font-semibold text-white mb-6">
+                  Your Quiz History ({displayQuizzes.length} completed)
+                </h3>
+                
+                {loadingQuizzes ? (
+                  <div className="text-center py-12">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="rounded-full h-16 w-16 border-4 border-neutral-600 border-t-amber-500 mx-auto mb-4"
+                    ></motion.div>
+                    <p className="text-neutral-300">Loading your quiz history...</p>
+                  </div>
+                ) : displayQuizzes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-24 h-24 bg-neutral-800/50 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-12 h-12 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-lg font-medium text-neutral-300 mb-2">No quizzes completed yet</h4>
+                    <p className="text-neutral-400 mb-6">Complete your first daily quiz to see your history here!</p>
+                    <Link 
+                      to="/daily-quiz"
+                      className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-medium py-2 px-4 rounded-xl transition-all duration-300"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Start Your First Quiz
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {displayQuizzes.map((quiz) => (
+                      <QuizCard key={quiz.id} quiz={quiz} />
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
+        {/* Mobile Stats */}
         <div className="md:hidden mt-8">
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-neutral-800/50 rounded-xl p-4 text-center border border-neutral-700/30">

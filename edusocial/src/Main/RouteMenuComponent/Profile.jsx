@@ -99,7 +99,7 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen relative bg-neutral-950 text-amber-100 py-8 px-4 md:px-8 flex flex-col justify-between">
+    <div className="min-h-screen relative bg-neutral-950 select-none text-white py-8 px-4 md:px-8 flex flex-col justify-between">
       <div className="fixed top-4 right-4 z-10 flex flex-col gap-3 md:flex-row md:gap-4">
         <Link to='/challenges' className="bg-gradient-to-r from-purple-600 to-amber-500 rounded-full h-12 w-12 flex justify-center items-center hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-110">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
@@ -179,11 +179,23 @@ const Profile = () => {
         <div className="bg-neutral-900 p-6 rounded-2xl h-auto md:max-h-90 shadow-lg relative">
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="w-32 h-32 md:w-36 md:h-36 flex-shrink-0">
-              <img 
-                src={UserProfileData?.UserProfile?.avatar?.url || "https://via.placeholder.com/150"} 
+              {UserProfileData?.UserProfile?.avatar?.url ? (
+               <img src={UserProfileData?.UserProfile?.avatar?.url || "https://via.placeholder.com/150"} 
                 alt="profile" 
                 className="rounded-full h-full w-full object-cover border-4 border-purple-700/30" 
-              />
+              /> ) : (
+                <svg className='w-full h-full' viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="100" cy="100" r="95" fill="#1e1d1d" stroke="url(#borderGradient)" stroke-width="10"/>
+                  <circle cx="100" cy="80" r="30" fill="#374151"/>
+                  <path d="M60 160C60 130 77.5 120 100 120C122.5 120 140 130 140 160V180H60V160Z" fill="#374151"/>
+                  <defs>
+                    <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#7C3AED"/>
+                      <stop offset="100%" stop-color="#F59E0B"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              )}
             </div>
             <div className="flex-1 text-center md:text-left">
               <div className="mb-4">

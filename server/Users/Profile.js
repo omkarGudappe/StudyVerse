@@ -270,8 +270,6 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       newPost,
     });
 
-    console.log("complete");
-
   } catch (err) {
     res.status(500).json({
       message:
@@ -413,8 +411,6 @@ Router.post('/settingsUpdated/:id', async (req, res) => {
     if(!settings) {
         return res.status(404).json({message: "Changes found"});
     }
-
-    console.log("Check updated setting", settings);
 
     try{
        const UserSettings = await User.findOneAndUpdate(

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import GoogleProvider from "./AuthProviders/GoogleProvider";
 import getFirebaseErrorMessage from '../Auth/AuthProviders/FirebaseError';
 import { auth } from '../Auth/AuthProviders/FirebaseSDK';
+import axios from 'axios';
 
 const LogIn = () => {
   const [formData, setFormData] = useState({
@@ -34,14 +35,15 @@ const LogIn = () => {
   }, [errors]);
 
   // Auto-navigate if user is already authenticated
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user && !checkIsJustSignInByGoogle) {
-        navigate("/home");
-      }
-    });
-    return () => unsubscribe();
-  }, [navigate, checkIsJustSignInByGoogle]);
+
+  // useEffect(() => {
+  //   const unsubscribe = auth.onAuthStateChanged((user) => {
+  //     if (user && !checkIsJustSignInByGoogle) {
+  //       navigate("/home");
+  //     }
+  //   });
+  //   return () => unsubscribe();
+  // }, [navigate, checkIsJustSignInByGoogle]);
 
   const addError = (message) => {
     const errorObj = { 
@@ -107,10 +109,23 @@ const LogIn = () => {
 
       if (isLogin) {
         const data = await Login(formData.email, formData.password);
-        if (data.user) {
-          navigate("/home");
-        } else {
-          addError("Invalid email or password");
+        // if (data.user) {
+        //   navigate("/home");
+        // } else {
+        //   addError("Invalid email or password");
+        // }
+        console.log('My id',data.user.uid);
+        try{
+          const res = await axios.get(`${import.meta.env.VITE_API_URL}/Auth/UserDetail?email=${formData.email}&uid=${data.user.uid}`);
+          if(res.data.exist){
+            if (res.data.token) {
+              localStorage.setItem("token", res.data.token);
+            }
+            console.log('hello')
+            navigate(`${res.data.route}`)
+          }
+        }catch(err){
+          console.log(err.message);
         }
       } else {
         const res = await SignUp(formData.email);
@@ -141,7 +156,7 @@ const LogIn = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ otp: otpString, email: formData.email }),
+        body: JSON.stringify({ otp: otpString, email: formData.email, password: formData.password }),
       });
 
       const result = await response.json();
@@ -152,7 +167,6 @@ const LogIn = () => {
           if (data.token) {
             localStorage.setItem("token", data.token);
           }
-          // Reset form and navigate
           setFormData({ email: "", password: "", confirmPassword: "" });
           setOtp(new Array(6).fill(""));
           setEnterOtp(false);

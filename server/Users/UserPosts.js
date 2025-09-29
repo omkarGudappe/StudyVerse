@@ -50,7 +50,6 @@ Router.get('/:id', async (req, res) => {
                 totalPages: Math.ceil(totalPosts / limit)
             }
         });
-        console.log( "one",AllPosts);
     } catch (error) {
         res.status(500).json({ ok: false, message: error.message });
     }
@@ -229,7 +228,6 @@ Router.get('/usersPosts/:uid', async (req, res) => {
 
    try{
        if(!uid) {
-            console.log("missing requirment");
             return res.status(404).json({ message: "Missing Requirment"});
         }
 
@@ -237,7 +235,6 @@ Router.get('/usersPosts/:uid', async (req, res) => {
         .sort({ createdAt: -1 });
 
         if(!UserPosts){
-            console.log("User not found");
             return res.json({message: "User don't have any Post yet"})
         }
 
@@ -252,9 +249,7 @@ Router.get('/usersPosts/:uid', async (req, res) => {
 Router.post('/share', async (req, res) => {
   try {
     const { postId, recipientId, senderId } = req.body;
-    
-    console.log("Sharing post:", { postId, recipientId, senderId });
-    
+        
     const post = await Posts.findById(postId)
       .populate('author', 'firstName lastName UserProfile.avatar username');
     

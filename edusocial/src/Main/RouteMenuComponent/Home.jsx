@@ -458,19 +458,19 @@ const StudyVerseMain = () => {
     return "unknown";
   };
 
-  useEffect(() => {
-    if (posts.length > 0 && ProfileData?._id) {
-      const userLikedPosts = new Set();
+  // useEffect(() => {
+  //   if (posts.length > 0 && ProfileData?._id) {
+  //     const userLikedPosts = new Set();
 
-      posts.forEach((post) => {
-        if (VerifyLikeServer(post._id, post?.likes)) {
-          userLikedPosts.add(post._id);
-        }
-      });
+  //     posts.forEach((post) => {
+  //       if (VerifyLikeServer(post._id, post?.likes)) {
+  //         userLikedPosts.add(post._id);
+  //       }
+  //     });
 
-      setLocalLikedPosts(userLikedPosts);
-    }
-  }, [posts, ProfileData]);
+  //     setLocalLikedPosts(userLikedPosts);
+  //   }
+  // }, [posts, ProfileData]);
 
   useEffect(() => {
     if (posts.length === 0) return;
@@ -1011,7 +1011,7 @@ const StudyVerseMain = () => {
   }
 
   return (
-    <div className="lenis min-h-screen bg-gradient-to-br from-neutral-900  to-neutral-800 text-white py-8">
+    <div className="lenis select-none min-h-screen bg-gradient-to-br from-neutral-900  to-neutral-800 text-white py-8">
       <div className="md:hidden fixed top-0 left-0 right-0 z-30 transition-transform duration-300">
         <nav className="fixed z-30 gap-0 top-0 left-0 w-full h-15">
           <div className="h-20 backdrop-blur-sm overflow-hidden flex items-center">
@@ -1171,7 +1171,6 @@ const StudyVerseMain = () => {
         ) : (
           <div className="space-y-6 flex flex-col items-center justify-center">
             {" "}
-            {/* Changed from grid to space-y for single column feed */}
             {posts.map((post) => (
               <div
                 key={post._id}
@@ -1247,7 +1246,7 @@ const StudyVerseMain = () => {
                         handleOpneGroupBtn(post._id, post?.author?.username);
                         setOpenBtnGroup(!OpenBtnGroup);
                       }}
-                      className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-700/50 transition-colors"
+                      className="p-1.5 text-neutral-400 cursor-pointer hover:text-white rounded-lg hover:bg-neutral-700/50 transition-colors"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -1309,7 +1308,7 @@ const StudyVerseMain = () => {
                   )}
 
                   {post.description && (
-                    <p className="text-neutral-300 mb-4 leading-relaxed text-sm bg-neutral-800/30 rounded-xl p-3 border border-neutral-700/30 line-clamp-3">
+                    <p className="text-neutral-300 mb-4 overflow-y-auto leading-relaxed text-sm bg-neutral-800/30 rounded-xl p-3 border border-neutral-700/30 line-clamp-3">
                       {post?.description}
                     </p>
                   )}
@@ -1319,7 +1318,6 @@ const StudyVerseMain = () => {
                       {post.files?.url.endsWith(".mp4") ||
                       post.files?.url.endsWith(".webm") ||
                       post.files?.url.endsWith(".mov") ? (
-                        // Video handling code - keep your existing video code
 
                         <div className="relative aspect-video bg-black">
                           <video

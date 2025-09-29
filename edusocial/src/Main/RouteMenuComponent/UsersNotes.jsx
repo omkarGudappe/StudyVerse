@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom';
 
 const UsersNotes = ({ open, onClose, ProfileData , from }) => {
-    const [Notes, setNotes] = useState([]);
+    const [Notes, setNotes] = useState();
     const [error, setError] = useState(null);
     const [Loading, setLoading] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
@@ -44,10 +44,12 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
         
         setDeletingId(noteId);
         const uid = ProfileData?._id;
+        console.log("Cheking notes befoure deleting ", Notes);
         try {
             const res =  await axios.delete(`${import.meta.env.VITE_API_URL}/Notes/delete/${noteId}?userId=${uid}`);
             if(res.data.ok){
-                setNotes(prev => prev.filter(note => note.NoteId !== noteId));
+                setNotes(prev => prev.filter(note => note?.Notes.filter(not => not.NoteId !== noteId )));
+                console.log("Checking notes from the response", Notes, 'and', )
             }
         } catch (err) {
             setError(err.response?.data?.message || "Failed to delete note");
@@ -96,22 +98,23 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
     );
 
     const NoteCard = ({ note, index }) => (
-        <motion.div
+       note.map((not) => (
+         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="group relative bg-neutral-800 rounded-2xl border border-neutral-700 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
+            className="group relative cursor-pointer bg-neutral-800 rounded-2xl border border-neutral-700 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
         >
             <button 
-                onClick={() => handleNoteClick(note)}
-                className="block p-6 pr-16 hover:bg-neutral-750 transition-colors duration-200"
+                onClick={() => handleNoteClick(not)}
+                className="block  cursor-pointer p-6 pr-16 hover:bg-neutral-750 transition-colors duration-200"
             >
                 <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-600 to-amber-600 rounded-xl flex items-center justify-center">
                         <svg 
                             xmlns="http://www.w3.org/2000/svg" 
                             className="w-6 h-6 text-white" 
-                            fill="none" 
+                            fill="none"
                             viewBox="0 0 24 24"
                             stroke="currentColor"
                         >
@@ -126,28 +129,28 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     
                     <div className="flex-1 min-w-0">
                         <h3 className="text-white font-semibold text-lg mb-2 truncate">
-                            {note?.title}
+                            {not?.title}
                         </h3>
                         
-                        {note?.description && (
+                        {not?.description && (
                             <p className="text-neutral-400 text-sm mb-3 line-clamp-2">
-                                {truncateText(note.description)}
+                                {truncateText(not?.description)}
                             </p>
                         )}
                         
                         <div className="flex items-center gap-4 text-xs text-neutral-500">
-                            {note?.createdAt && (
+                            {not?.createdAt && (
                                 <span className="flex items-center gap-1">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    {formatDate(note.createdAt)}
+                                    {formatDate(not?.createdAt)}
                                 </span>
                             )}
                             
-                            {note?.category && (
+                            {not?.category && (
                                 <span className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full text-xs">
-                                    {note.category}
+                                    {not?.category}
                                 </span>
                             )}
                         </div>
@@ -159,13 +162,13 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteNote(note.NoteId);
+                        handleDeleteNote(not?.NoteId);
                     }}
-                    disabled={deletingId === note.NoteId}
+                    disabled={deletingId === not?.NoteId}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
                     title="Delete note"
                 >
-                    {deletingId === note.NoteId ? (
+                    {deletingId === not?.NoteId ? (
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
                     ) : (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,11 +176,12 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                         </svg>
                     )}
                 </button>
-                <button>
+                {/* <button>
                     share
-                </button>
+                </button> */}
             </div>
         </motion.div>
+       ))
     );
 
     return (
@@ -213,10 +217,10 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                             </button>
                         </div>
                     </div>
-                ) : Notes?.length > 0 ? (
+                ) : Notes ? (
                     <div className="grid gap-4">
                         {Notes.map((note, index) => (
-                            <NoteCard key={note.NoteId} note={note} index={index} />
+                            <NoteCard key={note.NoteId} note={note.Notes} index={index} />
                         ))}
                     </div>
                 ) : (

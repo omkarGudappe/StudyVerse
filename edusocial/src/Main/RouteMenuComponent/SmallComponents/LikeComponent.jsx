@@ -1,13 +1,23 @@
 import React, {useState, useEffect} from 'react'
 import Socket from '../../../SocketConnection/Socket';
-import { usePostsStore } from '../../../StateManagement/StoreNotes';
+import { usePostsStore, useLessonStore } from '../../../StateManagement/StoreNotes';
 
 
-const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId}) => {
+const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId, isVideo=false }) => {
 
       const [pendingLikes, setPendingLikes] = useState(new Set());
       const [localLikedPosts, setLocalLikedPosts] = useState(new Set());
+      const [Content, setContent] = useState([]);
       const { posts } = usePostsStore();
+      const { Lessons } = useLessonStore();
+
+      useEffect(() => {
+        if(isVideo){
+          setContent(Lessons);
+        }else {
+          setContent(posts);
+        }
+      })
 
     useEffect(() => {
         const handler = ({ postId, likes, liked }) => {
@@ -38,16 +48,16 @@ const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId}) => {
     }, []);
 
       useEffect(() => {
-        if (posts.length > 0 && CurrentUserId) {
+        if (Content.length > 0 && CurrentUserId) {
           const userLikedPosts = new Set();
-          posts.forEach(post => {
+          Content.forEach(post => {
             if (VerifyLikeServer(post._id, post?.likes)) {
               userLikedPosts.add(post._id);
             }
           });
           setLocalLikedPosts(userLikedPosts);
         }
-      }, [posts, CurrentUserId]);
+      }, [Content, CurrentUserId]);
 
       const VerifyLikeServer = (postId, likes) => {
           const userId = CurrentUserId;

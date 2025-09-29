@@ -6,7 +6,6 @@ const Notes = require('../Db/NotesSchema');
 Router.get('/:userName' , async (req, res) => {
     try{
         const { userName } = req.params;
-        console.log("Backend" , userName);
         if(!userName) {
             return res.status(400).json({ok: false, message: "Missing Requirment" });
         }
@@ -35,7 +34,7 @@ Router.delete('/delete/:noteId', async (req, res) => {
 
     try{
       const Track =  await Notes.findOneAndUpdate(
-        uid,
+        {author: uid},
         { $pull: {Notes: {NoteId: noteId}}},
         {new: true}
       );
@@ -53,19 +52,20 @@ Router.delete('/delete/:noteId', async (req, res) => {
 
 Router.put('/update/:Id' , async(req, res) => {
     const { Id } = req.params;
-    const { content } = req.body;
+    const { content, userId } = req.body;
 
     if(!Id) {
         return res.status(404).json({ message: " Missing requirment" })
     }
 
     try{
-        await Notes.findByIdAndUpdate(
-            {_id: Id},
-            { Notes: {content} },
-            {new: true}
-        );
-        res.json({ok: true})
+       await Notes.findOneAndUpdate(
+        { author: userId, "Notes._id": Id },
+        { $set: { "Notes.$.content": content } },
+        { new: true }
+       );
+
+       return res.json({ok: true})
 
     }catch(err) {
         res.status(500).json({message: err.message});
@@ -83,7 +83,6 @@ Router.post('/usernotes' , async (req , res) =>{
         const FindUser = await User.findOne({_id: uid});
 
         if(!FindUser) {
-            console.log("Missing");
             return res.status(404).json({message:"User Not Found"});
         }
 
@@ -93,16 +92,20 @@ Router.post('/usernotes' , async (req , res) =>{
             content: content,
         };
         const FirstFindUserNotes = await Notes.findOneAndUpdate(
-            {_id: uid},
+            {author: uid},
             {$push: {Notes: NewNoteCreate}}
         )
 
         if(FirstFindUserNotes){
-            return res.json({message: "User Found And Updated"});
+            return res.json({ok: true, message: "User Found And Updated"});
         }else{
             const NewNote = await Notes.create({
                 author: FindUser._id,
-                Notes: {$push: {NewNoteCreate}},
+                Notes: {
+                    title,
+                    NoteId,
+                    content: content,
+                }
             })
 
             if(NewNote) {
@@ -119,8 +122,8 @@ Router.get('/usernotes/:ID', async (req, res) => {
     const { ID } = req.params;
 
     try{
-       const notes = await Notes.find({ author: ID });
-       console.log(notes , " check to the data");
+       const notes = await Notes.find({ author: ID })
+       .select('Notes');
 
         if(!notes){
             return res.status(404).json({message: "User Not Found"});

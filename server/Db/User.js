@@ -30,6 +30,7 @@ const UserSettingsSchema = new mongoose.Schema({
 }, { _id: false });
 
 const UserSchema = new mongoose.Schema({
+    authorEmail: { type: mongoose.Schema.Types.ObjectId, ref: "Auth" },
     firstName: {
         type: String,
         required: true,
@@ -53,10 +54,6 @@ const UserSchema = new mongoose.Schema({
         enum:["male", "female", "other"],
         default:"other"
     },
-    // education:{
-    //     type:String,
-    //     required:true,
-    // },
     education: {
         level: { 
             type: String, 
@@ -94,7 +91,6 @@ const UserSchema = new mongoose.Schema({
             type: String, 
             default: "" 
         },
-
         institute: { 
             type: String, 
             required: true 
@@ -137,8 +133,7 @@ const UserSchema = new mongoose.Schema({
     setting: { type: UserSettingsSchema , default: () => ({})},
 
     Uid:{type:String, unique:true},
-    firebaseUid:{type:String, unique:true}
-
+    firebaseUid:{type:String, unique:true},
 }, { timestamps: true });
 
 UserSchema.set("toJSON", {

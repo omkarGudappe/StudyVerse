@@ -5,10 +5,8 @@ const Quizes = require('../Db/DailyQuiz');
 // Get user's quiz history for review
 Router.get('/:id', async (req, res) => {
     const { id } = req.params;
-    console.log("Fetching quiz history for user:", id);
     
     if(!id) {
-        console.log("User ID is missing");
         return res.status(400).json({message: "User ID is missing"});
     }
     
@@ -17,7 +15,6 @@ Router.get('/:id', async (req, res) => {
             .select('sessions stats currentSession');
         
         if(!userQuiz) {
-            console.log("User quiz data not found");
             return res.json({
                 ok: true, 
                 message: "No quiz data found",
@@ -50,9 +47,7 @@ Router.get('/:id', async (req, res) => {
                 answeredAt: q.answeredAt
             }))
         }));
-        
-        console.log(`Found ${quizHistory.length} completed quizzes for review`);
-        
+                
         res.json({ 
             ok: true, 
             quizHistory: quizHistory,
