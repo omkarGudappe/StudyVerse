@@ -1391,7 +1391,7 @@ const StudyVerseMain = () => {
                             </div>
                           </div>
 
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity  flex items-end justify-center p-4">
                             <span className="text-white text-sm font-medium bg-purple-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
                               View PDF
                             </span>
