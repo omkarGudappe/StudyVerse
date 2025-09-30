@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { UserDataContextExport } from '../CurrentUserContexProvider'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom';
 
 const DailyQuiz = () => {
   const { ProfileData } = UserDataContextExport();
@@ -18,7 +19,8 @@ const DailyQuiz = () => {
   const [showHint, setShowHint] = useState(false);
   const [userAnswers, setUserAnswers] = useState({});
   const [quizStarted, setQuizStarted] = useState(false);
-  const [sessionId, setSessionId] = useState(null); // ADD THIS
+  const [sessionId, setSessionId] = useState(null);
+  const navigate = useNavigate();
 
   console.log(userAnswers);
 
@@ -340,7 +342,7 @@ const DailyQuiz = () => {
           <p className="text-neutral-400 mb-6">{error}</p>
           <div className="flex gap-3">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => navigate(-1)}
               className="flex-1 bg-purple-600 hover:bg-purple-500 text-white px-4 py-3 rounded-lg transition-colors font-medium"
             >
               Try Again

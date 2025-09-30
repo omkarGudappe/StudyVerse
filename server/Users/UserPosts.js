@@ -258,10 +258,14 @@ Router.post('/share', async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
     
+    console.log("Sharing post:", postId, "to recipient:", recipientId, "from sender:", senderId);
+
     const recipient = await User.findById(recipientId);
     if (!recipient) {
+        console.log("Recipient not found in users:", recipientId);
         const GroupRecipient = await Group.findById(recipientId);
         if(!GroupRecipient){
+            console.log("Recipient not found:", recipientId);
             return res.status(404).json({ error: 'Recipient not found' });
         }
     }

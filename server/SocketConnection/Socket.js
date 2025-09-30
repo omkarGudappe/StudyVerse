@@ -262,39 +262,128 @@ module.exports = function (io) {
       }
     });
 
-   socket.on("SendContactUsers", async ({ ID }) => {
-    if (!ID) {
-      console.log("Id not found from the socket sendcontact user");
-      return io.to(socket.id).emit("IdNotFound", { message: "Id Missing" });
-    }
-    console.log("Finding User");
-    try {
-      const Users = await Chat.findOne({ User1: ID }).populate({
-        path: "OtherUser.User2",
-        select: "firstName lastName UserProfile.avatar username education firebaseUid",
-      });
+  //  socket.on("SendContactUsers", async ({ ID }) => {
+  //   if (!ID) {
+  //     console.log("Id not found from the socket sendcontact user");
+  //     return io.to(socket.id).emit("IdNotFound", { message: "Id Missing" });
+  //   }
+  //   console.log("Finding User");
+  //   try {
+  //     const Users = await Chat.findOne({ User1: ID }).populate({
+  //       path: "OtherUser.User2",
+  //       select: "firstName lastName UserProfile.avatar username education firebaseUid",
+  //     });
 
-      const userGroups = await GroupChat.find({ members: ID })
-        .populate("members", "firstName lastName username UserProfile.avatar.url")
-        .populate("createdBy", "firstName lastName username");
+  //     const userGroups = await GroupChat.find({ members: ID })
+  //       .populate("members", "firstName lastName username UserProfile.avatar.url")
+  //       .populate("createdBy", "firstName lastName username");
 
-        console.log("Get Users Groups ", userGroups);
+  //       console.log("Get Users Groups ", userGroups);
 
-      if (!Users) {
-        return io
-          .to(socket.id)
-          .emit("UserNotFound", { message: "User is not exist" });
+  //     if (!Users) {
+  //       return io
+  //         .to(socket.id)
+  //         .emit("UserNotFound", { message: "User is not exist" });
+  //     }
+
+  //     socket.emit("ContactUsers", { 
+  //       User: Users.OtherUser,
+  //       Groups: userGroups || [] 
+  //     });
+  //   } catch (err) {
+  //     console.log("Error in SendContactUsers:", err.message);
+  //     socket.emit("ContactUsersError", { message: "Failed to fetch contacts and groups" });
+  //   }
+  // });
+
+    socket.on("SendContactUsers", async ({ ID }) => {
+      if (!ID) {
+        return io.to(socket.id).emit("IdNotFound", { message: "Id Missing" });
       }
 
-      socket.emit("ContactUsers", { 
-        User: Users.OtherUser,
-        Groups: userGroups || [] 
-      });
-    } catch (err) {
-      console.log("Error in SendContactUsers:", err.message);
-      socket.emit("ContactUsersError", { message: "Failed to fetch contacts and groups" });
-    }
-  });
+      try {
+        const userChat = await Chat.findOne({ User1: ID })
+          .populate({
+            path: "OtherUser.User2",
+            select: "firstName lastName username UserProfile.avatar.url education firebaseUid",
+            options: { lean: true }
+          })
+          .lean();
+
+        let sortedContacts = [];
+        if (userChat && userChat.OtherUser) {
+          sortedContacts = userChat.OtherUser
+            .filter(contact => contact.User2)
+            .sort((a, b) => {
+              const timeA = a.recentMessageTime ? new Date(a.recentMessageTime).getTime() : 0;
+              const timeB = b.recentMessageTime ? new Date(b.recentMessageTime).getTime() : 0;
+              return timeB - timeA;
+            })
+            .slice(0, 100);
+        }
+
+        const userGroups = await GroupChat.find({ members: ID })
+          .populate("members", "firstName lastName username")
+          .populate("createdBy", "firstName lastName username")
+          .select("name members createdBy recentMessage recentMessageTime")
+          .sort({ recentMessageTime: -1 })
+          .limit(50)
+          .lean();
+
+        socket.emit("ContactUsers", {
+          User: sortedContacts,
+          Groups: userGroups || []
+        });
+
+      } catch (err) {
+        console.error("Error in SendContactUsers:", err);
+        socket.emit("ContactUsersError", { message: "Failed to fetch contacts" });
+      }
+    });
+
+    socket.on("UpdateContactRecentMessage", async ({ userId, contactId, message, timestamp }) => {
+      try {
+        await Chat.findOneAndUpdate(
+          { 
+            User1: userId,
+            "OtherUser.User2": contactId 
+          },
+          { 
+            $set: { 
+              "OtherUser.$.recentMessage": message.substring(0, 100),
+              "OtherUser.$.recentMessageTime": timestamp || new Date()
+            } 
+          }
+        );
+
+        await Chat.findOneAndUpdate(
+          { 
+            User1: contactId,
+            "OtherUser.User2": userId 
+          },
+          { 
+            $set: {
+              "OtherUser.$.recentMessage": message.substring(0, 100),
+              "OtherUser.$.recentMessageTime": timestamp || new Date(),
+              "OtherUser.$.unreadCount": 1 
+            } 
+          }
+        );
+
+        const userSocketId = userSocketMap.get(userId);
+        const contactSocketId = userSocketMap.get(contactId);
+        
+        if (userSocketId) {
+          io.to(userSocketId).emit("ContactsUpdated", { refresh: true });
+        }
+        if (contactSocketId) {
+          io.to(contactSocketId).emit("ContactsUpdated", { refresh: true });
+        }
+
+      } catch (error) {
+        console.error("Error updating contact recent message:", error);
+      }
+    });
 
     socket.on("NewPostUploded", ({ upload }) => {
       console.log("Check Upload", upload);

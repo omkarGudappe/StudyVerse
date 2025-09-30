@@ -251,7 +251,7 @@ const Challenges = () => {
         </div>
         
         <Link 
-          to={quiz.completed ? `/challenges/quiz/review/${quiz.id}` : '/daily-quiz'}
+          to={quiz.completed ? `/challenges/quiz/review/${quiz.id}` : '/quiz'}
           state={quiz.completed ? { quizSession: quiz.sessionData } : null}
           className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
             quiz.completed 
@@ -454,7 +454,7 @@ const Challenges = () => {
                     </div>
                   </div>
                   <Link 
-                    to="/daily-quiz"
+                    to="/challenges/quiz"
                     className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-amber-500/25"
                   >
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

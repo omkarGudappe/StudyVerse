@@ -32,8 +32,6 @@ import { pdfjs } from "react-pdf";
 
 import * as PdfJs from "pdfjs-dist";
 
-// Use the worker from pdfjs-dist
-
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.js",
 
@@ -1164,7 +1162,7 @@ const StudyVerseMain = () => {
             {posts.map((post) => (
               <div
                 key={post._id}
-                className="bg-neutral-800/40 lg:w-2xl backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
+                className="bg-neutral-800/40 lg:w-2xl w-full backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
               >
                 {/* Post Header */}
 
@@ -1290,8 +1288,9 @@ const StudyVerseMain = () => {
                   </div>
                 </div>
 
-                <div className="p-5">
-                  {post.heading && (
+                <div className="">
+                  <div className="p-5">
+                    {post.heading && (
                     <h2 className="text-lg font-bold mb-3 text-white line-clamp-2">
                       {post.heading}
                     </h2>
@@ -1302,9 +1301,10 @@ const StudyVerseMain = () => {
                       {post?.description}
                     </p>
                   )}
+                  </div>
 
                   {post.files?.url ? (
-                    <div className="mb-4 rounded-xl overflow-hidden border border-neutral-700/30">
+                    <div className="mb-4 max-h-80 h-80 overflow-hidden border border-neutral-700/30">
                       {post.files?.url.endsWith(".mp4") ||
                       post.files?.url.endsWith(".webm") ||
                       post.files?.url.endsWith(".mov") ? (
@@ -1359,10 +1359,10 @@ const StudyVerseMain = () => {
                         // PDF handling - both direct PDFs and raw uploaded PDFs
 
                         <div
-                          className="relative group cursor-pointer"
+                          className="relative group cursor-pointer h-full"
                           onClick={() => openPdfModal(post.files.url)}
                         >
-                          <div className="aspect-video bg-gradient-to-br from-purple-600/20 to-amber-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-purple-500/30">
+                          <div className="aspect-video bg-gradient-to-br h-full w-full from-purple-600/20 to-amber-500/20 flex items-center justify-center">
                             <div className="text-center p-6">
                               <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-600/20 rounded-2xl mb-4 border border-purple-500/30">
                                 <svg
@@ -1391,7 +1391,7 @@ const StudyVerseMain = () => {
                             </div>
                           </div>
 
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-end justify-center p-4">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
                             <span className="text-white text-sm font-medium bg-purple-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
                               View PDF
                             </span>
@@ -1405,7 +1405,7 @@ const StudyVerseMain = () => {
                         // Text file handling - only if it's raw upload AND not any other known file type
 
                         <div
-                          className="relative group cursor-pointer"
+                          className="relative group h-full cursor-pointer"
                           onClick={() =>
                             handleRawContent(
                               post.files.url,
@@ -1414,7 +1414,7 @@ const StudyVerseMain = () => {
                             )
                           }
                         >
-                          <div className="aspect-video bg-gradient-to-br from-green-600/20 to-blue-500/20 flex items-center justify-center rounded-xl border-2 border-dashed border-green-500/30">
+                          <div className="aspect-video bg-gradient-to-br from-green-600/20 h-full w-full to-blue-500/20 flex items-center justify-center">
                             <div className="text-center p-6">
                               <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600/20 rounded-2xl mb-4 border border-green-500/30">
                                 <svg
@@ -1443,8 +1443,8 @@ const StudyVerseMain = () => {
                             </div>
                           </div>
 
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-end justify-center p-4">
-                            <span className="text-white text-sm font-medium bg-green-600/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
+                            <span className="text-white text-sm font-medium rounded-2xl bg-green-600/80 backdrop-blur-sm px-3 py-1.5">
                               View Text
                             </span>
                           </div>
@@ -1453,15 +1453,11 @@ const StudyVerseMain = () => {
                         <img
                           src={post.files.url}
                           alt={post.heading || "Study material"}
-                          className="w-full h-full max-h-100 object-cover rounded-xl"
+                          className="w-full h-full object-cover"
                           loading="lazy"
                           onError={(e) => {
-                            // If image fails to load, treat it as text content
-
                             e.target.style.display = "none";
-
                             const fallbackDiv = e.target.nextSibling;
-
                             if (
                               fallbackDiv &&
                               fallbackDiv.classList.contains("fallback-text")
@@ -1797,9 +1793,9 @@ const StudyVerseMain = () => {
                       <UserCard
                         key={user._id}
                         user={user}
-                        onClick={() => togglePeerSelection(user)}
+                        onClick={() => togglePeerSelection(user?.User2)}
                         showCheckbox={true}
-                        isSelected={selectedPeer?._id === user._id}
+                        isSelected={selectedPeer?._id === user?.User2?._id}
                       />
                     ))
                   ) : (

@@ -357,14 +357,30 @@ const Messages = () => {
       const newMsgRef = push(messagesRef);
       await set(newMsgRef, messageData);
       console.log("✅ Message saved");
+      if(messages.length < 1) {
+        setMessages(prev => [...prev, { id: messagesRef.key, ...messageData }]);
+      }
     } catch (err) {
       console.error("❌ Failed to save message:", err);
       setIsSending(false);
       return;
     }
 
-    // Update user chats for individual conversations
     if (!isGroupChat) {
+        Socket.emit("UpdateContactRecentMessage", {
+          userId: senderMongoId,
+          contactId: otherUser._id,
+          message: newMessage.trim() || (fileUrlData.url ? "📎 File" : (sharedPostId ? "📍 Post" : "")),
+          timestamp: Date.now(),
+        });
+
+      Socket.emit("UpdateContactRecentMessage", {
+        userId: otherUser._id,
+        contactId: senderMongoId,
+        message: newMessage.trim() || (fileUrlData.url ? "📎 File" : (sharedPostId ? "📍 Post" : "")),
+        timestamp: Date.now(),
+        chatId: chatId
+      });
       try {
         const otherFirebaseUid = otherUser.firebaseUid;
         const userChatRef = ref(database, `userChats/${senderFirebaseUid}/${chatId}`);
@@ -383,13 +399,15 @@ const Messages = () => {
         console.error("❌ Failed to update user chats:", err);
       }
     } else {
-      // Notify group members about new message
       Socket.emit("new-group-message", {
         groupId: groupId,
         message: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
         sender: ProfileData._id
       });
+
+      
     }
+
 
     // Reset states
     setNewMessage("");
@@ -901,12 +919,11 @@ const Messages = () => {
         </div>
       </div>
       
-      {/* Post Modal */}
       {openPostModel.status && (
         <OpenPostModel 
-          postId={openPostModel.id} 
+          Id={openPostModel.id} 
           onClose={handleClosePostModal} 
-          onShare={sharePostInChat}
+          open={openPostModel.status}
         />
       )}
     </div>

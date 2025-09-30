@@ -7,6 +7,9 @@ const UserChat = new mongoose.Schema({
             User2: { type: mongoose.Schema.Types.ObjectId, ref: "User" , required: true },
             ChatId: { type: String, required: true },
             LastSeen: { type: Date },
+            recentMessageTime: { type: Date, default: Date.now },
+            recentMessage: { type: String, default: "" },
+            unreadCount: { type: Number, default: 0 },
         }
     ],
 })
