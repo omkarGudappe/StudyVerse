@@ -161,11 +161,11 @@ module.exports = function (io) {
           message: "Connection request accepted.",
           FromID: fromID,
         });
-        io.emit("connection-updated", {
-          userId: Id,
-          fromId: fromID,
-          type: "accepted",
-        });
+        // io.emit("connection-updated", {
+        //   userId: Id,
+        //   fromId: fromID,
+        //   type: "accepted",
+        // });
         if (acceptorSocketId) {
           io.to(acceptorSocketId).emit("connection-updated", {
             userId: Id,
@@ -286,7 +286,6 @@ module.exports = function (io) {
           .emit("UserNotFound", { message: "User is not exist" });
       }
 
-      // Send both contacts and groups
       socket.emit("ContactUsers", { 
         User: Users.OtherUser,
         Groups: userGroups || [] 
@@ -399,6 +398,7 @@ module.exports = function (io) {
         const acceptorSocketId = userSocketMap.get(userId);
         io.to(acceptorSocketId).emit("Length", { Length: Length });
         io.to(acceptorSocketId).emit("Removed", { status: "removed", Id: Id });
+        
       } catch (err) {
         console.log(err.message);
       }

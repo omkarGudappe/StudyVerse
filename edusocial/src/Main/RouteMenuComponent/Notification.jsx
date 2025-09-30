@@ -46,12 +46,13 @@ const Notification = ({ open, onClose, ProfileData }) => {
             console.log("my noti", getNotify);
         })
 
-        Socket.on("Removed" , ({status , Id}) => {
-            if(status === "removed"){
-              const newNotification = notifications.filter((notification) => notification?.id !== Id);
-              setNotifications(newNotification);
+        Socket.on("Removed", ({ status, Id }) => {
+            if (status === "removed") {
+                setNotifications(prev => prev.filter(notification => 
+                  notification?._id !== Id
+                ));
             }
-        })
+        });
 
         return () => {
             Socket.off('requestAccepted');
@@ -162,7 +163,7 @@ const Notification = ({ open, onClose, ProfileData }) => {
     const handleDeleteNote = async (Id) => {
         if(!ProfileData) return;
         const userId = ProfileData?._id;
-        setNotificationId(true)
+        setNotificationId(Id)
         try{
             Socket.emit("handle-delete-notification" , {Id , userId });
         }catch(err){

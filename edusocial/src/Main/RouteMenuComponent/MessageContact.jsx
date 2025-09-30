@@ -156,8 +156,8 @@ const MessageContact = ({ open, onClose }) => {
         const groupRef = ref(database, `groupChats/${group._id}`);
 
         const membersObject = {};
-        memberUids.forEach(uid => {
-          membersObject[uid] = true;
+          selectedMembers.forEach(member => {
+            if (member.firebaseUid) membersObject[member.firebaseUid] = true;
         });
         if (CreatorUid) membersObject[CreatorUid] = true;
 

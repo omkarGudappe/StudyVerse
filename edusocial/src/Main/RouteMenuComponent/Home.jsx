@@ -235,24 +235,16 @@ const StudyVerseMain = () => {
   };
 
   useEffect(() => {
-    const Id = ProfileData?._id;
-
-    if (!Id) return;
-
-    Socket.emit("SendContactUsers", { ID: Id });
-
     Socket.on("ContactUsers", (data) => {
       if (!data) return;
-
       setContacts(data.User || []);
-
       setGroups(data.Groups || []);
     });
 
     return () => {
       Socket.off("ContactUsers");
     };
-  }, [open, ProfileData]);
+  }, []);
 
   useEffect(() => {
     FetchPostsFromBack();
@@ -261,8 +253,6 @@ const StudyVerseMain = () => {
   useEffect(() => {
     const handler = ({ Fetch }) => {
       if (Fetch) {
-        // Only refresh if needed, don't force full refresh
-
         usePostsStore.getState().refreshIfNeeded(ProfileData._id);
       }
     };
@@ -387,7 +377,7 @@ const StudyVerseMain = () => {
 
   const handleSharePost = (post) => {
     setShareModalOpen({ isOpen: true, post });
-
+    Socket.emit("SendContactUsers", { ID: ProfileData?._id })
     fetchPeersList();
   };
 
@@ -604,11 +594,11 @@ const StudyVerseMain = () => {
   }) => {
     const displayName = isGroup
       ? user.name
-      : `${user.firstName} ${user.lastName}`;
+      : `${user?.User2?.firstName} ${user?.User2?.lastName}`;
 
     const username = isGroup
-      ? `${user.members?.length || 0} members`
-      : user.username;
+      ? `${user?.members?.length || 0} members`
+      : user?.User2?.username;
 
     const subtitle = isGroup
       ? `Created by ${user.createdBy?.firstName} ${user.createdBy?.lastName}`
@@ -621,16 +611,16 @@ const StudyVerseMain = () => {
         {user.name?.[0]}
         {user.name?.[1] || ""}
       </span>
-    ) : user.UserProfile?.avatar?.url ? (
+    ) : user?.User2?.UserProfile?.avatar?.url ? (
       <img
-        src={user.UserProfile.avatar.url}
+        src={user?.User2?.UserProfile?.avatar?.url}
         alt={displayName}
         className="w-full h-full object-cover"
       />
     ) : (
       <span className="text-white font-semibold text-lg">
-        {user.firstName?.[0]}
-        {user.lastName?.[0]}
+        {user?.User2?.firstName?.[0]}
+        {user?.User2?.lastName?.[0]}
       </span>
     );
 
@@ -1868,7 +1858,7 @@ const StudyVerseMain = () => {
               <div className="mt-6 flex space-x-3">
                 <button
                   onClick={() =>
-                    setShareModalOpen({ isOpen: false, post: null })
+                  setShareModalOpen({ isOpen: false, post: null })
                   }
                   className="flex-1 py-3 px-4 bg-neutral-700/50 text-neutral-300 rounded-lg hover:bg-neutral-600/50 transition-colors"
                 >

@@ -120,7 +120,6 @@ const Messages = () => {
   useEffect(() => {
     if (!isGroupChat || !groupId || !ProfileData) return;
 
-    // In the fetchGroupData function in Messages.jsx:
     const fetchGroupData = async () => {
       try {
         setIsFetching(true);
@@ -201,12 +200,14 @@ const Messages = () => {
           });
         });
 
+        // Sort messages by timestamp in ascending order (oldest first)
         messagesData.sort((a, b) => a.timestamp - b.timestamp);
-        setMessages(messagesData);
+        setMessages(messagesData.reverse());
         setIsLoading(false);
 
+        // Scroll to bottom after messages are loaded
         setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+          scrollToBottom();
         }, 100);
       },
       (error) => {
@@ -219,6 +220,20 @@ const Messages = () => {
       off(messagesRef);
     };
   }, [otherUser, groupData, ProfileData, isGroupChat]);
+
+  // Scroll to bottom function
+  const scrollToBottom = () => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  };
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (!isLoading) {
+      scrollToBottom();
+    }
+  }, [messages, isLoading]);
 
   const GetFileUrlfromBackend = async () => {
     if(!selectedFile) return { url: "", type: "" };
@@ -360,14 +375,6 @@ const Messages = () => {
           timestamp: serverTimestamp(),
         });
         
-        // const otherUserChatRef = ref(database, `userChats/${otherFirebaseUid}/${chatId}`);
-        // await update(otherUserChatRef, {
-        //   otherUserFirebaseUid: senderFirebaseUid,
-        //   otherUserMongoId: senderMongoId,
-        //   lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
-        //   timestamp: serverTimestamp(),
-        // });
-        
         const User1 = ProfileData._id
         const User2 = otherUser._id;   
         Socket.emit("UsersChat", { user1: User1, user2: User2, chatId: chatId})
@@ -422,6 +429,19 @@ const Messages = () => {
     );
   };
 
+  const shouldShowTimestamp = (currentMsg, nextMsg) => {
+    if (!nextMsg) return true; // Always show timestamp for last message
+    
+    const timeDiff = nextMsg.timestamp - currentMsg.timestamp;
+    const senderChanged = nextMsg.senderId !== currentMsg.senderId;
+    
+    // Show timestamp if:
+    // - More than 5 minutes passed, OR
+    // - Sender changed, OR
+    // - It's the first message in group chat
+    return timeDiff > 3 * 60 * 1000 || senderChanged || isGroupChat;
+  };
+
   const startConversation = () => {
     inputRef.current?.focus();
   };
@@ -448,11 +468,6 @@ const Messages = () => {
     }
   }
 
-  // const handleCheckOnlineState = (Id) => {
-  //   if(!Id) return;
-  //   Socket.emit('OnlineStatus', ({Id}));
-  // }
-
   useEffect(() => {
     Socket.on('UserOnlineStatus' , ({Online}) => {
       if(Online){
@@ -476,7 +491,6 @@ const Messages = () => {
     Socket.emit('OnlineStatus', ({ CurrentUserId, OtherUserId }));
 
   } , [otherUser?._id, ProfileData?._id])
-
 
   const removeFile = () => {
     setSelectedFile(null);
@@ -566,7 +580,12 @@ const Messages = () => {
         </div>
       </div>
 
-      <div className={`flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-neutral-900/80 to-neutral-900 ${isMobile ? 'pb-24' : ''}`} ref={chatContainerRef}>
+      {/* Messages Container - Now using flex-col (not reverse) with auto scroll */}
+      <div 
+        className={`flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-neutral-900/80 to-neutral-900 ${isMobile ? 'pb-24' : ''}`} 
+        ref={chatContainerRef}
+        style={{ display: 'flex', flexDirection: 'column' }}
+      >
         {isLoading ? (
           <div className="flex justify-center items-center h-32">
             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
@@ -627,164 +646,165 @@ const Messages = () => {
             )}
           </div>
         ) : (
-          messages.map((msg, index) => {
-            const isOwnMessage = msg.senderId === ProfileData._id;
-            const showAvatar = !isOwnMessage && (!isConsecutiveMessage(msg, messages[index - 1]) || isGroupChat);
-            const showTimestamp = index === messages.length - 1 || 
-              (messages[index + 1] && 
-              (messages[index + 1].senderId !== msg.senderId || 
-              (messages[index + 1].timestamp - msg.timestamp) > 300000));
+          // Regular flex column (not reverse) - messages flow from top to bottom
+          <div className="flex flex-col-reverse overflow-y-auto h-full px-4 py-2">
+            {messages.map((msg, index) => {
+              const isOwnMessage = msg.senderId === ProfileData._id;
+              const showAvatar = !isOwnMessage && (!isConsecutiveMessage(msg, messages[index - 1]) || isGroupChat);
+              const showTimestamp = shouldShowTimestamp(msg, messages[index - 1 ]);
 
-            return (
-              <motion.div
-                key={msg.id || index}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} gap-2`}
-              >
-                {!isOwnMessage && showAvatar && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center overflow-hidden mt-1 shadow-md">
-                    {isGroupChat ? (
-                      <span className="text-white text-xs font-semibold">
-                        {msg.senderName?.[0] || 'U'}
-                      </span>
-                    ) : otherUser?.UserProfile?.avatar?.url ? (
-                      <img
-                        src={otherUser.UserProfile.avatar.url}
-                        alt={`${otherUser.firstName} ${otherUser.lastName}`}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-white text-xs font-semibold">
-                        {otherUser?.firstName?.[0]}
-                      </span>
-                    )}
-                  </div>
-                )}
-                
-                {!isOwnMessage && !showAvatar && (
-                  <div className="w-8"></div>
-                )}
-                
-                <div className={`max-w-[85%] sm:max-w-[75%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
-                  {!isOwnMessage && isGroupChat && (
-                    <span className="text-xs text-neutral-500 mb-1 px-1">
-                      {msg.senderName}
-                    </span>
+              return (
+                <motion.div
+                  key={msg.id || index}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} gap-2`}
+                >
+                  {!isOwnMessage && showAvatar && (
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center overflow-hidden mt-1 shadow-md">
+                      {isGroupChat ? (
+                        <span className="text-white text-xs font-semibold">
+                          {msg.senderName?.[0] || 'U'}
+                        </span>
+                      ) : otherUser?.UserProfile?.avatar?.url ? (
+                        <img
+                          src={otherUser.UserProfile.avatar.url}
+                          alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-white text-xs font-semibold">
+                          {otherUser?.firstName?.[0]}
+                        </span>
+                      )}
+                    </div>
                   )}
                   
-                  <motion.div
-                    whileTap={{ scale: 0.98 }}
-                    className={`p-3 rounded-2xl shadow-md ${
-                      isOwnMessage
-                        ? "bg-gradient-to-r from-purple-600 to-amber-500 text-white rounded-br-md"
-                        : "bg-neutral-700 text-white rounded-bl-md"
-                    }`}
-                  >
+                  {!isOwnMessage && !showAvatar && (
+                    <div className="w-8"></div>
+                  )}
+                  
+                  <div className={`max-w-[85%] sm:max-w-[75%] flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}>
+                    {!isOwnMessage && isGroupChat && showAvatar && (
+                      <span className="text-xs text-neutral-500 mt-1 px-1">
+                        {msg.senderName}
+                      </span>
+                    )}
                     
-                    {msg.file && (
-                      <div className="mt-2">
-                        {isImageFile(msg.file.type) ? (
-                          <div className="max-w-xs block overflow-hidden rounded-lg border border-neutral-600 relative">
-                            <img 
-                              src={msg.file.url} 
-                              alt="Shared image" 
-                              className="w-full h-auto max-h-64 object-contain"
-                            />
+                    <motion.div
+                      whileTap={{ scale: 0.98 }}
+                      className={`p-3 rounded-2xl shadow-md space-y-5 mt-2 ${
+                        isOwnMessage
+                          ? "bg-gradient-to-r from-purple-600 to-amber-500 text-white rounded-br-md"
+                          : "bg-neutral-700 text-white rounded-bl-md"
+                      }`}
+                    >
+                      
+                      {msg.file && (
+                        <div className="mt-2">
+                          {isImageFile(msg.file.type) ? (
+                            <div className="max-w-xs block overflow-hidden rounded-lg border border-neutral-600 relative">
+                              <img 
+                                src={msg.file.url} 
+                                alt="Shared image" 
+                                className="w-full h-auto max-h-64 object-contain"
+                              />
+                              <a 
+                                href={msg.file.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1.5 backdrop-blur-sm hover:bg-black/70 transition-colors"
+                              >
+                                <FaDownload className="h-3 w-3 text-white" />
+                              </a>
+                            </div>
+                          ) : (
                             <a 
                               href={msg.file.url} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="absolute bottom-2 right-2 bg-black/50 rounded-full p-1.5 backdrop-blur-sm hover:bg-black/70 transition-colors"
+                              className="flex items-center gap-3 p-3 bg-neutral-600/50 rounded-lg hover:bg-neutral-600 transition-all duration-200 border border-neutral-600"
                             >
-                              <FaDownload className="h-3 w-3 text-white" />
+                              <div className="bg-gradient-to-r from-purple-600 to-blue-500 p-2 rounded-lg">
+                                <FaFile className="h-6 w-6 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm font-medium truncate">{msg.file.name}</p>
+                                <p className="text-neutral-300 text-xs">{formatFileSize(msg.file.size)}</p>
+                              </div>
+                              <span className="text-neutral-400 text-xs">Click to download</span>
                             </a>
-                          </div>
-                        ) : (
-                          <a 
-                            href={msg.file.url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-3 p-3 bg-neutral-600/50 rounded-lg hover:bg-neutral-600 transition-all duration-200 border border-neutral-600"
-                          >
-                            <div className="bg-gradient-to-r from-purple-600 to-blue-500 p-2 rounded-lg">
-                              <FaFile className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white text-sm font-medium truncate">{msg.file.name}</p>
-                              <p className="text-neutral-300 text-xs">{formatFileSize(msg.file.size)}</p>
-                            </div>
-                            <span className="text-neutral-400 text-xs">Click to download</span>
-                          </a>
-                        )}
-                      </div>
-                    )}
-                    
-                    {msg.text && (
-                      <p className={`text-white ${isOwnMessage ? 'text-end' : 'text-start'} break-words`}>
-                        {msg.text}
-                      </p>
-                    )}
-
-                    {msg.sharedPost && (
-                      <div className="mt-2 p-3 bg-neutral-700/50 rounded-lg border border-neutral-600 max-w-full">
-                        <p className="text-sm text-neutral-300 mb-2">Shared a post:</p>
-                        <div className="flex gap-3">
-                          {msg.sharedPost.files?.url && msg.sharedPost.files.url.match(/\.(jpeg|jpg|gif|png|webp)$/) ? (
-                            <img 
-                              src={msg.sharedPost.files.url} 
-                              alt="Shared post" 
-                              className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center flex-shrink-0">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                            </div>
                           )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-medium mb-1">{msg.sharedPost.heading || 'Shared post'}</p>
-                            <div className="text-neutral-400 text-xs">
-                              {expandedPosts[msg.id] 
-                                ? msg.sharedPost.description || ''
-                                : truncateText(msg.sharedPost.description, 80)}
-                              
-                              {msg.sharedPost.description && msg.sharedPost.description.length > 80 && (
-                                <button 
-                                  onClick={() => togglePostExpansion(msg.id)}
-                                  className="text-purple-400 hover:text-purple-300 ml-1 font-medium"
-                                >
-                                  {expandedPosts[msg.id] ? 'Show less' : 'Read more'}
-                                </button>
-                              )}
+                        </div>
+                      )}
+                      
+                      {msg.text && (
+                        <p className={`text-white ${isOwnMessage ? 'text-end' : 'text-start'} break-words`}>
+                          {msg.text}
+                        </p>
+                      )}
+
+                      {msg.sharedPost && (
+                        <div className="mt-2 p-3 bg-neutral-700/50 rounded-lg border border-neutral-600 max-w-full">
+                          <p className="text-sm text-neutral-300 mb-2">Shared a post:</p>
+                          <div className="flex gap-3">
+                            {msg.sharedPost.files?.url && msg.sharedPost.files.url.match(/\.(jpeg|jpg|gif|png|webp)$/) ? (
+                              <img 
+                                src={msg.sharedPost.files.url} 
+                                alt="Shared post" 
+                                className="w-14 h-14 rounded-lg object-cover flex-shrink-0"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-purple-600 to-amber-500 flex items-center justify-center flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-white text-sm font-medium mb-1">{msg.sharedPost.heading || 'Shared post'}</p>
+                              <div className="text-neutral-400 text-xs">
+                                {expandedPosts[msg.id] 
+                                  ? msg.sharedPost.description || ''
+                                  : truncateText(msg.sharedPost.description, 80)}
+                                
+                                {msg.sharedPost.description && msg.sharedPost.description.length > 80 && (
+                                  <button 
+                                    onClick={() => togglePostExpansion(msg.id)}
+                                    className="text-purple-400 hover:text-purple-300 ml-1 font-medium"
+                                  >
+                                    {expandedPosts[msg.id] ? 'Show less' : 'Read more'}
+                                  </button>
+                                )}
+                              </div>
+                              <button 
+                                onClick={() => handleViewPost(msg.sharedPost._id)}
+                                className="text-xs text-purple-400 hover:text-purple-300 mt-1 font-medium"
+                              >
+                                View Post
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => handleViewPost(msg.sharedPost._id)}
-                              className="text-xs text-purple-400 hover:text-purple-300 mt-1 font-medium"
-                            >
-                              View Post
-                            </button>
                           </div>
                         </div>
-                      </div>
+                      )}
+                    </motion.div>
+                    
+                    {showTimestamp && (
+                      <span className="text-xs text-neutral-500 mt-1 px-1">
+                        {formatTime(msg.timestamp)}
+                      </span>
                     )}
-                  </motion.div>
-                  
-                  {showTimestamp && (
-                    <span className="text-xs text-neutral-500 mt-1 px-1">
-                      {formatTime(msg.timestamp)}
-                    </span>
-                  )}
-                </div>
-              </motion.div>
-            );
-          })
+                  </div>
+                </motion.div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
 
+      {/* Message Input */}
       <div className={`p-4 border-t border-neutral-700 bg-neutral-800/80 backdrop-blur-sm ${isMobile ? 'fixed bottom-16 left-0 right-0 z-10' : 'sticky bottom-0 z-10'} flex-shrink-0`}>
         {(previewImage || selectedFile) && (
           <div className="relative mb-3 max-w-xs rounded-lg overflow-hidden border border-neutral-700 bg-neutral-800 shadow-md">
@@ -882,11 +902,13 @@ const Messages = () => {
       </div>
       
       {/* Post Modal */}
-      <OpenPostModel 
-        open={openPostModel.status} 
-        onClose={handleClosePostModal} 
-        Id={openPostModel.id} 
-      />
+      {openPostModel.status && (
+        <OpenPostModel 
+          postId={openPostModel.id} 
+          onClose={handleClosePostModal} 
+          onShare={sharePostInChat}
+        />
+      )}
     </div>
   );
 };

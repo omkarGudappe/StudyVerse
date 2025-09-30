@@ -178,9 +178,10 @@ Router.get('/verify-session', (req, res) => {
     const id = decoded.id;
 
     if (!id) {
+        console.log("Invalid token: No user ID found");
       return res.status(401).json({ ok: false, message: "Invalid token" });
     }
-
+    console.log("Token verified for user ID:", id);
     res.json({ ok: true, user: decoded });
   } catch (err) {
     res.status(401).json({ ok: false, message: "Invalid or expired token" });

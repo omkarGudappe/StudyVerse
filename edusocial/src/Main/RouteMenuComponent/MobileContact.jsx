@@ -156,12 +156,11 @@ const MobileContact = () => {
       if (res.data.ok) {
         const group = res.data.group;
 
-        // 2️⃣ Create group in Firebase
         const groupRef = ref(database, `groupChats/${group._id}`);
 
-        const membersObject = {};
-        memberUids.forEach(uid => {
-          membersObject[uid] = true;
+      const membersObject = {};
+          selectedMembers.forEach(member => {
+            if (member.firebaseUid) membersObject[member.firebaseUid] = true;
         });
         // also add creator
         if (CreatorUid) membersObject[CreatorUid] = true;

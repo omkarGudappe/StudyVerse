@@ -254,6 +254,7 @@ Router.post('/share', async (req, res) => {
       .populate('author', 'firstName lastName UserProfile.avatar username');
     
     if (!post) {
+        console.log("Post not found:", postId);
       return res.status(404).json({ error: 'Post not found' });
     }
     
@@ -296,7 +297,7 @@ Router.post('/share', async (req, res) => {
         UserProfile: {}
       };
       
-      // Use the imported io instance
+      console.log("Emitting to socket ID:", recipientSocketId);
       const io = getIo();
       io.to(recipientSocketId).emit('post-shared', {
         postId,
