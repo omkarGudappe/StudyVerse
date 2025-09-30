@@ -148,7 +148,7 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
         }
     }
 
-    if (isLoading) {
+    if (!isLoading) {
         return <button className={`${className} flex items-center py-2 w-full bg-neutral-800 justify-center p-2`}><span className="loader"></span></button>
     }
 

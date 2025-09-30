@@ -136,7 +136,9 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                         </div>
                                                     )}
                                                 </div>
-                                                <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                <div className='flex-shrink-0'>
+                                                    <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                </div>
                                             </Link>
                                         </div>
                                     ))}
