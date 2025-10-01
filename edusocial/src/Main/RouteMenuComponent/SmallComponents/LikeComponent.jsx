@@ -82,7 +82,6 @@ const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId, isVide
           if (!UserId) return;
           
           const isCurrentlyLiked = localLikedPosts.has(postId);
-          
           if (isCurrentlyLiked) {
             setLocalLikedPosts(prev => {
               const newSet = new Set(prev);

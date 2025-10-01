@@ -91,7 +91,7 @@ const UserSchema = new mongoose.Schema({
             type: String, 
             default: "" 
         },
-        institute: { 
+        institute: {
             type: String, 
             required: true 
         },

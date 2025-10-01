@@ -26,11 +26,9 @@ const RawToPdfConverter = ({
     setError(null);
     
     try {
-      // If it's a URL, fetch the content
       if (content.startsWith('http')) {
         await handleUrlContent(content);
       } else {
-        // If it's raw text content
         await handleRawTextContent(content);
       }
     } catch (err) {
@@ -44,54 +42,60 @@ const RawToPdfConverter = ({
     try {
       const response = await fetch(url);
       
-      // Check if it's a PDF by content type or URL pattern
+      // Check content type from response headers
       const contentType = response.headers.get('content-type');
-      const isPdf = contentType === 'application/pdf' || 
-                   url.includes('.pdf') || 
-                   url.includes('/raw/upload/') && url.includes('.pdf');
       
-      if (isPdf) {
-        // For PDF files, we'll handle them differently
+      if (contentType?.includes('pdf') || url.toLowerCase().endsWith('.pdf')) {
+        // For PDF files, we'll show a message that we can't extract text
         setFileType('pdf');
-        setTextContent('This is a PDF file. PDF files are best viewed in their original format.');
-        setLoading(false);
-        return;
+        setTextContent('This is a PDF file. PDF text extraction is not available in this version. Please download the original file to view it.');
+        convertToReadablePDF('This is a PDF file. PDF text extraction is not available in this version. Please download the original file to view it.');
+      } else {
+        // Try as text file
+        const text = await response.text();
+        if (text.length > 0 && !text.includes('�')) {
+          setFileType('text');
+          setTextContent(text);
+          convertToReadablePDF(text);
+        } else {
+          // If text extraction fails, treat it as binary/unreadable
+          setFileType('binary');
+          setTextContent('This file contains binary data that cannot be displayed as text. Please download the original file.');
+          convertToReadablePDF('This file contains binary data that cannot be displayed as text. Please download the original file.');
+        }
       }
-      
-      // For text files, extract the content
-      const text = await response.text();
-      
-      // Check if the response is actually a PDF by looking for PDF signature
-      if (text.startsWith('%PDF') || text.includes('%PDF')) {
-        setFileType('pdf');
-        setTextContent('This file is a PDF document. Please download it to view properly.');
-        setLoading(false);
-        return;
-      }
-      
-      // It's a text file
-      setFileType('text');
-      setTextContent(text);
-      convertToReadablePDF(text);
-      
     } catch (error) {
-      throw new Error('Failed to fetch content from URL');
+      console.error('Error processing URL:', error);
+      setError('Unable to process this file. Please try downloading the original file.');
+      setLoading(false);
     }
   };
 
   const handleRawTextContent = async (rawContent) => {
-    // Check if it's a PDF by looking for PDF signature
-    if (rawContent.startsWith('%PDF') || rawContent.includes('%PDF')) {
-      setFileType('pdf');
-      setTextContent('This appears to be PDF content. PDF files cannot be displayed as text.');
+    try {
+      // Check if it looks like a PDF by signature
+      const isPdf = rawContent.startsWith('%PDF') || 
+        (rawContent.length > 4 &&
+          rawContent.charCodeAt(0) === 0x25 && 
+          rawContent.charCodeAt(1) === 0x50 && 
+          rawContent.charCodeAt(2) === 0x44 && 
+          rawContent.charCodeAt(3) === 0x46);
+
+      if (isPdf) {
+        setFileType('pdf');
+        setTextContent('This appears to be a PDF file. PDF text extraction is not available in this version. Please download the original file.');
+        convertToReadablePDF('This appears to be a PDF file. PDF text extraction is not available in this version. Please download the original file.');
+      } else {
+        // Try to decode as text
+        setFileType('text');
+        setTextContent(rawContent);
+        convertToReadablePDF(rawContent);
+      }
+    } catch (error) {
+      console.error('Error processing raw content:', error);
+      setError('Failed to process the content.');
       setLoading(false);
-      return;
     }
-    
-    // It's regular text content
-    setFileType('text');
-    setTextContent(rawContent);
-    convertToReadablePDF(rawContent);
   };
 
   const convertToReadablePDF = (text) => {
@@ -104,14 +108,12 @@ const RawToPdfConverter = ({
     try {
       const doc = new jsPDF();
       
-      // Set document properties
       doc.setProperties({
         title: fileName || 'Study Material',
         subject: 'Extracted text content',
         author: 'StudyVerse'
       });
       
-      // Set font
       doc.setFont('helvetica');
       doc.setFontSize(12);
       
@@ -119,30 +121,28 @@ const RawToPdfConverter = ({
       const margin = 15;
       const maxWidth = pageWidth - (2 * margin);
       
-      // Clean the text
       const cleanText = text
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
         .replace(/\t/g, '    ')
-        .substring(0, 100000); // Limit to 100k characters
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        .substring(0, 50000);
       
-      // Add title if we have a file name
       if (fileName) {
         doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
         doc.text(fileName, margin, 20);
         doc.setFontSize(12);
+        doc.setFont('helvetica', 'normal');
       }
       
-      // Split text into lines that fit the page width
       const lines = doc.splitTextToSize(cleanText, maxWidth);
       
       let yPosition = fileName ? 35 : 20;
       const lineHeight = 7;
       const pageHeight = doc.internal.pageSize.getHeight();
       
-      // Add text to PDF
       for (let i = 0; i < lines.length; i++) {
-        // Add new page if needed
         if (yPosition + lineHeight > pageHeight - margin) {
           doc.addPage();
           yPosition = margin;
@@ -152,12 +152,10 @@ const RawToPdfConverter = ({
         yPosition += lineHeight;
       }
       
-      // Generate the PDF URL
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);
       setPdfUrl(url);
       
-      // Notify parent component
       if (onConversionComplete) {
         onConversionComplete(url);
       }
@@ -183,7 +181,6 @@ const RawToPdfConverter = ({
 
   const downloadOriginal = () => {
     if (content.startsWith('http')) {
-      // For URLs, create a direct download link
       const link = document.createElement('a');
       link.href = content;
       link.download = fileName || 'original-file';
@@ -192,7 +189,6 @@ const RawToPdfConverter = ({
       link.click();
       document.body.removeChild(link);
     } else {
-      // For raw text content, create a text file
       const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -260,40 +256,15 @@ const RawToPdfConverter = ({
                 Processing content...
               </span>
             </div>
-          ) : fileType === 'pdf' ? (
-            <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-500/20 rounded-2xl mb-4 border border-amber-500/30">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h4 className="text-lg font-semibold text-white mb-2">PDF File</h4>
-              <p className="text-neutral-400 mb-6 max-w-md mx-auto">
-                {textContent || 'This is a PDF document. PDF files are best viewed in their original format.'}
-              </p>
-              <div className="flex justify-center space-x-4 flex-wrap gap-3">
-                <button
-                  onClick={downloadOriginal}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 text-white rounded-lg hover:from-purple-500 hover:to-amber-400 transition-colors"
-                >
-                  Download PDF
-                </button>
-                <button
-                  onClick={onClose}
-                  className="px-6 py-3 bg-neutral-700/50 text-neutral-300 rounded-lg hover:bg-neutral-600/50 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
           ) : (
             <div className="space-y-6">
               {/* Text Preview */}
               <div className="bg-neutral-900/50 rounded-xl p-4 max-h-96 overflow-y-auto">
                 <div className="text-sm text-neutral-400 mb-2">
-                  Text Preview ({textContent.length} characters)
+                  {fileType === 'pdf' ? 'PDF File Information' : 'Text Content'} 
+                  ({textContent.length} characters)
                 </div>
-                <div className="text-neutral-200 whitespace-pre-wrap text-sm bg-neutral-800/30 p-3 rounded-lg max-h-64 overflow-y-auto font-mono">
+                <div className="text-neutral-200 whitespace-pre-wrap text-sm bg-neutral-800/30 p-3 rounded-lg max-h-64 overflow-y-auto">
                   {textContent || 'No content available.'}
                 </div>
               </div>
@@ -329,6 +300,16 @@ const RawToPdfConverter = ({
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                   </svg>
                   Download PDF
+                </button>
+                
+                <button
+                  onClick={downloadOriginal}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-500 transition-colors flex items-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Download Original
                 </button>
                 
                 <button

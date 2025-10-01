@@ -517,7 +517,6 @@ export const useLessonStore = create((set, get) => ({
   limit: DEFAULT_LIMIT,
   lastFetched: null,
 
-  // Clear all lessons
   clearLesson: () => set({ 
     Lessons: [], 
     page: 1, 
@@ -525,12 +524,10 @@ export const useLessonStore = create((set, get) => ({
     lastFetched: null 
   }),
 
-  // Add a new lesson
   addLesson: (newLesson) => set((state) => ({
     Lessons: [newLesson, ...state.Lessons]
   })),
 
-  // Update lesson likes
   updateLessonLikes: (LessonId, likes) => set((state) => ({
     Lessons: state.Lessons.map(lesson =>
       lesson._id === LessonId
@@ -539,11 +536,10 @@ export const useLessonStore = create((set, get) => ({
     )
   })),
 
-  // Add a comment to a lesson
   addCommentToLesson: (lessonId, comment) => set((state) => ({
     Lessons: state.Lessons.map(lesson =>
       lesson._id === lessonId
-        ? { 
+        ? {
             ...lesson, 
             comments: lesson.comments ? [...lesson.comments, comment] : [comment],
             commentCount: (lesson.commentCount || 0) + 1
@@ -552,7 +548,6 @@ export const useLessonStore = create((set, get) => ({
     )
   })),
 
-  // Remove a comment from a lesson
   removeCommentFromLesson: (lessonId, commentId) => set((state) => ({
     Lessons: state.Lessons.map(lesson =>
       lesson._id === lessonId
@@ -565,18 +560,15 @@ export const useLessonStore = create((set, get) => ({
     )
   })),
 
-  // Delete a lesson
   deleteLesson: (lessonId) => set((state) => ({
     Lessons: state.Lessons.filter(lesson => lesson._id !== lessonId)
   })),
 
-  // Fetch lessons with pagination and caching
   fetchLesson: async (userId, loadMore = false, forceRefresh = false) => {
     const currentState = get();
     
     if (loadMore && !currentState.hasMore) return;
     
-    // Return cached data if it's still valid and not forcing refresh
     if (!forceRefresh && !loadMore && currentState.Lessons.length > 0 && 
         currentState.lastFetched && (Date.now() - currentState.lastFetched) < CACHE_DURATION) {
       return currentState.Lessons;

@@ -280,9 +280,12 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
 });
 
 Router.get('/search', async (req, res) => {
-    const { query } = req.query;
+    const { query, uid } = req.query;
 
     try {
+        const user = await User.findById(uid);
+        if(!user) return res.status(404).json({message: "User Not found"});
+        
         const users = await User.find({
             $or: [
                 { username: { $regex: query, $options: "i" } },
@@ -293,18 +296,36 @@ Router.get('/search', async (req, res) => {
         const Notes = await Posts.find({
             contentType: 'note',
             $or: [
-                { heading: { $regex: query, $options: "i" },
-                  description: { $regex: query, $options: "i" }
+                { 
+                    visibility: "public",
+                    $or: [
+                        { heading: { $regex: query, $options: "i" } },
+                        { description: { $regex: query, $options: "i" } }
+                    ]
                 },
+                { 
+                    visibility: "peers", 
+                    author: { $in: user.connections },
+                    $or: [
+                        { heading: { $regex: query, $options: "i" } },
+                        { description: { $regex: query, $options: "i" } }
+                    ]
+                },
+                { 
+                    author: uid,
+                    $or: [
+                        { heading: { $regex: query, $options: "i" } },
+                        { description: { $regex: query, $options: "i" } }
+                    ]
+                }
             ]
         })
 
         const Lesson = await Posts.find({
             contentType: 'lesson',
-             $or: [
-                { heading: { $regex: query, $options: "i" },
-                  description: { $regex: query, $options: "i" }
-                },
+            $or: [
+                { heading: { $regex: query, $options: "i" } },
+                { description: { $regex: query, $options: "i" } }
             ]
         })
 

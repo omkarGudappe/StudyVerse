@@ -24,14 +24,15 @@ import Setting from "../Main/RouteMenuComponent/Settings/Setting";
 import UpdateUserNotes from "../Main/RouteMenuComponent/Panels/UpdateUserNotes";
 import MobileUserNotes from "../Main/RouteMenuComponent/MobileUserNotes";
 import SettingePage from "../Main/RouteMenuComponent/Settings/SettingePage";
-import ProfileUpdate from '../Main/RouteMenuComponent/Settings/ProfileUpdate';
-import DeailyQuiz from '../Main/RouteMenuComponent/AIModel/DeailyQuiz'
+import ProfileUpdate from "../Main/RouteMenuComponent/Settings/ProfileUpdate";
+import DeailyQuiz from "../Main/RouteMenuComponent/AIModel/DeailyQuiz";
 import Lesson from "../Main/RouteMenuComponent/Lesson";
 import Video from "../Main/RouteMenuComponent/Panels/Video";
 import NotificationSetting from "../Main/RouteMenuComponent/Settings/NotificationSetting";
 import Privacy from "../Main/RouteMenuComponent/Settings/Privacy";
 import Challenges from "../Main/RouteMenuComponent/Challenges";
 import QuizReview from "../Main/RouteMenuComponent/SmallComponents/QuizReview";
+import PublicNotes from "../Main/RouteMenuComponent/PublicNotes";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -43,8 +44,8 @@ const MenuWrapper = ({ children }) => {
       setIsMobile(window.innerWidth < 768);
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const showNavBar = !hideNavbarPaths.some((path) =>
@@ -53,11 +54,15 @@ const MenuWrapper = ({ children }) => {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-neutral-900 w-full pb-16"> {/* Padding for mobile bottom nav */}
+      <div className="min-h-screen bg-neutral-900 w-full pb-16">
+        {" "}
+        {/* Padding for mobile bottom nav */}
         {children}
-        {showNavBar && <div className="fixed bottom-0 left-0 right-0 z-30">
-          <Menu />
-        </div>}
+        {showNavBar && (
+          <div className="fixed bottom-0 left-0 right-0 z-30">
+            <Menu />
+          </div>
+        )}
       </div>
     );
   }
@@ -97,18 +102,18 @@ const PageRoute = () => {
               }
             />
             <Route
-              path='/messages/:userName'
+              path="/messages/:userName"
               element={
                 <MenuWrapper>
-                  <Messages/>
+                  <Messages />
                 </MenuWrapper>
               }
             />
             <Route
-              path='/group-chat/:groupId'
+              path="/group-chat/:groupId"
               element={
                 <MenuWrapper>
-                  <Messages/>
+                  <Messages />
                 </MenuWrapper>
               }
             />
@@ -116,7 +121,7 @@ const PageRoute = () => {
               path="/lessons"
               element={
                 <MenuWrapper>
-                  <Lesson/>
+                  <Lesson />
                 </MenuWrapper>
               }
             />
@@ -124,7 +129,7 @@ const PageRoute = () => {
               path="/video"
               element={
                 <MenuWrapper>
-                  <Video/>
+                  <Video />
                 </MenuWrapper>
               }
             />
@@ -132,15 +137,15 @@ const PageRoute = () => {
               path="/notes/:Id"
               element={
                 <MenuWrapper>
-                  <UpdateUserNotes/>
+                  <UpdateUserNotes />
                 </MenuWrapper>
               }
             />
             <Route
-              path='/notes'
+              path="/notes"
               element={
                 <MenuWrapper>
-                  <MobileUserNotes/>
+                  <MobileUserNotes />
                 </MenuWrapper>
               }
             />
@@ -153,35 +158,35 @@ const PageRoute = () => {
               }
             />
             <Route
-               path="/contactMessage"
-               element={
+              path="/contactMessage"
+              element={
                 <MenuWrapper>
-                  <MobileContact/>
+                  <MobileContact />
                 </MenuWrapper>
-               }
+              }
             />
             <Route
               path="/challenges"
-               element={
+              element={
                 <MenuWrapper>
                   {/* <DeailyQuiz/> */}
-                  <Challenges/>
+                  <Challenges />
                 </MenuWrapper>
-               }
+              }
             />
             <Route
               path="/challenges/quiz"
-               element={
+              element={
                 <MenuWrapper>
-                  <DeailyQuiz/>
+                  <DeailyQuiz />
                 </MenuWrapper>
-               }
+              }
             />
             <Route
               path="/challenges/quiz/review/:id"
               element={
                 <MenuWrapper>
-                  <QuizReview/>
+                  <QuizReview />
                 </MenuWrapper>
               }
             />
@@ -189,7 +194,7 @@ const PageRoute = () => {
               path="/profile/:userName"
               element={
                 <MenuWrapper>
-                  <UserProfile/>
+                  <UserProfile />
                 </MenuWrapper>
               }
             />
@@ -197,12 +202,12 @@ const PageRoute = () => {
               path="/settings"
               element={
                 <MenuWrapper>
-                  <SettingePage/>
+                  <SettingePage />
                 </MenuWrapper>
               }
             />
             <Route
-              path='/createNotes'
+              path="/createNotes"
               element={
                 <MenuWrapper>
                   <Notes />
@@ -213,7 +218,7 @@ const PageRoute = () => {
               path="/setting/update-profile"
               element={
                 <MenuWrapper>
-                  <ProfileUpdate/>
+                  <ProfileUpdate />
                 </MenuWrapper>
               }
             />
@@ -221,7 +226,7 @@ const PageRoute = () => {
               path="/setting/notifications"
               element={
                 <MenuWrapper>
-                  <NotificationSetting/>
+                  <NotificationSetting />
                 </MenuWrapper>
               }
             />
@@ -229,16 +234,23 @@ const PageRoute = () => {
               path="/setting/privacy"
               element={
                 <MenuWrapper>
-                  <Privacy/>
+                  <Privacy />
+                </MenuWrapper>
+              }
+            />
+            <Route
+              path="/public-notes/:Id"
+              element={
+                <MenuWrapper>
+                  <PublicNotes />
                 </MenuWrapper>
               }
             />
             <Route path="/fillprofile" element={<ProfileDetail />} />
             <Route path="/profileBio" element={<ProfileBio />} />
-            
-            {/* 404 Page */}
-            <Route 
-              path="*" 
+
+            <Route
+              path="*"
               element={
                 <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center">
                   <div className="text-center">
@@ -246,7 +258,7 @@ const PageRoute = () => {
                     <p className="text-neutral-400">Page not found</p>
                   </div>
                 </div>
-              } 
+              }
             />
           </Routes>
         </CurrentUserContexProvider>

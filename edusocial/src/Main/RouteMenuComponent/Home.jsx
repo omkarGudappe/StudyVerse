@@ -29,14 +29,13 @@ import RawToPdfConverter from "./Panels/RawToPdfConverter";
 import LikeComponent from "./SmallComponents/LikeComponent";
 
 import { pdfjs } from "react-pdf";
+import { Document, Page } from 'react-pdf';
+import * as pdfjsLib from "pdfjs-dist";
+import pdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url"; 
+import PdfViewer from "./SmallComponents/PdfViewer";
 
-import * as PdfJs from "pdfjs-dist";
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.js",
-
-  import.meta.url
-).toString();
 
 const StudyVerseMain = () => {
   const [likedPosts, setLikedPosts] = useState(new Set());
@@ -792,17 +791,18 @@ const StudyVerseMain = () => {
 
   const openPdfModal = (url) => {
     setPdfModal({ isOpen: true, url, numPages: 0, pageNumber: 1 });
-
+    console.log("hello1" , pdfModal);
     setPdfLoading(true);
   };
 
   const closePdfModal = () => {
     setPdfModal({ isOpen: false, url: null, numPages: 0, pageNumber: 1 });
+    console.log("hello2" , pdfModal);
   };
 
   const onDocumentLoadSuccess = ({ numPages }) => {
     setPdfModal((prev) => ({ ...prev, numPages }));
-
+    console.log("hello3" , pdfModal);
     setPdfLoading(false);
   };
 
@@ -826,24 +826,18 @@ const StudyVerseMain = () => {
   };
 
   const handleRawContent = (content, type, fileName) => {
+    console.log("hello4" , pdfModal);
     setRawContentModal({
       isOpen: true,
-
       content,
-
-      type: "text", // Force text type for URL content
-
+      type: "text",
       fileName,
-
       convertedPdfUrl: null,
     });
   };
 
   const handleConversionComplete = (pdfUrl) => {
     setRawContentModal((prev) => ({ ...prev, convertedPdfUrl: pdfUrl }));
-
-    // Also update the PDF modal to show the converted PDF
-
     setPdfModal({
       isOpen: true,
 
@@ -1292,7 +1286,7 @@ const StudyVerseMain = () => {
                   <div className="p-5">
                     {post.heading && (
                     <h2 className="text-lg font-bold mb-3 text-white line-clamp-2">
-                      {post.heading}
+                      {post?.heading}
                     </h2>
                   )}
 
@@ -1341,7 +1335,6 @@ const StudyVerseMain = () => {
                                     strokeWidth={2}
                                     d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
                                   />
-
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
@@ -1356,11 +1349,9 @@ const StudyVerseMain = () => {
                       ) : post.files?.url.endsWith(".pdf") ||
                         (post.files?.url.includes("/raw/upload/") &&
                           post.files?.url.endsWith(".pdf")) ? (
-                        // PDF handling - both direct PDFs and raw uploaded PDFs
-
                         <div
                           className="relative group cursor-pointer h-full"
-                          onClick={() => openPdfModal(post.files.url)}
+                          onClick={() => openPdfModal(post?.files?.url)}
                         >
                           <div className="aspect-video bg-gradient-to-br h-full w-full from-purple-600/20 to-amber-500/20 flex items-center justify-center">
                             <div className="text-center p-6">
@@ -1403,52 +1394,52 @@ const StudyVerseMain = () => {
                           /\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/i
                         ) ? (
                         // Text file handling - only if it's raw upload AND not any other known file type
+                          <PdfViewer fileUrl={post?.files?.url}/>
+                        // <div
+                        //   className="relative group h-full cursor-pointer"
+                        //   onClick={() =>
+                        //     handleRawContent(
+                        //       post.files.url,
+                        //       "text",
+                        //       post.heading || "Study Material"
+                        //     )
+                        //   }
+                        // >
+                        //   <div className="aspect-video bg-gradient-to-br from-green-600/20 h-full w-full to-blue-500/20 flex items-center justify-center">
+                        //     <div className="text-center p-6">
+                        //       <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600/20 rounded-2xl mb-4 border border-green-500/30">
+                        //         <svg
+                        //           xmlns="http://www.w3.org/2000/svg"
+                        //           className="h-8 w-8 text-green-400"
+                        //           fill="none"
+                        //           viewBox="0 0 24 24"
+                        //           stroke="currentColor"
+                        //         >
+                        //           <path
+                        //             strokeLinecap="round"
+                        //             strokeLinejoin="round"
+                        //             strokeWidth={2}
+                        //             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        //           />
+                        //         </svg>
+                        //       </div>
 
-                        <div
-                          className="relative group h-full cursor-pointer"
-                          onClick={() =>
-                            handleRawContent(
-                              post.files.url,
-                              "text",
-                              post.heading || "Study Material"
-                            )
-                          }
-                        >
-                          <div className="aspect-video bg-gradient-to-br from-green-600/20 h-full w-full to-blue-500/20 flex items-center justify-center">
-                            <div className="text-center p-6">
-                              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-600/20 rounded-2xl mb-4 border border-green-500/30">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-8 w-8 text-green-400"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                  />
-                                </svg>
-                              </div>
+                        //       <h4 className="font-semibold text-white mb-2">
+                        //         Text Document
+                        //       </h4>
 
-                              <h4 className="font-semibold text-white mb-2">
-                                Text Document
-                              </h4>
+                        //       <p className="text-sm text-neutral-400">
+                        //         Click to view this text content
+                        //       </p>
+                        //     </div>
+                        //   </div>
 
-                              <p className="text-sm text-neutral-400">
-                                Click to view this text content
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
-                            <span className="text-white text-sm font-medium rounded-2xl bg-green-600/80 backdrop-blur-sm px-3 py-1.5">
-                              View Text
-                            </span>
-                          </div>
-                        </div>
+                        //   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center p-4">
+                        //     <span className="text-white text-sm font-medium rounded-2xl bg-green-600/80 backdrop-blur-sm px-3 py-1.5">
+                        //       View Text
+                        //     </span>
+                        //   </div>
+                        // </div>
                       ) : (
                         <img
                           src={post.files.url}
@@ -1888,121 +1879,146 @@ const StudyVerseMain = () => {
         </div>
       )}
 
-      {pdfModal.isOpen && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-800/95 backdrop-blur-lg rounded-2xl border border-neutral-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-neutral-700/50 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-white">PDF Viewer</h3>
+     {pdfModal.isOpen && (
+  <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="bg-neutral-800/95 backdrop-blur-lg rounded-2xl border border-neutral-700/50 max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="p-4 border-b border-neutral-700/50 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-white">PDF Viewer</h3>
+        <button
+          onClick={closePdfModal}
+          className="p-2 hover:bg-neutral-700/50 rounded-lg transition-colors"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 text-neutral-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
 
-              <button
-                onClick={closePdfModal}
-                className="p-2 hover:bg-neutral-700/50 rounded-lg transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-neutral-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+      <div className="p-4 flex items-center justify-between bg-neutral-900/50">
+        <button
+          onClick={previousPage}
+          disabled={pdfModal.pageNumber <= 1}
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            pdfModal.pageNumber <= 1
+              ? "bg-neutral-700/30 text-neutral-500 cursor-not-allowed"
+              : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
+          }`}
+        >
+          Previous
+        </button>
+
+        <span className="text-neutral-300">
+          Page {pdfModal.pageNumber} of {pdfModal.numPages}
+        </span>
+
+        <button
+          onClick={nextPage}
+          disabled={pdfModal.pageNumber >= pdfModal.numPages}
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            pdfModal.pageNumber >= pdfModal.numPages
+              ? "bg-neutral-700/30 text-neutral-500 cursor-not-allowed"
+              : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
+          }`}
+        >
+          Next
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-auto p-4 flex justify-center min-h-[500px]">
+        {pdfLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+            <span className="ml-3 text-neutral-400">Loading PDF...</span>
+          </div>
+        ) : (
+          <Document
+            file={pdfModal.url}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(error) => {
+              console.error('PDF load error:', error);
+              setPdfLoading(false);
+            }}
+            loading={
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="ml-3 text-neutral-400">Loading PDF...</span>
+              </div>
+            }
+            error={
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-2xl mb-4 border border-red-500/30">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8 text-red-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-white mb-2">
+                  Failed to Load PDF
+                </h4>
+                <p className="text-neutral-400 mb-4">
+                  The PDF document could not be loaded.
+                </p>
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = pdfModal.url;
+                    link.download = 'document.pdf';
+                    link.target = '_blank';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 text-white rounded-lg hover:from-purple-500 hover:to-amber-400 transition-colors"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-4 flex items-center justify-between bg-neutral-900/50">
-              <button
-                onClick={previousPage}
-                disabled={pdfModal.pageNumber <= 1}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  pdfModal.pageNumber <= 1
-                    ? "bg-neutral-700/30 text-neutral-500 cursor-not-allowed"
-                    : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-                }`}
-              >
-                Previous
-              </button>
-
-              <span className="text-neutral-300">
-                Page {pdfModal.pageNumber} of {pdfModal.numPages}
-              </span>
-
-              <button
-                onClick={nextPage}
-                disabled={pdfModal.pageNumber >= pdfModal.numPages}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  pdfModal.pageNumber >= pdfModal.numPages
-                    ? "bg-neutral-700/30 text-neutral-500 cursor-not-allowed"
-                    : "bg-purple-500/20 text-purple-300 hover:bg-purple-500/30"
-                }`}
-              >
-                Next
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-auto p-4 flex justify-center">
-              {pdfLoading && (
+                  Download PDF Instead
+                </button>
+              </div>
+            }
+          >
+            <Page 
+              pageNumber={pdfModal.pageNumber} 
+              width={Math.min(800, window.innerWidth - 40)}
+              loading={
                 <div className="flex items-center justify-center py-12">
                   <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              )}
-
-              {/* <Document
-
-                file={pdfModal.url}
-
-                onLoadSuccess={onDocumentLoadSuccess}
-
-                onLoadError={() => setPdfLoading(false)}
-
-                loading={
-
-                  <div className="flex items-center justify-center py-12">
-
-                    <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-
-                  </div>
-
-                }
-
-              >
-
-                <Page 
-
-                  pageNumber={pdfModal.pageNumber} 
-
-                  width={Math.min(800, window.innerWidth - 40)}
-
-                  loading={
-
-                    <div className="flex items-center justify-center py-12">
-
-                      <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-
-                    </div>
-
-                  }
-
-                />
-
-              </Document> */}
-            </div>
-          </div>
-        </div>
-      )}
+              }
+            />
+          </Document>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
       {rawContentModal.isOpen && (
         <RawToPdfConverter
           content={rawContentModal.content}
           type={rawContentModal.type}
           fileName={rawContentModal.fileName}
-          convertedPdfUrl={rawContentModal.convertedPdfUrl}
           onConversionComplete={handleConversionComplete}
+          convertedPdfUrl={rawContentModal.convertedPdfUrl}
           onClose={closeRawContentModal}
         />
       )}

@@ -14,7 +14,7 @@ Router.get('/:id', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const skip = (page - 1) * limit;
 
-        const user = await User.findById({ _id: id })
+        const user = await User.findById(id)
         if(!user) return res.status(404).json({message: "User Not found"});
 
         const AllPosts = await Posts.find({
@@ -105,16 +105,21 @@ Router.get('/lesson/:id' , async (req, res) => {
 
 Router.get('/comments/:id', async (req, res) => {
     const { id } = req.params;
+    const { page = 1, limit = 10 } = req.query;
 
     try {
         if (!id) {
             return res.status(400).json({ message: "Id Not Found" });
         }
 
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+
         const postWithComments = await Posts.findById(id)
             .populate({
                 path: "comments.user",
-                select: "firstName lastName UserProfile.avatar",
+                select: "username UserProfile.avatar",
                 populate: {
                     path: "UserProfile.avatar",
                     select: "url"
@@ -122,28 +127,40 @@ Router.get('/comments/:id', async (req, res) => {
             })
             .select("comments")
 
-            
-            if (!postWithComments) {
-                return res.status(404).json({ message: "Post not found" });
-            }
-            
-            if (postWithComments) {
-                postWithComments.comments.sort((a, b) => b.createdAt - a.createdAt);
-            }
-            
-        const formattedComments = postWithComments.comments.map(comment => ({
+        if (!postWithComments) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+        
+        if (postWithComments.comments) {
+            postWithComments.comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+        
+        const totalComments = postWithComments.comments.length;
+        
+        const paginatedComments = postWithComments.comments.slice(skip, skip + limitNum);
+        
+        const formattedComments = paginatedComments.map(comment => ({
             _id: comment._id,
             content: comment.comment,
             createdAt: comment.createdAt,
             author: {
                 _id: comment.user._id,
-                firstName: comment.user.firstName,
-                lastName: comment.user.lastName,
+                username: comment.user.username,
                 avatar: comment.user.UserProfile?.avatar?.url || null
             }
         }));
 
-        res.json({ ok: true, comments: formattedComments });
+        res.json({ 
+            ok: true, 
+            comments: formattedComments,
+            pagination: {
+                currentPage: pageNum,
+                totalPages: Math.ceil(totalComments / limitNum),
+                totalComments: totalComments,
+                hasNextPage: skip + limitNum < totalComments,
+                hasPrevPage: pageNum > 1
+            }
+        });
 
     } catch (err) {
         console.log(err.message);
@@ -172,7 +189,7 @@ Router.post('/comments/:postId', async (req, res) => {
             { new: true }
         ).populate({
             path: "comments.user",
-            select: "firstName lastName UserProfile.avatar",
+            select: "username UserProfile.avatar",
             populate: {
                 path: "UserProfile.avatar",
                 select: "url"
@@ -210,8 +227,7 @@ Router.post('/comments/:postId', async (req, res) => {
                 createdAt: addedComment.createdAt,
                 author: {
                     _id: addedComment.user._id,
-                    firstName: addedComment.user.firstName,
-                    lastName: addedComment.user.lastName,
+                    username: addedComment.user.username,
                     avatar: addedComment.user.UserProfile?.avatar?.url || null
                 }
             }

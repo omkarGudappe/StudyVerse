@@ -24,36 +24,36 @@ const Menu = () => {
   const [PreviosActive, setPreviosActive] = useState(activeBtn);
   const navigate = useNavigate();
 
-    useEffect(() => {
-    const checkSession = async () => {
-      const token = localStorage.getItem("token");
-      console.log("Befour getting");
-      if (!token){
-        navigate("/"); return
-      };
-      console.log("Found token, verifying session...", token);
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-session`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+  //   useEffect(() => {
+  //   const checkSession = async () => {
+  //     const token = localStorage.getItem("token");
+  //     console.log("Befour getting");
+  //     if (!token){
+  //       navigate("/"); return
+  //     };
+  //     console.log("Found token, verifying session...", token);
+  //     try {
+  //       const res = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-session`, {
+  //         headers: { Authorization: `Bearer ${token}` }
+  //       });
 
-        const data = await res.json();
-        if (data.ok) {
-          navigate("/home");
-          console.log("Session valid, navigating to home.");
-        } else {
-          navigate("/");
-          localStorage.removeItem("token");
-          console.log("Session invalid, please log in again.");
-        }
-      } catch (err) {
-        localStorage.removeItem("token");
-        console.log("Session verification error:", err.message);
-      }
-    };
+  //       const data = await res.json();
+  //       if (data.ok) {
+  //         navigate("/home");
+  //         console.log("Session valid, navigating to home.");
+  //       } else {
+  //         navigate("/");
+  //         localStorage.removeItem("token");
+  //         console.log("Session invalid, please log in again.");
+  //       }
+  //     } catch (err) {
+  //       localStorage.removeItem("token");
+  //       console.log("Session verification error:", err.message);
+  //     }
+  //   };
   
-    checkSession();
-  }, []);
+  //   checkSession();
+  // }, []);
 
   useEffect(() => {
     const handleResize = () => {

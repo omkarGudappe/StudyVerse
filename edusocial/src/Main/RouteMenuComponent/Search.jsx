@@ -4,12 +4,14 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import SearchPanel from './Panels/SearchPanel';
 import SearchResult from './SmallComponents/SearchResult';
+import { UserDataContextExport } from './CurrentUserContexProvider';
 
 const Search = ({ searchClicked, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { ProfileData } = UserDataContextExport();
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -19,12 +21,13 @@ const Search = ({ searchClicked, onClose }) => {
         return;
       }
 
-      // In Search.jsx, update the FindFriend function:
         const FindFriend = async () => {
           try {
+            const uid = ProfileData ? ProfileData._id : "";
+            if(!uid) return;
             setIsLoading(true);
             setError(null);
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${searchTerm}`);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${searchTerm}&uid=${uid}`);
             const Data = res.data;
             
             // Set the search results with the expected structure
