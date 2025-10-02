@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import axios from 'axios';
 import Socket from "../../../SocketConnection/Socket";
 import { auth } from '../../../Auth/AuthProviders/FirebaseSDK';
+import { UserDataContextExport } from '../CurrentUserContexProvider';
 
 const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
 
@@ -9,11 +10,13 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
     const [OtherUserConnections, setOtherUserConnections] = useState(null);
     const [PeerStatus, setPeerStatus] = useState({});
     const [isLoading, setIsLoading] = useState(false);
+    const { ProfileData } =UserDataContextExport();
 
     useEffect(() => {
         const FetchUsersConnections = async () => {
             try {
                 setIsLoading(true);
+                console.log("Fetching connections for", currentUser, OtherUser , ProfileData?._id);
                 const getIds = [currentUser, OtherUser];
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/getConnections`, {
                     params: { ids: getIds.join(',') }
@@ -38,7 +41,11 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
             setPeerStatus({ peeread: true })
         } else if (OtherUserConnections.connectionRequests?.includes(currentUser)) {
             setPeerStatus({ requested: true })
+        } else if(currentUser === OtherUser) {
+            console.log("It's you");
+            setPeerStatus({ self: true });
         } else {
+            console.log("No connection");
             setPeerStatus({ peer: true });
         }
     }, [CurrentUserConnections, OtherUserConnections, currentUser])
@@ -166,11 +173,15 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
                     <button title='cancel request' onClick={handleCancelRequest} className={` ${className} cursor-pointer bg-gray-700  p-2`}>
                         Requested
                     </button>
-            ) : PeerStatus.peeread && (
+            ) : PeerStatus.peeread ? (
                     <button title='UnPeer' onClick={handleUnPeer} className={`${className} cursor-pointer bg-blue-900 p-2`}>
                         Peered
                     </button>
-            )}
+            ) : PeerStatus.self ? (
+                    <button disabled className={`${className} cursor-not-allowed bg-neutral-600 p-2`}>
+                        It's You
+                    </button>
+            ) : null}
         </div>
     )
 }

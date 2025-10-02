@@ -62,7 +62,6 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
               </span>
             )}
           </div>
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-green-500 rounded-full border-2 border-neutral-900"></div>
         </div>
         
         <div className="flex-1 min-w-0">
@@ -94,7 +93,6 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
     </motion.div>
   );
 
-  // Enhanced Note Card Component
   const NoteCard = ({ note, index }) => (
     <motion.div
       key={note._id || index}
@@ -108,10 +106,10 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
       <Link
         to={`/notes/${note._id}`}
         onClick={onClose}
-        className="flex items-center gap-4 p-4 bg-gradient-to-r from-neutral-800 to-neutral-900 rounded-2xl hover:from-blue-900/20 hover:to-blue-800/20 transition-all duration-300 border border-neutral-700 hover:border-blue-500/50 shadow-lg hover:shadow-xl"
+        className="flex items-center gap-4 p-4 bg-gradient-to-r from-neutral-800 to-neutral-900 rounded-2xl transition-all duration-300 border border-neutral-700 "
       >
         <div className="relative">
-          <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center border-2 border-neutral-700 group-hover:border-blue-400 transition-all duration-300 shadow-lg">
+          <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border-2 border-neutral-700 group-hover:border-blue-400 transition-all duration-300 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
@@ -138,68 +136,94 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
     </motion.div>
   );
 
-  // Enhanced Lesson Card Component
   const LessonCard = ({ lesson, index }) => (
     <motion.div
       key={lesson._id || index}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, type: "spring", stiffness: 100 }}
-      whileHover={{ scale: 1.02 }}
+      whileHover={{ scale: 1.001, y: -2 }}
       whileTap={{ scale: 0.98 }}
       className="cursor-pointer group"
     >
       <Link
         to={`/video?l=${lesson._id}`}
         onClick={onClose}
-        className="flex gap-4 p-4 bg-gradient-to-r from-neutral-800 to-neutral-900 rounded-2xl hover:from-green-900/20 hover:to-green-800/20 transition-all duration-300 border border-neutral-700 hover:border-green-500/50 shadow-lg hover:shadow-xl"
+        className="block bg-gradient-to-br from-neutral-800 to-neutral-900 rounded-2xl transition-all duration-500 border overflow-hidden"
       >
-        <div className="relative flex-shrink-0">
-          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-neutral-900/50 flex items-center justify-center overflow-hidden border-2 border-neutral-700 group-hover:border-green-400 transition-all duration-300">
+        <div className="relative">
+          <div className="aspect-video w-full bg-neutral-900 relative overflow-hidden">
             {lesson?.files?.url ? (
-              <div className="relative w-full h-full">
-                <video className="w-full h-full object-cover" src={lesson.files.url} />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <svg className="w-5 h-5 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
+              <>
+                <video 
+                  className="w-full h-full object-cover transition-transform duration-700"
+                  src={lesson.files.url}
+                  poster={lesson.thumbnail || ''}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300"></div>
+                <div className="absolute top-3 right-3">
+                  <span className="bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur-sm">
+                    {lesson.duration}
+                  </span>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex items-center justify-center">
+                    <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd"/>
                     </svg>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-600 to-emerald-500">
+                <div className="text-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-white text-sm font-medium">Video Lesson</p>
+                </div>
+              </div>
             )}
           </div>
         </div>
         
-        <div className="flex-1 min-w-0">
-          <h3 className="text-white font-bold truncate text-sm md:text-base mb-1">{lesson.heading}</h3>
-          <p className="text-neutral-300 text-xs md:text-sm truncate mb-2">{lesson.subject}</p>
-          <div className="flex flex-wrap gap-3 text-xs text-neutral-400">
-            <span className="flex items-center gap-1 bg-neutral-700 px-2 py-1 rounded-full">
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-3 mb-2">
+            <h3 className="text-white font-bold text-sm md:text-base leading-tight flex-1 line-clamp-2 group-hover:text-purple-500 transition-colors duration-300">
+              {lesson.heading}
+            </h3>
+            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </div>
+          
+          <p className="text-neutral-300 text-xs md:text-sm mb-3 line-clamp-2">{lesson.description || lesson.subject}</p>
+          
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1 bg-neutral-700/80 hover:bg-green-500/20 px-2 py-1 rounded-full text-xs text-neutral-300 transition-all duration-300 border border-neutral-600 hover:border-purple-400/50">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
               </svg>
               {lesson.level}
             </span>
-            <span className="flex items-center gap-1 bg-neutral-700 px-2 py-1 rounded-full">
+            <span className="inline-flex items-center gap-1 bg-neutral-700/80 hover:bg-green-500/20 px-2 py-1 rounded-full text-xs text-neutral-300 transition-all duration-300 border border-neutral-600 hover:border-purple-400/50">
               <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd"/>
               </svg>
               {lesson.duration}
             </span>
+            {lesson.subject && (
+              <span className="inline-flex items-center gap-1 bg-neutral-700/80 hover:bg-green-500/20 px-2 py-1 rounded-full text-xs text-neutral-300 transition-all duration-300 border border-neutral-600 hover:border-purple-400/50">
+                {lesson.subject}
+              </span>
+            )}
           </div>
         </div>
         
-        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-center">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </div>
+        <div className="absolute inset-0 border-2 border-transparent group-hover:border-purple-400/30 rounded-2xl transition-all duration-500 pointer-events-none"></div>
       </Link>
     </motion.div>
   );
@@ -227,16 +251,18 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
 
     if (activeData.length > 0) {
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <motion.p 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="text-neutral-300 text-sm font-medium mb-4 flex items-center gap-2"
           >
-            <span className="bg-neutral-700 px-2 py-1 rounded-full text-xs">{getResultCount()}</span>
+            <span className="bg-gradient-to-tr from-purple-500 to-amber-500 px-3 py-1 rounded-full text-xs text-white font-bold shadow-lg">
+              {getResultCount()}
+            </span>
             {getResultText()}
           </motion.p>
-          <div className="space-y-3">
+          <div className={`space-y-4 pb-15 ${activeTab === 'lessons' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-3'}`}>
             <AnimatePresence>
               {activeTab === 'users' && usersData.map((user, index) => (
                 <UserCard key={user._id} user={user} index={index} />
@@ -271,7 +297,7 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
   };
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-4 md:p-6 select-none">
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-12">
           <div className="relative">
@@ -298,26 +324,26 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex bg-neutral-800 p-1 rounded-2xl mb-6 shadow-lg"
+            className="flex bg-neutral-800 p-1 rounded-2xl mb-6 shadow-lg border border-neutral-700"
           >
             {[
-              { id: 'users', label: 'Users', color: 'purple',},
-              { id: 'notes', label: 'Notes', color: 'purple',},
-              { id: 'lessons', label: 'Lessons', color: 'purple', }
+              { id: 'users', label: 'Users', color: 'purple'},
+              { id: 'notes', label: 'Notes', color: 'purple'},
+              { id: 'lessons', label: 'Lessons', color: 'purple'}
             ].map((tab) => (
               <button
                 key={tab.id}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl transition-all duration-300 font-medium text-sm md:text-base ${
+                className={`flex-1 flex items-center justify-center gap-2 py-1 px-4 rounded-xl transition-all duration-300 font-medium text-sm md:text-base ${
                   activeTab === tab.id 
-                    ? `bg-${tab.color}-600 text-white shadow-lg` 
-                    : 'text-neutral-300 hover:text-white hover:bg-neutral-700'
+                    ? `border-0 border-b-4 border-b-purple-600 text-white shadow-lg transform scale-105` 
+                    : 'text-neutral-300 hover:text-white hover:bg-neutral-700/50'
                 }`}
                 onClick={() => setActiveTab(tab.id)}
               >
                 <span className="text-base">{tab.icon}</span>
                 {tab.label}
-                <span className={`ml-1 px-1.5 py-0.5 text-xs rounded-full ${
-                  activeTab === tab.id ? 'bg-white/20' : 'bg-neutral-700'
+                <span className={`ml-1 px-2 py-1 text-xs rounded-full ${
+                  activeTab === tab.id ? 'bg-white/20 text-white' : 'bg-neutral-700 text-neutral-300'
                 }`}>
                   {tab.id === 'users' ? usersData.length : tab.id === 'notes' ? notesData.length : lessonsData.length}
                 </span>

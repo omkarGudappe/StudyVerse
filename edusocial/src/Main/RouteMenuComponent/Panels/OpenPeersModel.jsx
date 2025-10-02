@@ -186,9 +186,7 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                         Mutual: {connection.mutualConnections || 0} connections
                                                     </div>
                                                 </div>
-                                                <button className='bg-purple-600 hover:bg-purple-700 py-1 px-3 rounded-md text-sm transition-colors whitespace-nowrap'>
-                                                    Connect
-                                                </button>
+                                                <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
                                             </div>
                                         </div>
                                     ))}
