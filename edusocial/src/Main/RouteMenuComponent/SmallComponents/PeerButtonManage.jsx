@@ -173,15 +173,11 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
                     <button title='cancel request' onClick={handleCancelRequest} className={` ${className} cursor-pointer bg-gray-700  p-2`}>
                         Requested
                     </button>
-            ) : PeerStatus.peeread ? (
+            ) : PeerStatus.peeread && (
                     <button title='UnPeer' onClick={handleUnPeer} className={`${className} cursor-pointer bg-blue-900 p-2`}>
                         Peered
                     </button>
-            ) : PeerStatus.self ? (
-                    <button disabled className={`${className} cursor-not-allowed bg-neutral-600 p-2`}>
-                        It's You
-                    </button>
-            ) : null}
+            )}
         </div>
     )
 }

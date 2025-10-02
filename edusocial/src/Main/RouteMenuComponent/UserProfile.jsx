@@ -102,7 +102,7 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-amber-100 py-8 px-4 md:px-8">
+    <div className="min-h-screen select-none bg-neutral-950 text-amber-100 py-8 px-4 md:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Profile Header */}
         <div className="relative bg-gradient-to-br from-neutral-900 to-neutral-800 p-6 rounded-2xl shadow-lg mb-6 border border-neutral-700/50">

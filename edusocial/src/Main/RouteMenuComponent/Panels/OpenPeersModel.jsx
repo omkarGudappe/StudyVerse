@@ -137,7 +137,13 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                     )}
                                                 </div>
                                                 <div className='flex-shrink-0'>
-                                                    <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                    {connection?._id === currentUserData?._id  ? (
+                                                        <button className='bg-purple-600 p-2 px-4 rounded-2xl '>
+                                                            You
+                                                        </button>
+                                                    ) : (
+                                                        <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                    )}
                                                 </div>
                                             </Link>
                                         </div>
@@ -179,14 +185,20 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                     {connection?.education && (
                                                         <div className='text-sm text-neutral-400 truncate'>
                                                             {connection?.education?.standard}
-                                                            {connection?.education.standard || connection?.education?.degree && `, ${connection?.education?.stream || connection?.education?.field}`}
+                                                            {connection?.education.standard || connection?.education?.degree && ` ${connection?.education?.stream || connection?.education?.field}`}
                                                         </div>
                                                     )}
                                                     <div className="text-xs text-purple-400 mt-1">
                                                         Mutual: {connection.mutualConnections || 0} connections
                                                     </div>
                                                 </div>
-                                                <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                {connection?._id === currentUserData?._id ? (
+                                                    <button className='bg-purple-600 p-2 px-4 rounded-2xl '>
+                                                        You
+                                                    </button>
+                                                ) : (
+                                                    <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                )}
                                             </div>
                                         </div>
                                     ))}
