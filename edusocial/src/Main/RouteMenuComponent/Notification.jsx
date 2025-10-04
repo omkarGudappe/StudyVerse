@@ -29,13 +29,10 @@ const Notification = ({ open, onClose, ProfileData }) => {
 
     useEffect(() => {
         Socket.on('requestAccepted', (data) => {
-            if (data.FromID) {
-                setNotifications(prev => prev.filter(notification => 
-                    notification.sender?._id !== data.FromID && 
-                    notification.type === NOTIFICATION_TYPES.PEER_REQUEST
-                ));
-                setActiveActions(prev => ({ ...prev, [data.FromID]: false }));
-            }
+            setNotifications(prev => prev.filter(notification => 
+                notification?._id !== data.FromID
+            ));
+            setActiveActions(prev => ({ ...prev, [data.FromID]: false }));
         });
 
         Socket.on('newNotification', (newNotification) => {
@@ -100,10 +97,11 @@ const Notification = ({ open, onClose, ProfileData }) => {
         }
     };
 
-    const handleAccept = (senderId) => {
+    const handleAccept = (senderId , notificationId) => {
         const ID = ProfileData?._id ;
+    console.log("Accepting request - senderId:", senderId, "notificationId:", notificationId);
         setActiveActions(prev => ({ ...prev, [senderId]: 'accepting' }));
-        Socket.emit("acceptRequest", { Id: ID, fromID: senderId });
+        Socket.emit("acceptRequest", { Id: ID, fromID: senderId, notificationId: notificationId });
     };
 
     const handleDecline = (senderId) => {
@@ -250,7 +248,7 @@ const Notification = ({ open, onClose, ProfileData }) => {
                                         {notification.type === NOTIFICATION_TYPES.PEER_REQUEST && (
                                             <div className="flex gap-2">
                                                 <button
-                                                    onClick={() => handleAccept(notification.sender?._id)}
+                                                    onClick={() => handleAccept(notification.sender?._id, notification._id)}
                                                     disabled={activeActions[notification.sender?._id]}
                                                     className={`px-4 py-2 cursor-pointer rounded-lg text-sm font-medium transition-all duration-200 ${
                                                         activeActions[notification.sender?._id] === 'accepting'

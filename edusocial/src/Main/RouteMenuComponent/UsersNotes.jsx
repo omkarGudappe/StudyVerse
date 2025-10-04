@@ -48,7 +48,8 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
         try {
             const res =  await axios.delete(`${import.meta.env.VITE_API_URL}/Notes/delete/${noteId}?userId=${uid}`);
             if(res.data.ok){
-                setNotes(prev => prev.filter(note => note?.Notes.filter(not => not.NoteId !== noteId )));
+                const newNote = Notes?.Notes?.filter(note => note?.NoteId !== noteId);
+                setNotes(prev => ({...prev, Notes: newNote}));
                 console.log("Checking notes from the response", Notes, 'and', )
             }
         } catch (err) {
@@ -96,6 +97,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
             ))}
         </div>
     );
+
 
     const NoteCard = ({ note, index }) => (
        note.map((not) => (
@@ -188,7 +190,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
         <UserNotesPanel
             open={open}
             onClose={onClose}
-            Notes={Notes}
+            Notes={Notes?.Notes}
             from={from}
         >
             <div className="p-6">
@@ -196,7 +198,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                 <div className="mb-6">
                     <h2 className="text-2xl font-bold text-white mb-2">Your Notes</h2>
                     <p className="text-neutral-400">
-                        {Notes?.length} note{Notes?.length !== 1 ? 's' : ''} created
+                        {Notes?.Notes?.length} note{Notes?.Notes?.length !== 1 ? 's' : ''} created
                     </p>
                 </div>
 
@@ -219,9 +221,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     </div>
                 ) : Notes ? (
                     <div className="grid gap-4">
-                        {Notes.map((note, index) => (
-                            <NoteCard key={note.NoteId} note={note.Notes} index={index} />
-                        ))}
+                            <NoteCard key={Notes.NoteId} note={Notes.Notes}/>
                     </div>
                 ) : (
                     <div className="text-center py-16">

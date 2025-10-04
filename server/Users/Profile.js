@@ -3,6 +3,7 @@ const multer = require('multer');
 const cloudinary = require('../CloudinaryStorage/cloudinary');
 const User = require('../Db/User');
 const Posts = require('../Db/UserPost');
+const authenticate = require('../AuthVerify/AuthMiddleware')
 
 const fs = require("fs");
 const path = require("path");
@@ -23,7 +24,7 @@ Router.post('/userdetail', upload.none(), async (req, res) => {
         return res.json({ ok: false, message: "All fields are required" });
     }
 
-    await User.findOne({ firebaseUid: FUid }).then((existingUser) => {
+    await User.findOne({ firebaseUid: FUid }).lean().then((existingUser) => {
         if (existingUser) {
             return res.json({ ok: false, message: "User already exists" });
         }
@@ -114,7 +115,7 @@ Router.get('/friend/username/:userName' , async (req, res) => {
             return res.status(400).json({ok: false, message: "Missing Requirment" });
         }
 
-        await User.findOne({ username: userName}).then((user) => {
+        User.findOne({ username: userName}).lean().then((user) => {
             if(user){
                 return res.status(200).json({ok: true, user})
             }else {
@@ -142,7 +143,7 @@ Router.get('/profile/:FUid' , async (req , res) => {
         console.error("Error fetching user profile:", err);
         res.status(500).json({ message: "Internal server error" });
     }
-})
+});
 
 
 // Router.post('/posts/:Fid', upload.single('image'), async (req, res) => {
@@ -279,62 +280,457 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
   }
 });
 
-Router.get('/search', async (req, res) => {
-    const { query, uid } = req.query;
+// Router.get('/search', async (req, res) => {
+//     const { query, uid } = req.query;
 
-    try {
-        const user = await User.findById(uid);
-        if(!user) return res.status(404).json({message: "User Not found"});
+//     try {
+//         const user = await User.findById(uid);
+//         if(!user) return res.status(404).json({message: "User Not found"});
         
-        const users = await User.find({
-            $or: [
-                { username: { $regex: query, $options: "i" } },
-            ]
-        })
-        .select('firstName lastName education firebaseUid username UserProfile')
+//         const users = await User.find({
+//             $or: [
+//                 { username: { $regex: query, $options: "i" } },
+//             ]
+//         })
+//         .select('firstName lastName education firebaseUid username UserProfile')
 
-        const Notes = await Posts.find({
-            contentType: 'note',
-            $or: [
-                { 
-                    visibility: "public",
-                    $or: [
-                        { heading: { $regex: query, $options: "i" } },
-                        { description: { $regex: query, $options: "i" } }
-                    ]
-                },
-                { 
-                    visibility: "peers", 
-                    author: { $in: user.connections },
-                    $or: [
-                        { heading: { $regex: query, $options: "i" } },
-                        { description: { $regex: query, $options: "i" } }
-                    ]
-                },
-                { 
-                    author: uid,
-                    $or: [
-                        { heading: { $regex: query, $options: "i" } },
-                        { description: { $regex: query, $options: "i" } }
-                    ]
-                }
-            ]
-        })
+//         const Notes = await Posts.find({
+//             contentType: 'note',
+//             $or: [
+//                 { 
+//                     visibility: "public",
+//                     $or: [
+//                         { heading: { $regex: query, $options: "i" } },
+//                         { description: { $regex: query, $options: "i" } }
+//                     ]
+//                 },
+//                 { 
+//                     visibility: "peers", 
+//                     author: { $in: user.connections },
+//                     $or: [
+//                         { heading: { $regex: query, $options: "i" } },
+//                         { description: { $regex: query, $options: "i" } }
+//                     ]
+//                 },
+//                 { 
+//                     author: uid,
+//                     $or: [
+//                         { heading: { $regex: query, $options: "i" } },
+//                         { description: { $regex: query, $options: "i" } }
+//                     ]
+//                 }
+//             ]
+//         })
 
-        const Lesson = await Posts.find({
-            contentType: 'lesson',
-            $or: [
-                { heading: { $regex: query, $options: "i" } },
-                { description: { $regex: query, $options: "i" } }
-            ]
-        })
+//         const Lesson = await Posts.find({
+//             contentType: 'lesson',
+//             $or: [
+//                 { heading: { $regex: query, $options: "i" } },
+//                 { description: { $regex: query, $options: "i" } }
+//             ]
+//         })
 
-        res.json({ message: "Search results", users, Lesson, Notes });
-    } catch (err) {
-        console.error("Error searching users:", err);
-        res.status(500).json({ message: "Internal server error" });
+//         res.json({ message: "Search results", users, Lesson, Notes });
+//     } catch (err) {
+//         console.error("Error searching users:", err);
+//         res.status(500).json({ message: "Internal server error" });
+//     }
+// });
+
+Router.get('/searchUser', authenticate , async (req, res) => {
+    const { query } = req.query;
+    const userId = req.user._id;
+
+    const searchRegex = new RegExp(escapeRegex(query), 'i');
+    const words = query.trim().split(/\s+/).filter(word => word.length > 0);
+
+    try{
+        try{
+            const users = await User.find({
+                $or: [
+                    { 
+                        $or: [
+                            { firstName: { $regex: `^${query}$`, $options: 'i' } },
+                            { lastName: { $regex: `^${query}$`, $options: 'i' } },
+                            { username: { $regex: `^${query}$`, $options: 'i' } }
+                        ]
+                    },
+                    { 
+                        $or: [
+                            { firstName: { $regex: `^${query}`, $options: 'i' } },
+                            { lastName: { $regex: `^${query}`, $options: 'i' } },
+                            { username: { $regex: `^${query}`, $options: 'i' } }
+                        ]
+                    },
+                    words.length > 1 ? {
+                        $and: words.map(word => ({
+                            $or: [
+                                { firstName: { $regex: word, $options: 'i' } },
+                                { lastName: { $regex: word, $options: 'i' } },
+                                { username: { $regex: word, $options: 'i' } }
+                            ]
+                        }))
+                    } : {},
+                    {
+                        $or: [
+                            { firstName: searchRegex },
+                            { lastName: searchRegex },
+                            { username: searchRegex },
+                        ]
+                    },
+                    ...generatePartialMatches(words, ['firstName', 'lastName', 'username'])
+                ].filter(condition => Object.keys(condition).length > 0)
+            })
+            .select("firstName lastName education firebaseUid username UserProfile")
+            .lean()
+            return res.json({users:users});
+
+        }catch(err){
+            console.log("Somthing error", err.message);
+            const users = await User.find({
+                $or: [
+                    { firstName: searchRegex },
+                    { lastName: searchRegex },
+                    { username: searchRegex }
+                ]
+            })
+            .select("firstName lastName education firebaseUid username UserProfile")
+            .lean()
+            
+           return res.json({users:users});
+        }
+    }catch(err){
+        console.log("Error", err.message);
     }
 });
+
+
+Router.get('/search', authenticate , async (req, res) => {
+    const { query, uid, page = 1, limit = 10 } = req.query;
+
+    try {
+        const user = await User.findById(uid).lean();
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.min(50, parseInt(limit));
+        const skip = (pageNum - 1) * limitNum;
+
+        const searchResults = await performEnhancedSearch(query, uid, user, pageNum, limitNum, skip);
+        
+        res.json(searchResults);
+
+    } catch (err) {
+        console.error("Error searching:", err);
+        const user = await User.findById(uid).lean();
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        const fallbackResults = await performRegexSearch(query, uid, user, pageNum, limitNum, skip);
+        res.json(fallbackResults);
+    }
+});
+
+// Enhanced search function with multiple strategies
+async function performEnhancedSearch(query, uid, user, pageNum, limitNum, skip) {
+    const searchRegex = new RegExp(escapeRegex(query), 'i');
+    const words = query.trim().split(/\s+/).filter(word => word.length > 0);
+    
+    const searchPatterns = generateSearchPatterns(query, words);
+    
+    const [users, notes, lessons, totalCounts] = await Promise.all([
+        User.find({
+            $or: [
+                { 
+                    $or: [
+                        { firstName: { $regex: `^${query}$`, $options: 'i' } },
+                        { lastName: { $regex: `^${query}$`, $options: 'i' } },
+                        { username: { $regex: `^${query}$`, $options: 'i' } }
+                    ]
+                },
+                { 
+                    $or: [
+                        { firstName: { $regex: `^${query}`, $options: 'i' } },
+                        { lastName: { $regex: `^${query}`, $options: 'i' } },
+                        { username: { $regex: `^${query}`, $options: 'i' } }
+                    ]
+                },
+                words.length > 1 ? {
+                    $and: words.map(word => ({
+                        $or: [
+                            { firstName: { $regex: word, $options: 'i' } },
+                            { lastName: { $regex: word, $options: 'i' } },
+                            { username: { $regex: word, $options: 'i' } }
+                        ]
+                    }))
+                } : {},
+                {
+                    $or: [
+                        { firstName: searchRegex },
+                        { lastName: searchRegex },
+                        { username: searchRegex },
+                        { "education.standard": searchRegex },
+                        { "education.degree": searchRegex },
+                        { "education.field": searchRegex },
+                        { "education.institute": searchRegex }
+                    ]
+                },
+                ...generatePartialMatches(words, ['firstName', 'lastName', 'username'])
+            ].filter(condition => Object.keys(condition).length > 0)
+        })
+        .select("firstName lastName education firebaseUid username UserProfile")
+        .limit(limitNum)
+        .skip(skip)
+        .lean(),
+
+        Posts.find({
+            contentType: "note",
+            $or: [
+                // Exact title match
+                { heading: { $regex: `^${query}$`, $options: 'i' } },
+                // Starts with query
+                { heading: { $regex: `^${query}`, $options: 'i' } },
+                // Contains all words in title or description
+                words.length > 1 ? {
+                    $and: words.map(word => ({
+                        $or: [
+                            { heading: { $regex: word, $options: 'i' } },
+                            { description: { $regex: word, $options: 'i' } }
+                        ]
+                    }))
+                } : {},
+                // Contains any word
+                {
+                    $or: [
+                        { heading: searchRegex },
+                        { description: searchRegex }
+                    ]
+                }
+            ].filter(condition => Object.keys(condition).length > 0),
+            $or: [
+                { visibility: "public" },
+                {
+                    visibility: "peers",
+                    author: { $in: user.connections }
+                },
+                { author: uid }
+            ]
+        })
+        .populate('author', 'firstName lastName username')
+        .limit(limitNum)
+        .skip(skip)
+        .lean(),
+
+        // Enhanced Lessons search
+        Posts.find({
+            contentType: "lesson",
+            $or: [
+                // Exact title match
+                { heading: { $regex: `^${query}$`, $options: 'i' } },
+                // Starts with query
+                { heading: { $regex: `^${query}`, $options: 'i' } },
+                // Contains all words
+                words.length > 1 ? {
+                    $and: words.map(word => ({
+                        $or: [
+                            { heading: { $regex: word, $options: 'i' } },
+                            { description: { $regex: word, $options: 'i' } }
+                        ]
+                    }))
+                } : {},
+                // Contains any word
+                {
+                    $or: [
+                        { heading: searchRegex },
+                        { description: searchRegex }
+                    ]
+                }
+            ].filter(condition => Object.keys(condition).length > 0)
+        })
+        .populate('author', 'firstName lastName username')
+        .limit(limitNum)
+        .skip(skip)
+        .lean(),
+
+        // Count queries
+        Promise.all([
+            User.countDocuments({
+                $or: [
+                    { firstName: searchRegex },
+                    { lastName: searchRegex },
+                    { username: searchRegex },
+                    { "education.standard": searchRegex },
+                    { "education.degree": searchRegex },
+                    { "education.field": searchRegex },
+                    { "education.institute": searchRegex }
+                ]
+            }),
+            Posts.countDocuments({
+                contentType: "note",
+                $or: [
+                    { heading: searchRegex },
+                    { description: searchRegex }
+                ],
+                $or: [
+                    { visibility: "public" },
+                    {
+                        visibility: "peers",
+                        author: { $in: user.connections }
+                    },
+                    { author: uid }
+                ]
+            }),
+            Posts.countDocuments({
+                contentType: "lesson",
+                $or: [
+                    { heading: searchRegex },
+                    { description: searchRegex }
+                ]
+            })
+        ])
+    ]);
+
+    const [totalUsers, totalNotes, totalLessons] = totalCounts;
+
+    return {
+        ok: true,
+        message: "Search results",
+        users,
+        notes,
+        lessons,
+        pagination: {
+            page: pageNum,
+            limit: limitNum,
+            totalUsers,
+            totalNotes,
+            totalLessons,
+            hasMore: {
+                users: users.length === limitNum && totalUsers > skip + users.length,
+                notes: notes.length === limitNum && totalNotes > skip + notes.length,
+                lessons: lessons.length === limitNum && totalLessons > skip + lessons.length
+            }
+        }
+    };
+}
+
+// Helper functions
+function escapeRegex(text) {
+    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+}
+
+function generateSearchPatterns(query, words) {
+    const patterns = [];
+    
+    // Exact match
+    patterns.push({ $regex: `^${query}$`, $options: 'i' });
+    
+    // Starts with
+    patterns.push({ $regex: `^${query}`, $options: 'i' });
+    
+    // Contains
+    patterns.push({ $regex: query, $options: 'i' });
+    
+    // For multi-word queries, create patterns for each word
+    if (words.length > 1) {
+        words.forEach(word => {
+            if (word.length > 2) {
+                patterns.push({ $regex: word, $options: 'i' });
+            }
+        });
+    }
+    
+    return patterns;
+}
+
+function generatePartialMatches(words, fields) {
+    const partialMatches = [];
+    
+    words.forEach(word => {
+        if (word.length > 2) {
+            // Match words that contain parts of the search term
+            for (let i = 3; i <= word.length; i++) {
+                const partial = word.substring(0, i);
+                fields.forEach(field => {
+                    partialMatches.push({
+                        [field]: { $regex: partial, $options: 'i' }
+                    });
+                });
+            }
+        }
+    });
+    
+    return partialMatches;
+}
+
+// Basic regex search fallback
+async function performRegexSearch(query, uid, user, pageNum, limitNum, skip) {
+    const searchRegex = new RegExp(escapeRegex(query), 'i');
+    
+    const [users, notes, lessons] = await Promise.all([
+        User.find({
+            $or: [
+                { firstName: searchRegex },
+                { lastName: searchRegex },
+                { username: searchRegex }
+            ]
+        })
+        .select("firstName lastName education firebaseUid username UserProfile")
+        .limit(limitNum)
+        .skip(skip)
+        .lean(),
+
+        Posts.find({
+            contentType: "note",
+            $or: [
+                { heading: searchRegex },
+                { description: searchRegex }
+            ],
+            $or: [
+                { visibility: "public" },
+                {
+                    visibility: "peers",
+                    author: { $in: user.connections }
+                },
+                { author: uid }
+            ]
+        })
+        .populate('author', 'firstName lastName username')
+        .limit(limitNum)
+        .skip(skip)
+        .lean(),
+
+        Posts.find({
+            contentType: "lesson",
+            $or: [
+                { heading: searchRegex },
+                { description: searchRegex }
+            ]
+        })
+        .populate('author', 'firstName lastName username')
+        .limit(limitNum)
+        .skip(skip)
+        .lean()
+    ]);
+
+    return {
+        ok: true,
+        message: "Search results (basic)",
+        users,
+        notes,
+        lessons,
+        pagination: {
+            page: pageNum,
+            limit: limitNum,
+            hasMore: {
+                users: users.length === limitNum,
+                notes: notes.length === limitNum,
+                lessons: lessons.length === limitNum
+            }
+        }
+    };
+}
 
 Router.put('/profile/update/:FUid', upload.single('image'), async (req, res) => {
     const { FUid } = req.params;

@@ -122,8 +122,7 @@ Router.get('/usernotes/:ID', async (req, res) => {
     const { ID } = req.params;
 
     try{
-       const notes = await Notes.find({ author: ID })
-       .select('Notes');
+       const notes = await Notes.findOne({ author: ID })
 
         if(!notes){
             return res.status(404).json({message: "User Not Found"});

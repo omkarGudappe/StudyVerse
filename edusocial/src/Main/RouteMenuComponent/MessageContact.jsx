@@ -73,7 +73,18 @@ const MessageContact = ({ open, onClose }) => {
       const searchInModal = async () => {
         try {
           setIsModalSearching(true);
-          const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${modalSearchTerm}`);
+          const token = localStorage.getItem('token');
+          if(!token) {
+            throw new Error('No auth token found');
+          }
+          const res = await axios.get(
+            `${import.meta.env.VITE_API_URL}/user/searchUser?query=${modalSearchTerm}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
           const Data = res.data;
           if (Data.users) {
             setModalSearchResults(Data.users);
@@ -186,16 +197,24 @@ const MessageContact = ({ open, onClose }) => {
     }
   };
 
+  console.log("Chking group", groups);
+
   const UserCard = ({ user, isGroup = false, onClick, showCheckbox = false, isSelected = false }) => {
     const displayName = isGroup ? user.name : `${user.firstName} ${user.lastName}`;
-    const username = isGroup ? `${user.members?.length || 0} members` : user.username;
+    const username = isGroup ? `${user?.members?.length} Members` : user.username;
     const subtitle = isGroup 
-      ? `Created by ${user.createdBy?.firstName} ${user.createdBy?.lastName}` 
+      ? '' 
       : (user.education ? (user.education.standard || user.education.degree) : '');
     
-    const avatarContent = isGroup ? (
+    const avatarContent = isGroup && user?.avatar ? (
+      <img
+        src={user?.avatar}
+        alt={displayName}
+        className="w-full h-full object-cover"
+      />
+    ) : isGroup && !user?.avatar ? (
       <span className="text-white font-semibold text-lg">
-        {user.name?.[0]}{user.name?.[1] || ''}
+        {displayName?.[0]}{displayName?.[1]}
       </span>
     ) : user.UserProfile?.avatar?.url ? (
       <img

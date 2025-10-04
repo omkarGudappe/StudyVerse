@@ -47,4 +47,11 @@ const PostSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 }, {timestamps: true});
 
+PostSchema.index({
+  heading: "text",
+  description: "text"
+});
+
+PostSchema.index({ contentType: 1, heading: "text", description: "text" });
+
 module.exports = mongoose.model("Posts" , PostSchema);

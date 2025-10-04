@@ -144,5 +144,10 @@ UserSchema.set("toJSON", {
     }
 });
 
+UserSchema.index({ username: 1 });
+UserSchema.index({ firebaseUid: 1 });
+UserSchema.index({ Uid: 1 });
+UserSchema.index({ username: "text", firstName: "text", lastName: "text" });
+
 
 module.exports = mongoose.model("User" , UserSchema); 

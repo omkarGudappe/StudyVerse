@@ -333,7 +333,7 @@ const Menu = () => {
      const path = location.pathname.substring(1);
     const current = ["settings" , "notes", "profile" , "search", "createNotes" , "notification", "profile" , "messages" , "contactMessage", "lessons", ];
 
-    const dynamicRoutes = ["messages", "setting"];
+    const dynamicRoutes = ["messages", "setting" ,"group-chat"];
 
     
     for (const route of dynamicRoutes) {

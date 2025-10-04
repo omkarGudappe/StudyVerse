@@ -3,7 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { UserDataContextExport } from "../CurrentUserContexProvider";
 
-const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , title, onClose}) => {
+const SearchResult = ({
+  isLoading, 
+  error, 
+  searchResults = {}, 
+  searchTerm, 
+  title, 
+  onClose,
+  pagination,
+  onLoadMore
+}) => {
   const { ProfileData } = UserDataContextExport();
   const [activeTab, setActiveTab] = useState('users');
 
@@ -24,6 +33,14 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
       case 'notes': return notesData.length;
       case 'lessons': return lessonsData.length;
       default: return usersData.length;
+    }
+  };
+
+  const getHasMore = () => {
+    switch (activeTab) {
+      case 'notes': return pagination?.hasMore?.notes || false;
+      case 'lessons': return pagination?.hasMore?.lessons || false;
+      default: return pagination?.hasMore?.users || false;
     }
   };
 
@@ -228,10 +245,42 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
     </motion.div>
   );
 
+   const LoadMoreButton = () => {
+    if (!getHasMore() || getResultCount() === 0) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="flex justify-center mt-6"
+      >
+        <button
+          onClick={onLoadMore}
+          disabled={isLoading}
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-full font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Loading...
+            </>
+          ) : (
+            <>
+              Load More
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </>
+          )}
+        </button>
+      </motion.div>
+    );
+  };
+
   const renderContent = () => {
     const activeData = getActiveData();
     
-    if (activeData.length === 0 && searchTerm) {
+    if (activeData.length === 0 && searchTerm && !isLoading) {
       return (
         <motion.div
           initial={{ opacity: 0 }}
@@ -261,20 +310,24 @@ const SearchResult = ({isLoading , error, searchResults = [] , searchTerm , titl
               {getResultCount()}
             </span>
             {getResultText()}
+            {getHasMore() && (
+              <span className="text-xs text-purple-400 ml-2">• More available</span>
+            )}
           </motion.p>
           <div className={`space-y-4 pb-15 ${activeTab === 'lessons' ? 'grid grid-cols-1 md:grid-cols-2 gap-4' : 'space-y-3'}`}>
             <AnimatePresence>
               {activeTab === 'users' && usersData.map((user, index) => (
-                <UserCard key={user._id} user={user} index={index} />
+                <UserCard key={`${user._id}-${index}`} user={user} index={index} />
               ))}
               {activeTab === 'notes' && notesData.map((note, index) => (
-                <NoteCard key={note._id} note={note} index={index} />
+                <NoteCard key={`${note._id}-${index}`} note={note} index={index} />
               ))}
               {activeTab === 'lessons' && lessonsData.map((lesson, index) => (
-                <LessonCard key={lesson._id} lesson={lesson} index={index} />
+                <LessonCard key={`${lesson._id}-${index}`} lesson={lesson} index={index} />
               ))}
             </AnimatePresence>
           </div>
+          <LoadMoreButton />
         </div>
       );
     }

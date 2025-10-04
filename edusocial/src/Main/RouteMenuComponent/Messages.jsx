@@ -17,9 +17,10 @@ import { UserDataContextExport } from "./CurrentUserContexProvider";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import EmojiPicker from "emoji-picker-react";
-import { FaSmile, FaPaperclip, FaPaperPlane, FaFile, FaImage, FaDownload, FaTimes, FaUsers, FaUser } from "react-icons/fa";
+import { FaSmile, FaPaperclip, FaPaperPlane, FaFile, FaImage, FaDownload, FaTimes, FaUsers, FaUser, FaCheck, FaCheckDouble, FaClock } from "react-icons/fa";
 import Socket from '../../SocketConnection/Socket';
 import OpenPostModel from "./SmallComponents/OpenPostModel";
+import GroupDetailModel from "./SmallComponents/GroupDetailModel";
 
 const Messages = () => {
   const { userName, groupId } = useParams();
@@ -47,6 +48,10 @@ const Messages = () => {
     id: null
   });
   const [OnlineStatus, setOnlieStatus] = useState();
+  const [OpenGroupDetailModel, setOpenGroupDetailModel] = useState(false);
+
+  // Track pending messages and their status
+  const [pendingMessages, setPendingMessages] = useState({});
   
   // Check if device is mobile
   useEffect(() => {
@@ -58,10 +63,8 @@ const Messages = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Determine if this is a group chat or individual chat
   const isGroupChat = !!groupId;
   
-  // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
@@ -80,7 +83,6 @@ const Messages = () => {
     setShowEmojiPicker(false);
   };
 
-  // Get appropriate chat ID based on chat type
   const getChatId = () => {
     if (isGroupChat) {
       return groupId;
@@ -92,12 +94,10 @@ const Messages = () => {
     }
   };
 
-  // Get appropriate database path based on chat type
   const getDatabasePath = () => {
     return isGroupChat ? `groupChats/${groupId}` : `chats/${getChatId()}`;
   };
 
-  // Fetch other user data (for individual chats)
   useEffect(() => {
     if (isGroupChat || !userName || !ProfileData) return;
 
@@ -116,20 +116,16 @@ const Messages = () => {
     fetchOtherUser();
   }, [userName, ProfileData, isGroupChat]);
 
-  // Fetch group data (for group chats)
-  useEffect(() => {
-    if (!isGroupChat || !groupId || !ProfileData) return;
-
-    const fetchGroupData = async () => {
+     const fetchGroupData = async () => {
       try {
         setIsFetching(true);
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/group/${groupId}`);
         
         if (res.data.ok && res.data.group) {
           setGroupData(res.data.group);
+          console.log(res.data.group.members);
         } else {
           console.error("Unexpected response structure:", res.data);
-          // Set fallback data to prevent infinite loading
           setGroupData({
             _id: groupId,
             name: "Unknown Group",
@@ -138,7 +134,6 @@ const Messages = () => {
         }
       } catch (error) {
         console.error("Error fetching group:", error);
-        // Set fallback data
         setGroupData({
           _id: groupId,
           name: "Unknown Group",
@@ -149,6 +144,8 @@ const Messages = () => {
       }
     };
 
+  useEffect(() => {
+    if (!isGroupChat || !groupId || !ProfileData) return;
     fetchGroupData();
   }, [groupId, ProfileData, isGroupChat]);
 
@@ -194,10 +191,21 @@ const Messages = () => {
       (snapshot) => {
         const messagesData = [];
         snapshot.forEach((childSnapshot) => {
-          messagesData.push({
+          const message = {
             id: childSnapshot.key,
             ...childSnapshot.val(),
-          });
+          };
+          
+          // Remove from pending if this message is now confirmed
+          if (pendingMessages[message.tempId]) {
+            setPendingMessages(prev => {
+              const newPending = { ...prev };
+              delete newPending[message.tempId];
+              return newPending;
+            });
+          }
+          
+          messagesData.push(message);
         });
 
         // Sort messages by timestamp in ascending order (oldest first)
@@ -264,31 +272,22 @@ const Messages = () => {
     }
   }, [isLoading, isFetching]);
 
+  // Generate unique temporary ID for pending messages
+  const generateTempId = () => {
+    return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  };
+
   const sendMessage = async (sharedPostId = null) => {
     if ((!newMessage.trim() && !selectedFile && !sharedPostId) || 
         (!isGroupChat && !otherUser) || 
         (isGroupChat && !groupData) || 
         !ProfileData) return;
 
-    setIsSending(true);
-    let fileUrlData = { url: "", type: "" };
-
-    // Upload file if one is selected
-    if (selectedFile) {
-      try {
-        fileUrlData = await GetFileUrlfromBackend();
-        if (!fileUrlData.url) {
-          console.error("Failed to upload file");
-          setIsSending(false);
-          return;
-        }
-      } catch (error) {
-        console.error("File upload error:", error);
-        setIsSending(false);
-        return;
-      }
-    }
-
+    // setIsSending(true);
+    
+    // Generate temporary ID for this message
+    const tempId = generateTempId();
+    
     const senderMongoId = ProfileData._id;
     const senderFirebaseUid = ProfileData.firebaseUid;
     const chatId = getChatId();
@@ -300,15 +299,75 @@ const Messages = () => {
       return;
     }
 
-    // Prepare message data
+    // Create temporary message data for immediate display
+    const tempMessageData = {
+      id: tempId,
+      tempId: tempId,
+      senderId: senderMongoId,
+      senderUid: senderFirebaseUid,
+      text: newMessage.trim(),
+      timestamp: Date.now(),
+      status: 'pending' // pending, sent, delivered, read
+    };
+
+    if (isGroupChat) {
+      tempMessageData.senderName = `${ProfileData.firstName} ${ProfileData.lastName}`;
+    }
+
+    if (sharedPostId && sharedPosts[sharedPostId]) {
+      tempMessageData.sharedPost = sharedPosts[sharedPostId];
+    }
+
+    // Add temporary message to local state immediately
+    setMessages(prev => [tempMessageData, ...prev]);
+    
+    // Add to pending messages
+    setPendingMessages(prev => ({
+      ...prev,
+      [tempId]: {
+        data: tempMessageData,
+        timestamp: Date.now()
+      }
+    }));
+
+    let fileUrlData = { url: "", type: "" };
+
+    
+
+    if (selectedFile) {
+      try {
+        setIsSending(true);
+        fileUrlData = await GetFileUrlfromBackend();
+        if (!fileUrlData.url) {
+          console.error("Failed to upload file");
+          setMessages(prev => prev.map(msg => 
+            msg.id === tempId ? { ...msg, status: 'failed' } : msg
+          ));
+          setIsSending(false);
+          setNewMessage("");
+          return;
+        }
+      } catch (error) {
+        console.error("File upload error:", error);
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? { ...msg, status: 'failed' } : msg
+        ));
+        setIsSending(false);
+        return;
+      }
+    }else {
+      setNewMessage("");
+    }
+
+    
     const messageData = {
       senderId: senderMongoId,
       senderUid: senderFirebaseUid,
       text: newMessage.trim(),
-      timestamp: serverTimestamp()
+      timestamp: serverTimestamp(),
+      tempId: tempId // Include tempId to match with pending message
     };
 
-    // Add sender name for group chats
     if (isGroupChat) {
       messageData.senderName = `${ProfileData.firstName} ${ProfileData.lastName}`;
     }
@@ -317,7 +376,6 @@ const Messages = () => {
       messageData.sharedPost = sharedPosts[sharedPostId];
     }
 
-    // Add file data to message if available
     if (fileUrlData.url) {
       messageData.file = {
         url: fileUrlData.url,
@@ -328,14 +386,12 @@ const Messages = () => {
     }
 
     try {
-      // Update chat metadata
       const chatRef = ref(database, databasePath);
       await update(chatRef, {
         lastMessage: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
         updatedAt: serverTimestamp(),
       });
       
-      // For individual chats, update participants
       if (!isGroupChat) {
         const otherFirebaseUid = otherUser.firebaseUid;
         await update(chatRef, {
@@ -352,16 +408,22 @@ const Messages = () => {
     }
 
     try {
-      // Save the message
       const messagesRef = ref(database, `${databasePath}/messages`);
       const newMsgRef = push(messagesRef);
       await set(newMsgRef, messageData);
       console.log("✅ Message saved");
-      if(messages.length < 1) {
-        setMessages(prev => [...prev, { id: messagesRef.key, ...messageData }]);
-      }
+      
+      // Update local message status to sent
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId ? { ...msg, status: 'sent' } : msg
+      ));
+      
     } catch (err) {
       console.error("❌ Failed to save message:", err);
+      // Update message status to failed
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId ? { ...msg, status: 'failed' } : msg
+      ));
       setIsSending(false);
       return;
     }
@@ -398,19 +460,16 @@ const Messages = () => {
       } catch (err) {
         console.error("❌ Failed to update user chats:", err);
       }
-    } else {
+    }
+
+    if (isGroupChat) {
       Socket.emit("new-group-message", {
         groupId: groupId,
         message: newMessage.trim() || (fileUrlData.url ? "Shared a file" : ""),
         sender: ProfileData._id
       });
-
-      
     }
 
-
-    // Reset states
-    setNewMessage("");
     setSelectedFile(null);
     setPreviewImage(null);
     setFileInfo({ name: "", type: "", size: 0 });
@@ -453,11 +512,48 @@ const Messages = () => {
     const timeDiff = nextMsg.timestamp - currentMsg.timestamp;
     const senderChanged = nextMsg.senderId !== currentMsg.senderId;
     
-    // Show timestamp if:
-    // - More than 5 minutes passed, OR
-    // - Sender changed, OR
-    // - It's the first message in group chat
     return timeDiff > 3 * 60 * 1000 || senderChanged || isGroupChat;
+  };
+
+  // Render message status indicator
+  const renderMessageStatus = (message) => {
+    if (message.senderId !== ProfileData._id) return null;
+    
+    let statusIcon;
+    let statusColor;
+    
+    switch (message.status) {
+      case 'pending':
+        statusIcon = <FaClock className="h-3 w-3" />;
+        statusColor = "text-neutral-400";
+        break;
+      case 'sent':
+        statusIcon = <FaCheck className="h-3 w-3" />;
+        statusColor = "text-neutral-400";
+        break;
+      case 'delivered':
+        statusIcon = <FaCheckDouble className="h-3 w-3" />;
+        statusColor = "text-neutral-400";
+        break;
+      case 'read':
+        statusIcon = <FaCheckDouble className="h-3 w-3" />;
+        statusColor = "text-blue-400";
+        break;
+      case 'failed':
+        statusIcon = <FaTimes className="h-3 w-3" />;
+        statusColor = "text-red-400";
+        break;
+      default:
+        // For messages without status (older messages), assume delivered
+        statusIcon = <FaCheckDouble className="h-3 w-3" />;
+        statusColor = "text-neutral-400";
+    }
+    
+    return (
+      <span className={`ml-2 ${statusColor} flex items-center`}>
+        {statusIcon}
+      </span>
+    );
   };
 
   const startConversation = () => {
@@ -540,6 +636,8 @@ const Messages = () => {
     });
   };
 
+  console.log("Group data", groupData);
+
   const handleClosePostModal = () => {
     setOpenPostModel({
       status: false,
@@ -560,45 +658,60 @@ const Messages = () => {
     <div className="flex flex-col h-full bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
       {/* Header */}
       <div className="p-4 border-b border-neutral-700 bg-neutral-800/80 backdrop-blur-sm sticky top-0 z-10 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-neutral-700 shadow-lg ${
-              isGroupChat 
-                ? "bg-gradient-to-br from-purple-600 to-indigo-600" 
-                : "bg-gradient-to-br from-purple-600 to-blue-500"
-            }`}>
-              {isGroupChat ? (
-                <span className="text-white font-semibold text-lg">
-                  {groupData.name?.[0]}{groupData.name?.[1] || ''}
-                </span>
-              ) : otherUser?.UserProfile?.avatar?.url ? (
-                <img
-                  src={otherUser.UserProfile.avatar.url}
-                  alt={`${otherUser.firstName} ${otherUser.lastName}`}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-white font-semibold text-lg">
-                  {otherUser?.firstName?.[0]}{otherUser?.lastName?.[0]}
-                </span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center overflow-hidden border-2 border-neutral-700 shadow-lg ${
+                isGroupChat 
+                  ? "bg-gradient-to-br from-purple-600 to-indigo-600" 
+                  : "bg-gradient-to-br from-purple-600 to-blue-500"
+              }`}>
+                {isGroupChat && groupData?.avatar ? (
+                  <img
+                    src={groupData?.avatar}
+                    alt={`${groupData?.name?.[0]} ${groupData?.name?.[1]}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : otherUser?.UserProfile?.avatar?.url ? (
+                  <img
+                    src={otherUser.UserProfile.avatar.url}
+                    alt={`${otherUser.firstName} ${otherUser.lastName}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white font-semibold text-lg">
+                    {otherUser?.firstName?.[0]}{otherUser?.lastName?.[0]}
+                  </span>
+                )}
+              </div>
+              {!isGroupChat && (
+                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-900"></div>
               )}
             </div>
-            {!isGroupChat && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-neutral-900"></div>
-            )}
+            <div>
+              <h2 className="text-lg font-bold text-white">
+                {isGroupChat ? groupData.name : `${otherUser.firstName} ${otherUser.lastName}`}
+              </h2>
+              <p className="text-neutral-400 text-sm">
+                {isGroupChat ? `${groupData.members?.length || 0} members` : OnlineStatus}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-white">
-              {isGroupChat ? groupData.name : `${otherUser.firstName} ${otherUser.lastName}`}
-            </h2>
-            <p className="text-neutral-400 text-sm">
-              {isGroupChat ? `${groupData.members?.length || 0} members` : OnlineStatus}
-            </p>
-          </div>
+            {isGroupChat ? (
+              <div className="lg:relative">
+                <button onClick={() => setOpenGroupDetailModel(true)} className="p-2 rounded-full hover:bg-neutral-700/50 transition">
+                  <svg xmlns="http://www.w3.org/200/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="1" />
+                    <circle cx="12" cy="5" r="1" />
+                    <circle cx="12" cy="19" r="1" />
+                  </svg>
+                </button>
+              </div>
+            ) : null}
         </div>
       </div>
 
-      {/* Messages Container - Now using flex-col (not reverse) with auto scroll */}
+      {/* Messages Container */}
       <div 
         className={`flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-neutral-900/80 to-neutral-900 ${isMobile ? 'pb-24' : ''}`} 
         ref={chatContainerRef}
@@ -716,7 +829,7 @@ const Messages = () => {
                         isOwnMessage
                           ? "bg-gradient-to-r from-purple-600 to-amber-500 text-white rounded-br-md"
                           : "bg-neutral-700 text-white rounded-bl-md"
-                      }`}
+                      } ${msg.status === 'failed' ? 'border border-red-400' : ''}`}
                     >
                       
                       {msg.file && (
@@ -808,11 +921,14 @@ const Messages = () => {
                       )}
                     </motion.div>
                     
-                    {showTimestamp && (
-                      <span className="text-xs text-neutral-500 mt-1 px-1">
-                        {formatTime(msg.timestamp)}
-                      </span>
-                    )}
+                    <div className="flex items-center justify-end w-full mt-1">
+                      {showTimestamp && (
+                        <span className="text-xs text-neutral-500 px-1">
+                          {formatTime(msg.timestamp)}
+                        </span>
+                      )}
+                      {renderMessageStatus(msg)}
+                    </div>
                   </div>
                 </motion.div>
               );
@@ -824,108 +940,144 @@ const Messages = () => {
 
       {/* Message Input */}
       <div className={`p-4 border-t border-neutral-700 bg-neutral-800/80 backdrop-blur-sm ${isMobile ? 'fixed bottom-16 left-0 right-0 z-10' : 'sticky bottom-0 z-10'} flex-shrink-0`}>
-        {(previewImage || selectedFile) && (
-          <div className="relative mb-3 max-w-xs rounded-lg overflow-hidden border border-neutral-700 bg-neutral-800 shadow-md">
-            {previewImage ? (
-              <>
-                <img src={previewImage} alt="Preview" className="w-full h-auto max-h-32 object-contain" />
-                <button 
-                  className="absolute top-1 right-1 bg-neutral-900/70 rounded-full p-1 text-white hover:bg-neutral-900 transition-colors"
-                  onClick={removeFile}
-                >
-                  <FaTimes className="h-4 w-4" />
-                </button>
-              </>
-            ) : (
-              <div className="p-3 flex items-center gap-3">
-                <div className="bg-gradient-to-r from-purple-600 to-blue-500 p-2 rounded-lg">
-                  <FaFile className="h-6 w-6 text-white" />
-                </div>
+        {/* File Preview */}
+        {selectedFile && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-3 p-3 bg-neutral-700 rounded-lg border border-neutral-600"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                {previewImage ? (
+                  <div className="relative">
+                    <img 
+                      src={previewImage} 
+                      alt="Preview" 
+                      className="w-12 h-12 rounded-lg object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/20 rounded-lg"></div>
+                  </div>
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center">
+                    <FaFile className="h-5 w-5 text-white" />
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-white text-sm font-medium truncate">{fileInfo.name}</p>
-                  <p className="text-neutral-300 text-xs">{formatFileSize(fileInfo.size)}</p>
+                  <p className="text-neutral-400 text-xs">{formatFileSize(fileInfo.size)}</p>
                 </div>
-                <button 
-                  className="text-neutral-400 hover:text-white transition-colors"
-                  onClick={removeFile}
-                >
-                  <FaTimes className="h-4 w-4" />
-                </button>
               </div>
-            )}
-          </div>
+              <button
+                onClick={removeFile}
+                className="text-neutral-400 hover:text-red-400 transition-colors p-1"
+              >
+                <FaTimes className="h-4 w-4" />
+              </button>
+            </div>
+          </motion.div>
         )}
-        
-        <div className="flex items-center gap-2 w-full">
-          <div className="relative" ref={emojiPickerRef}>
-            <button
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              title="Insert Emoji"
-              className="cursor-pointer p-2 text-neutral-400 hover:text-white transition-colors rounded-lg hover:bg-neutral-700"
-            >
-              <FaSmile className="h-5 w-5" />
-            </button>
-            {showEmojiPicker && (
-              <div className="absolute bottom-full left-0 mb-2 z-50">
-                <EmojiPicker onEmojiClick={onEmojiClick} />
-              </div>
-            )}
-          </div>
-          
-          <label htmlFor="file" className="p-2 cursor-pointer text-neutral-400 hover:text-white rounded-lg transition-colors hover:bg-neutral-700">
+
+        <div className="flex items-end gap-2">
+          {/* Emoji Picker Toggle */}
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            className="p-2 text-neutral-400 hover:text-white transition-colors flex-shrink-0"
+          >
+            <FaSmile className="h-5 w-5" />
+          </button>
+
+          {/* File Upload */}
+          <label className="p-2 text-neutral-400 hover:text-white transition-colors cursor-pointer flex-shrink-0">
             <FaPaperclip className="h-5 w-5" />
+            <input
+              type="file"
+              className="hidden"
+              onChange={handleFileChange}
+              accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.txt"
+            />
           </label>
-          <input 
-            onChange={handleFileChange} 
-            type="file" 
-            name="file" 
-            className="hidden" 
-            id="file" 
-          />
-          
-          <input
-            ref={inputRef}
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                if (newMessage.trim() || selectedFile) {
+
+          {/* Message Input */}
+          <div className="flex-1 relative">
+            <textarea
+              ref={inputRef}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder={`Message ${isGroupChat ? groupData.name : otherUser.firstName}...`}
+              className="w-full bg-neutral-700 border border-neutral-600 rounded-xl px-4 py-3 text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none max-h-32"
+              rows="1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
                   sendMessage();
                 }
-              }
-            }}
-            className="flex-1 p-3 rounded-xl bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-neutral-500 text-white"
-            placeholder="Type your message..."
-          />
-          
+              }}
+            />
+          </div>
+
+          {/* Send Button */}
           <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={sendMessage}
-            disabled={(!newMessage.trim() && !selectedFile) || isSending}
-            className={`p-3 rounded-xl font-semibold transition-all flex items-center justify-center ${
-              (newMessage.trim() || selectedFile) && !isSending
-                ? "bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white shadow-md"
-                : "bg-neutral-700 text-neutral-500 cursor-not-allowed"
+            whileHover={{ scale: isSending ? 1 : 1.05 }}
+            whileTap={{ scale: isSending ? 1 : 0.95 }}
+            onClick={() => sendMessage()}
+            disabled={isSending || (!newMessage.trim() && !selectedFile)}
+            className={`p-3 rounded-xl transition-all duration-200 flex items-center justify-center flex-shrink-0 ${
+              isSending 
+                ? 'bg-neutral-600 cursor-not-allowed' 
+                : (newMessage.trim() || selectedFile) 
+                  ? 'bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600' 
+                  : 'bg-neutral-700 cursor-not-allowed'
             }`}
           >
             {isSending ? (
-              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
             ) : (
-              <FaPaperPlane className="h-5 w-5" />
+              <FaPaperPlane className="h-4 w-4 text-white" />
             )}
           </motion.button>
         </div>
+
+        <AnimatePresence>
+          {showEmojiPicker && (
+            <motion.div
+              ref={emojiPickerRef}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="absolute bottom-full left-0 mb-2 z-20"
+            >
+              <EmojiPicker
+                onEmojiClick={onEmojiClick}
+                width={isMobile ? '100%' : 350}
+                height={400}
+                previewConfig={{ showPreview: false }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      
-      {openPostModel.status && (
-        <OpenPostModel 
-          Id={openPostModel.id} 
-          onClose={handleClosePostModal} 
-          open={openPostModel.status}
+
+      {OpenGroupDetailModel && (
+        <GroupDetailModel
+          groupId={groupId}
+          GroupData={groupData}
+          onClose={() => setOpenGroupDetailModel(false)}
+          currentUser={ProfileData}
+          UpdateGroupData={(data) => setGroupData(data)}
         />
       )}
+
+      {openPostModel.status && (
+        <OpenPostModel
+          postId={openPostModel.id}
+          onClose={handleClosePostModal}
+          onShare={sharePostInChat}
+        />
+      )}
+
     </div>
   );
 };

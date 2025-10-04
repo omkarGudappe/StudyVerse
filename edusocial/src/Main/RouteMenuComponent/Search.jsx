@@ -1,65 +1,119 @@
-import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react'
 import axios from 'axios';
-import { Link } from 'react-router-dom';
 import SearchPanel from './Panels/SearchPanel';
 import SearchResult from './SmallComponents/SearchResult';
 import { UserDataContextExport } from './CurrentUserContexProvider';
 
 const Search = ({ searchClicked, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [searchResults, setSearchResults] = useState({
+    users: [],
+    notes: [],
+    lessons: []
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    hasMore: { users: false, notes: false, lessons: false }
+  });
   const { ProfileData } = UserDataContextExport();
+
+  // Reset pagination when search term changes
+  useEffect(() => {
+    setPagination({ page: 1, hasMore: { users: false, notes: false, lessons: false } });
+    setSearchResults({ users: [], notes: [], lessons: [] });
+  }, [searchTerm]);
+
+  const searchAPI = useCallback(async (term, page) => {
+    const uid = ProfileData ? ProfileData._id : "";
+    if(!uid) {
+      console.log('No user ID found');
+      return null;
+    }
+
+    try {
+      console.log('Searching for:', term, 'page:', page);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No auth token found');
+      }
+      const res = await axios.get(
+        `${import.meta.env.VITE_API_URL}/user/search?query=${encodeURIComponent(term)}&uid=${uid}&page=${page}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+      console.log('Search results:', res.data);
+      return res.data;
+    } catch (err) {
+      console.error('Search API error:', err);
+      throw err;
+    }
+  }, [ProfileData]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm.trim() === "") {
-        setSearchResults([]);
+        setSearchResults({ users: [], notes: [], lessons: [] });
         setError(null);
+        setIsLoading(false);
         return;
       }
 
-        const FindFriend = async () => {
-          try {
-            const uid = ProfileData ? ProfileData._id : "";
-            if(!uid) return;
-            setIsLoading(true);
-            setError(null);
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${searchTerm}&uid=${uid}`);
-            const Data = res.data;
+      const performSearch = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          
+          const Data = await searchAPI(searchTerm, pagination.page);
+          
+          if (Data) {
+            setSearchResults(prev => ({
+              users: pagination.page === 1 ? Data.users : [...prev.users, ...Data.users],
+              notes: pagination.page === 1 ? Data.notes : [...prev.notes, ...Data.notes],
+              lessons: pagination.page === 1 ? Data.lessons : [...prev.lessons, ...Data.lessons]
+            }));
             
-            // Set the search results with the expected structure
-            setSearchResults({
-              users: Data.users || [],
-              notes: Data.Notes || [],
-              lessons: Data.Lesson || []
-            });
-                        console.log(Data.users , "users");
-            console.log(Data.Lesson, "Lesson");
-            console.log(Data.Notes, "Notes");
-            
-          } catch (err) {
-            console.error(err);
-            setError(err.response?.data?.message || "Failed to search");
-            setSearchResults({ users: [], notes: [], lessons: [] });
-          } finally {
-            setIsLoading(false);
+            setPagination(prev => ({
+              ...prev,
+              hasMore: Data.pagination?.hasMore || { users: false, notes: false, lessons: false }
+            }));
           }
-        };
+
+        } catch (err) {
+          console.error('Search error:', err);
+          setError(err.response?.data?.message || "Failed to search");
+          if (pagination.page === 1) {
+            setSearchResults({ users: [], notes: [], lessons: [] });
+          }
+        } finally {
+          setIsLoading(false);
+        }
+      };
       
-      FindFriend();
+      performSearch();
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm]);
+  }, [searchTerm, pagination.page, searchAPI]);
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+  };
+
   const clearSearch = () => {
     setSearchTerm("");
-    setSearchResults([]);
+    setSearchResults({ users: [], notes: [], lessons: [] });
+    setPagination({ page: 1, hasMore: { users: false, notes: false, lessons: false } });
     setError(null);
+  };
+
+  const loadMore = () => {
+    setPagination(prev => ({ ...prev, page: prev.page + 1 }));
   };
 
   return (
@@ -70,7 +124,16 @@ const Search = ({ searchClicked, onClose }) => {
       onSearchChange={handleSearchChange}
       onClearSearch={clearSearch}
     >
-      <SearchResult onClose={onClose} isLoading={isLoading} searchTerm={searchTerm} error={error} searchResults={searchResults} title="profile" />
+      <SearchResult 
+        onClose={onClose} 
+        isLoading={isLoading} 
+        searchTerm={searchTerm} 
+        error={error} 
+        searchResults={searchResults} 
+        title="profile"
+        pagination={pagination}
+        onLoadMore={loadMore}
+      />
     </SearchPanel>
   );
 };
