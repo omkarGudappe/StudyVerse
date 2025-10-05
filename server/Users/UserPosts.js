@@ -14,29 +14,38 @@ Router.get('/:id', async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const skip = (page - 1) * limit;
 
-        const user = await User.findById(id)
-        if(!user) return res.status(404).json({message: "User Not found"});
+        const user = await User.findById(id).select('connections');
+        if (!user) return res.status(404).json({ message: "User Not found" });
 
-        const AllPosts = await Posts.find({
+        const queryConditions = {
             contentType: "post",
             $or: [
-                { visibility : "public" },
-                { visibility : "peers" , author: { $in: user.connections }},
+                { visibility: "public" },
+                { visibility: "peers", author: { $in: user.connections } },
                 { author: id },
             ]
-        }).populate({
-                path: 'author',
-                select: 'firstName lastName UserProfile.avatar username'
-            })
-            .populate({
-                path: 'likes',
-                select: 'Uid username',
-            })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        };
 
-        const totalPosts = await Posts.countDocuments();
+        const [AllPosts, totalPosts] = await Promise.all([
+            Posts.find(queryConditions)
+                .populate({
+                    path: 'author',
+                    select: 'firstName lastName UserProfile.avatar username'
+                })
+                .populate({
+                    path: 'likes',
+                    select: 'Uid username',
+                    options: { limit: 10 }
+                })
+                .select('heading description files visibility likes comments share createdAt')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+                
+            Posts.countDocuments(queryConditions)
+        ]);
+
         const hasMore = page * limit < totalPosts;
 
         res.json({ 
@@ -53,7 +62,7 @@ Router.get('/:id', async (req, res) => {
     } catch (error) {
         res.status(500).json({ ok: false, message: error.message });
     }
-})
+});
 
 Router.get('/lesson/:id' , async (req, res) => {
     const { id } = req.params;
@@ -62,29 +71,38 @@ Router.get('/lesson/:id' , async (req, res) => {
         const limit = parseInt(req.query.limit) || 5;
         const skip = (page - 1) * limit;
 
-        const user = await User.findById({ _id: id })
+        const user = await User.findById(id).select('connections');
         if(!user) return res.status(404).json({message: "User Not found"});
 
-        const AllPosts = await Posts.find({
+        const queryConditions = {
             contentType: "lesson",
             $or: [
-                { visibility : "public" },
-                { visibility : "peers" , author: { $in: user.connections }},
-                { author: id },
+                { visibility: "public" },
+                { visibility: "peers", author: { $in: user.connections }},
+                { author: id }, 
             ]
-        }).populate({
-                path: 'author',
-                select: 'firstName lastName UserProfile.avatar username'
-            })
-            .populate({
-                path: 'likes',
-                select: 'Uid username',
-            })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        };
 
-        const totalPosts = await Posts.countDocuments();
+        const [AllPosts, totalPosts] = await Promise.all([
+            Posts.find(queryConditions)
+            .populate({
+                    path: 'author',
+                    select: 'firstName lastName UserProfile.avatar username'
+                })
+                .populate({
+                    path: 'likes',
+                    select: 'Uid username',
+                    options: { limit: 10 }
+                })
+                .select('heading description files visibility likes comments share createdAt')
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+
+            Posts.countDocuments(queryConditions)
+        ]);
+
         const hasMore = page * limit < totalPosts;
 
         res.json({ 

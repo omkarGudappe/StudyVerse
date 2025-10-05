@@ -53,5 +53,11 @@ PostSchema.index({
 });
 
 PostSchema.index({ contentType: 1, heading: "text", description: "text" });
+PostSchema.index({ contentType: 1, createdAt: -1 });
+PostSchema.index({ contentType: 1, visibility: 1, author: 1 });
+PostSchema.index({ contentType: 1, visibility: 1, author: 1, createdAt: -1 });
+PostSchema.index({ author: 1, contentType: 1, createdAt: -1 });
+PostSchema.index({ _id: 1, "comments.createdAt": -1 });
+PostSchema.index({ "comments.user": 1 });
 
 module.exports = mongoose.model("Posts" , PostSchema);

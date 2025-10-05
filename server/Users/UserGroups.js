@@ -253,78 +253,6 @@ router.put('/:groupId/update',
   }
 );
 
-router.put('/:groupId/update-simple', 
-  upload.single('avatar'),
-  validateGroupUpdate,
-  async (req, res) => {
-    const { groupId } = req.params;
-    const { name, currentUserId } = req.body;
-
-    try {
-      const group = await Group.findById(groupId);
-      if (!group) {
-        return res.status(404).json({ ok: false, message: "Group not found" });
-      }
-
-      const isMember = group.members.some(member => 
-        member.member.toString() === currentUserId
-      );
-
-      if (!isMember) {
-        return res.status(403).json({ 
-          ok: false, 
-          message: "You are not a member of this group" 
-        });
-      }
-
-      const updateData = {};
-      
-      if (name && name.trim()) {
-        updateData.name = name.trim();
-      }
-
-      if (req.file) {
-        const result = await cloudinary.uploader.upload(
-          `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`,
-          {
-            folder: 'studyverse/GroupAvatars',
-            transformation: [
-              { width: 200, height: 200, crop: 'fill' },
-              { quality: 'auto' },
-              { format: 'webp' }
-            ]
-          }
-        );
-        updateData.avatar = result.secure_url;
-      }
-
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ 
-          ok: false, 
-          message: "No changes provided" 
-        });
-      }
-
-      const updatedGroup = await Group.findByIdAndUpdate(
-        groupId,
-        { $set: updateData },
-        { new: true }
-      ).populate("members", "firstName lastName username UserProfile.avatar.url")
-       .populate("createdBy", "firstName lastName username");
-
-      res.json({ 
-        ok: true, 
-        group: updatedGroup,
-        message: "Group updated successfully" 
-      });
-
-    } catch (err) {
-      console.error("Error updating group:", err);
-      res.status(500).json({ ok: false, message: err.message });
-    }
-  }
-);
-
 router.post('/:groupId/members', authenticate, async (req, res) => {
   const { memberIds } = req.body;
   const { groupId } = req.params;
@@ -345,7 +273,7 @@ router.post('/:groupId/members', authenticate, async (req, res) => {
       });
     }
 
-    const isAdmin = group.createdBy.toString() === req.user._id.toString();
+    const isAdmin = group.members.some(member => member.member.toString() === req.user._id.toString() && member.isAdmin);
     if (!isAdmin) {
       return res.status(403).json({ 
         ok: false, 
@@ -418,7 +346,7 @@ router.delete('/:groupId/members/:memberId', authenticate, authorizeGroupAccess,
        return res.status(404).json({ ok: false, message: "Group not found" });
      }
 
-     const isAdmin = group.createdBy.toString() === req.user._id.toString();
+     const isAdmin = group.members.some(member => member.member.toString() === req.user._id.toString() && member.isAdmin);
      if (!isAdmin) {
        return res.status(403).json({ ok: false, message: "You are not authorized to remove members" });
      }
@@ -446,8 +374,36 @@ router.delete('/:groupId/leave' , authenticate, async(req, res) => {
         return res.status(404).json({ ok: false, message: "Group not found" });
       }
 
-      group.members.pull({ member: userId });
-      await group.save();
+      const isCreator = group.createdBy.toString() === userId.toString();
+    
+      if (isCreator) {
+        console.log("User is group creator");
+        
+        const otherAdmins = group.members.filter(member => 
+          member.member.toString() !== userId.toString() && member.isAdmin
+        );
+
+        if (otherAdmins.length === 0) {
+          console.log("No other admins found");
+          return res.status(403).json({ 
+            ok: false, 
+            message: "Group creator cannot leave the group. Please assign a new admin before leaving." 
+          });
+        }
+
+        console.log("Other admins found:", otherAdmins.length);
+        
+        const newCreator = otherAdmins[0];
+        group.createdBy = newCreator.member;
+        group.members = group.members.filter(m => m.member.toString() !== userId.toString());
+        
+        await group.save();
+        
+      } else {
+        group.members = group.members.filter(m => m.member.toString() !== userId.toString());
+        await group.save();
+      }
+
 
       res.json({ ok: true, message: "You have left the group successfully" });
     } catch(err) {

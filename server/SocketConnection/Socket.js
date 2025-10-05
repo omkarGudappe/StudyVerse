@@ -53,6 +53,11 @@ module.exports = function (io) {
       }
     });
 
+     socket.on('joinUploadRoom', (userId) => {
+      socket.join(userId);
+      console.log(`User ${userId} joined upload room`);
+    });
+
     socket.on("disconnect", () => {
       for (let [userId, socketId] of userSocketMap.entries()) {
         if (socketId === socket.id) {
