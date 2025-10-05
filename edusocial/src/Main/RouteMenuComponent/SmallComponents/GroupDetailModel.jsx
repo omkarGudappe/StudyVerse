@@ -418,7 +418,7 @@ useEffect(() => {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="w-full max-w-md mb-4 bg-red-500/20 border border-red-500/50 rounded-xl p-4 flex items-center gap-3"
+                className="w-full max-w-md mb-4 bg-red-500/20 border z-60 border-red-500/50 rounded-xl p-4 flex items-center gap-3"
               >
                 <FaExclamationTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
                 <p className="text-red-200 text-sm flex-1">{error}</p>
@@ -750,7 +750,7 @@ useEffect(() => {
 
       <AnimatePresence>
         {showAddMembersModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

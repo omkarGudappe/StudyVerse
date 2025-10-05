@@ -19,6 +19,7 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                 if (res.data.ok) {
                     setConnections(res.data.ConnectionNetWork);
                     setConnectionsNetwork(res.data.Connections);
+                    console.log(res.data.Connections);
                 }
             } catch (err) {
                 console.log(err.message);
@@ -48,7 +49,7 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
     const filteredConnections = Connections.filter(connection => {
         const fullName = `${connection?.firstName || ''} ${connection?.lastName || ''}`;
         const education = connection?.education ? connection.education : '';
-        return fullName.includes(searchTerm) || education.includes(searchTerm) && User;
+        return fullName.includes(searchTerm) || education.includes(searchTerm);
     });
 
     console.log(filteredConnections);
@@ -192,13 +193,15 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                                                         Mutual: {connection.mutualConnections || 0} connections
                                                     </div>
                                                 </div>
-                                                {connection?._id === currentUserData?._id ? (
-                                                    <button className='bg-purple-600 p-2 px-4 rounded-2xl '>
-                                                        You
-                                                    </button>
-                                                ) : (
-                                                    <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
-                                                )}
+                                                <div className='flex-shrink-0'>
+                                                    {connection?._id === currentUserData?._id ? (
+                                                        <button className='bg-purple-600 p-2 px-4 rounded-2xl '>
+                                                            You
+                                                        </button>
+                                                    ) : (
+                                                        <PeerButtonManage className='rounded-2xl w-20' currentUser={ProfileData?._id} OtherUser={connection?._id} />
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     ))}

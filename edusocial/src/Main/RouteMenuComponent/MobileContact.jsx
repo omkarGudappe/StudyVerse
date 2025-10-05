@@ -22,12 +22,11 @@ const MobileContact = () => {
   const [isCreatingGroup, setIsCreatingGroup] = useState(false);
   const [createError, setCreateError] = useState(null);
   const [groups, setGroups] = useState([]);
-  const [activeTab, setActiveTab] = useState('contacts'); // 'contacts', 'groups', or 'search'
-  const [modalSearchTerm, setModalSearchTerm] = useState(""); // Search term for modal
-  const [modalSearchResults, setModalSearchResults] = useState([]); // Search results for modal
-  const [isModalSearching, setIsModalSearching] = useState(false); // Loading state for modal search
+  const [activeTab, setActiveTab] = useState('contacts');
+  const [modalSearchTerm, setModalSearchTerm] = useState("");
+  const [modalSearchResults, setModalSearchResults] = useState([]);
+  const [isModalSearching, setIsModalSearching] = useState(false);
 
-  // Debounced search function for main search
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       if (searchTerm.trim() === "") {
@@ -62,7 +61,6 @@ const MobileContact = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, activeTab]);
 
-  // Debounced search function for modal
   useEffect(() => {
     if (!showGroupModal) return;
     
@@ -75,7 +73,18 @@ const MobileContact = () => {
       const searchInModal = async () => {
         try {
           setIsModalSearching(true);
-          const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${modalSearchTerm}`);
+          const token = localStorage.getItem('token');
+          if(!token) {
+            throw new Error('No auth token found');
+          }
+          const res = await axios.get(
+            `${import.meta.env.VITE_API_URL}/user/searchUser?query=${modalSearchTerm}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
           const Data = res.data;
           if (Data.users) {
             setModalSearchResults(Data.users);
@@ -105,7 +114,6 @@ const MobileContact = () => {
     setActiveTab('contacts');
   }, []);
 
-  // Fetch contacts and groups
   useEffect(() => {
     const Id = ProfileData?._id;
     if(!Id) return;
@@ -146,7 +154,6 @@ const MobileContact = () => {
       const memberIds = selectedMembers.map(member => member._id);
       const memberUids = selectedMembers.map(member => member.firebaseUid);
 
-      // 1️⃣ Create group in your backend (MongoDB)
       const res = await axios.post(`${import.meta.env.VITE_API_URL}/group/create`, {
         name: groupName,
         createdBy: CreatorId,
@@ -158,11 +165,10 @@ const MobileContact = () => {
 
         const groupRef = ref(database, `groupChats/${group._id}`);
 
-      const membersObject = {};
+        const membersObject = {};
           selectedMembers.forEach(member => {
             if (member.firebaseUid) membersObject[member.firebaseUid] = true;
         });
-        // also add creator
         if (CreatorUid) membersObject[CreatorUid] = true;
 
         await set(groupRef, {
@@ -172,17 +178,12 @@ const MobileContact = () => {
           createdAt: serverTimestamp(),
         });
 
-        // 3️⃣ UI reset
         setGroupName("");
         setSelectedMembers([]);
         setShowGroupModal(false);
         setModalSearchTerm("");
         setModalSearchResults([]);
         
-        // Show success notification
-        // You could implement a toast notification system here
-        
-        // 4️⃣ Refresh groups
         Socket.emit("SendContactUsers", { ID: CreatorId });
       } else {
         throw new Error(res.data.message);
@@ -195,17 +196,22 @@ const MobileContact = () => {
     }
   };
 
-  // User card component for reusability
   const UserCard = ({ user, isGroup = false, onClick, showCheckbox = false, isSelected = false }) => {
     const displayName = isGroup ? user.name : `${user.firstName} ${user.lastName}`;
-    const username = isGroup ? `${user.members?.length || 0} members` : user.username;
+    const username = isGroup ? `${user?.members?.length} Members` : user.username;
     const subtitle = isGroup 
-      ? `Created by ${user.createdBy?.firstName} ${user.createdBy?.lastName}` 
+      ? '' 
       : (user.education ? (user.education.standard || user.education.degree) : '');
     
-    const avatarContent = isGroup ? (
+    const avatarContent = isGroup && user?.avatar ? (
+      <img
+        src={user?.avatar}
+        alt={displayName}
+        className="w-full h-full object-cover"
+      />
+    ) : isGroup && !user?.avatar ? (
       <span className="text-white font-semibold text-sm">
-        {user.name?.[0]}{user.name?.[1] || ''}
+        {displayName?.[0]}{displayName?.[1]}
       </span>
     ) : user.UserProfile?.avatar?.url ? (
       <img
@@ -269,7 +275,6 @@ const MobileContact = () => {
     );
   };
 
-  // Render content based on active tab
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -352,7 +357,6 @@ const MobileContact = () => {
       );
     }
 
-    // Empty states
     if (activeTab === 'contacts' && contacts.length === 0) {
       return (
         <div className="text-center py-8 text-neutral-400">
@@ -412,7 +416,6 @@ const MobileContact = () => {
           open={true} 
         />
         
-        {/* Navigation Tabs */}
         <div className="flex mt-3 bg-neutral-800 rounded-xl p-1">
           <button
             onClick={() => setActiveTab('contacts')}
@@ -450,11 +453,9 @@ const MobileContact = () => {
       </div>
       
       <div className="px-4 mt-3">
-        {/* Content Area */}
         {renderContent()}
       </div>
 
-      {/* Group Creation Modal for Mobile */}
       <AnimatePresence>
         {showGroupModal && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-end justify-center z-50 p-2 sm:items-center sm:p-4">
@@ -507,7 +508,6 @@ const MobileContact = () => {
                   Select Members ({selectedMembers.length})
                 </label>
                 
-                {/* Search input in modal */}
                 <div className="relative mb-2">
                   <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -539,7 +539,6 @@ const MobileContact = () => {
                       <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-purple-500"></div>
                     </div>
                   ) : modalSearchTerm && modalSearchResults.length > 0 ? (
-                    // Show search results when searching
                     modalSearchResults.map(user => (
                       <div 
                         key={user._id} 
@@ -559,7 +558,6 @@ const MobileContact = () => {
                       </div>
                     ))
                   ) : contacts.length > 0 ? (
-                    // Show contacts when not searching
                     contacts.map(contact => (
                       <div 
                         key={contact._id} 

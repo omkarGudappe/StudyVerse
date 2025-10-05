@@ -672,6 +672,10 @@ const Messages = () => {
                     alt={`${groupData?.name?.[0]} ${groupData?.name?.[1]}`}
                     className="w-full h-full object-cover"
                   />
+                ) : isGroupChat && !groupData?.avatar ? (
+                  <span className="text-white font-semibold text-lg">
+                      {groupData?.name?.[0]}{groupData?.name?.[1]}
+                  </span>
                 ) : otherUser?.UserProfile?.avatar?.url ? (
                   <img
                     src={otherUser.UserProfile.avatar.url}
@@ -713,7 +717,7 @@ const Messages = () => {
 
       {/* Messages Container */}
       <div 
-        className={`flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-neutral-900/80 to-neutral-900 ${isMobile ? 'pb-24' : ''}`} 
+        className={`flex-1 overflow-y-auto no-scrollbar p-4 space-y-3 bg-gradient-to-b from-neutral-900/80 to-neutral-900 ${isMobile ? 'pb-24' : ''}`} 
         ref={chatContainerRef}
         style={{ display: 'flex', flexDirection: 'column' }}
       >
@@ -979,7 +983,7 @@ const Messages = () => {
           </motion.div>
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-center gap-2">
           {/* Emoji Picker Toggle */}
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}

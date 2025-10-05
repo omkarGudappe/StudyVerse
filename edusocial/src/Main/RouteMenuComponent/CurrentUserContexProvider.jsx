@@ -1,5 +1,4 @@
 import React , { useContext , createContext, useState , useEffect } from 'react'
-import { auth } from '../../Auth/AuthProviders/FirebaseSDK';
 import axios from 'axios';
 
 const UserDataContext = createContext();
@@ -13,28 +12,18 @@ export const UserDataContextExport = () => {
   const [FirebaseUid, setFirebaseUid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setFirebaseUid(user.uid);
-        console.log("developer checking 1")
-        // const localDeveloptFUID = '5pIWwVGDdfROltHBqIENjrBrOl23';
-        // setFirebaseUid(localDeveloptFUID);
-      } else {
-        console.log("developer checking 2")
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!FirebaseUid) return;
-    
+  useEffect(() => {    
     const FetchDataFromBackEnd = async () => {
       try {
         setLoading(true);
-        const FetchProfileData = await axios.get(`${import.meta.env.VITE_API_URL}/user/profile/${FirebaseUid}`);
+        const FetchProfileData = await axios.get(`${import.meta.env.VITE_API_URL}/user/profile`, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        );
         setProfileData(FetchProfileData.data.userProfile);
         setError(null);
       } catch (err) {
@@ -45,7 +34,7 @@ export const UserDataContextExport = () => {
       }
     };
     FetchDataFromBackEnd();
-  }, [FirebaseUid]);
+  }, [token]);
 
   return (
     <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error, setProfileData }}>

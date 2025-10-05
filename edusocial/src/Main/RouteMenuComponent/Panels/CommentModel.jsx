@@ -50,8 +50,10 @@ const CommentModel = ({ open, postId, onClose, PostownerId }) => {
                     
                     if (Array.isArray(commentsData)) {
                         setComments(commentsData);
+                        // console.log('Comments 1:', commentsData);
                     } else if (commentsData && Array.isArray(commentsData.comments)) {
                         setComments(commentsData.comments);
+                        // console.log('Comments 2:', commentsData.comments);
                     } else {
                         console.error('Unexpected comments format:', commentsData);
                         setComments([]);

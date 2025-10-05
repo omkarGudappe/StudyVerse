@@ -468,7 +468,7 @@ const MessageContact = ({ open, onClose }) => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="bg-neutral-800 rounded-2xl p-6 max-w-md w-full border border-neutral-700 shadow-xl max-h-[90vh] overflow-y-auto"
+              className="bg-neutral-800 lenis rounded-2xl p-6 max-w-md w-full border border-neutral-700 shadow-xl max-h-[90vh] overflow-y-auto"
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-bold text-white">Create Group Chat</h3>

@@ -154,120 +154,193 @@ const Post = ({ ModelCloseClicked }) => {
         }
     }, [error]);
 
-    const handleSubmit = async () => {
-        if (!PostDetail.heading.trim()) {
-            setError("Please add a title for your content");
-            return;
-        }
-        
-        if (!PostDetail.visibility) {
-            setError("Please select a visibility option");
-            return;
-        }
-
-        const form = new FormData();
+  // Add this useEffect for Socket.IO progress tracking
+// Update your useEffect socket listener
+React.useEffect(() => {
+  const handleUploadProgress = (data) => {
+    console.log('📡 Progress update received:', data);
+    
+    let calculatedPercent = 0;
+    
+    // Fix the progress mapping logic - backend sends 0-300, frontend needs 0-100
+    switch (data.phase) {
+      case 'processing':
+        // Backend sends 100 = 10% in frontend
+        calculatedPercent = 10;
+        break;
+      case 'analyzing':
+        // Backend sends 100 = 15% in frontend  
+        calculatedPercent = 15;
+        break;
+      case 'compressing':
+        // Backend sends 100-200, map to 15-70% in frontend
+        // data.progress ranges from 100 to 200
+        const compressionRange = data.progress - 100; // 0 to 100
+        calculatedPercent = 15 + (compressionRange * 0.55); // 15% to 70%
+        break;
+      case 'uploading_to_cdn':
+        // Backend sends 200, map to 70-95% in frontend
+        calculatedPercent = 70 + Math.random() * 10; // 70-80% with some variation
+        break;
+      case 'complete':
+        calculatedPercent = 100;
+        setUploadStatus('success');
+        setLoading(false);
+        // Leave room on completion
         const Fid = auth.currentUser.uid;
-        form.append('heading', PostDetail.heading.trim());
-        form.append('description', PostDetail.description.trim());
-        form.append('image', PostDetail.image);
-        form.append('contentType', PostContent);
-        form.append('visibility', PostDetail.visibility);
+        Socket.emit('leaveUploadRoom', Fid);
+        break;
+      case 'error':
+        setError(data.message || 'Upload failed');
+        setUploadStatus('error');
+        setLoading(false);
+        // Leave room on error
+        const FidError = auth.currentUser.uid;
+        Socket.emit('leaveUploadRoom', FidError);
+        return;
+      default:
+        // Direct mapping: backend 0-300 → frontend 0-100
+        calculatedPercent = Math.min((data.progress / 3), 100);
+    }
+    
+    // Ensure we don't go over 100% and provide minimum progress
+    calculatedPercent = Math.max(5, Math.min(Math.round(calculatedPercent), 100));
+    
+    console.log(`📡 Mapping: backend ${data.progress} (${data.phase}) → frontend ${calculatedPercent}%`);
+    
+    setPercent(calculatedPercent);
+    setUploadPhase(data.phase);
+    
+    if (data.message) {
+      console.log('📡 Progress message:', data.message);
+    }
+  };
 
-        setLoading(true);
-        setUploadStatus('uploading');
-        setPercent(0);
-        setUploadPhase('preparing');
+  const handleUploadError = (error) => {
+    console.error('📡 Upload error received:', error);
+    setError(error.message || 'Upload failed');
+    setUploadStatus('error');
+    setLoading(false);
+  };
 
-        try {
-            cancelRequest.current = axios.CancelToken.source();
+  // Listen for progress updates
+  console.log('📡 Setting up socket listeners for uploadProgress');
+  Socket.on('uploadProgress', handleUploadProgress);
+  Socket.on('uploadError', handleUploadError);
 
-            // 🔹 Fake progress for compression
-            if (Selected.type.startsWith("video/")) {
-                setUploadPhase('compressing');
-                let fakeProgress = 0;
-                while (fakeProgress < 40) {
-                    await new Promise(res => setTimeout(res, 4000));
-                    fakeProgress += 3;
-                    setPercent(fakeProgress);
-                }
-            }
+  return () => {
+    console.log('📡 Cleaning up socket listeners');
+    Socket.off('uploadProgress', handleUploadProgress);
+    Socket.off('uploadError', handleUploadError);
+  };
+}, []);
 
-            setUploadPhase('uploading');
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
-                headers: { "Content-Type": "multipart/form-data" },
-                cancelToken: cancelRequest.current.token,
-                onUploadProgress: (progressEvent) => {
-                    if (progressEvent.total) {
-                        const uploadProgress = Math.round((progressEvent.loaded * 60) / progressEvent.total);
-                        setPercent(40 + uploadProgress);
-                    }
-                },
-                timeout: 300000, // 5 minute timeout for large uploads
-            });
+// Replace your current handleSubmit function with this:
+const handleSubmit = async () => {
+  if (!PostDetail.heading.trim()) {
+    setError("Please add a title for your content");
+    return;
+  }
+  
+  if (!PostDetail.visibility) {
+    setError("Please select a visibility option");
+    return;
+  }
 
-            const result = res.data;
-            if (result && result.newPost) {
-                setUploadStatus('success');
-                setPercent(100);
-                addPost(result.newPost);
-                console.log(result.uploadFile , "for chceking url");
-                Socket.emit("NewPostUploded", { upload: true });
-                setTimeout(() => ModelCloseClicked(false), 1500);
-            } else {
-                throw new Error(result.message || "Failed to upload");
-            }
-        } catch (err) {
-            if (axios.isCancel(err)) {
-                setUploadStatus('idle');
-                setError("Upload cancelled");
-            } else if (err.code === 'ECONNABORTED') {
-                setError("Upload timed out. Please try again with a smaller file or better connection.");
-                setUploadStatus('error');
-            } else if (err.response) {
-                // Server responded with error status
-                const status = err.response.status;
-                const message = err.response.data?.message || "Upload failed";
-                
-                switch (status) {
-                    case 400:
-                        setError(message || "Missing required fields");
-                        break;
-                    case 401:
-                        setError("Please log in again to upload content");
-                        break;
-                    case 403:
-                        setError("You don't have permission to upload content");
-                        break;
-                    case 404:
-                        setError("User not found. Please check your account");
-                        break;
-                    case 413:
-                        setError("File too large. Please choose a smaller file");
-                        break;
-                    case 415:
-                        setError("Unsupported file type");
-                        break;
-                    case 500:
-                    case 502:
-                    case 503:
-                        setError("Server error. Please try again later");
-                        break;
-                    default:
-                        setError(message || "Upload failed. Please try again.");
-                }
-                setUploadStatus('error');
-            } else if (err.request) {
-                // Network error
-                setError("Network error. Please check your connection and try again.");
-                setUploadStatus('error');
-            } else {
-                // Other errors
-                setError(err.message || "An unexpected error occurred");
-                setUploadStatus('error');
-            }
-            setLoading(false);
+  const form = new FormData();
+  const Fid = auth.currentUser.uid;
+  form.append('heading', PostDetail.heading.trim());
+  form.append('description', PostDetail.description.trim());
+  form.append('image', PostDetail.image);
+  form.append('contentType', PostContent);
+  form.append('visibility', PostDetail.visibility);
+
+  setLoading(true);
+  setUploadStatus('uploading');
+  setPercent(0);
+  setUploadPhase('preparing');
+
+  try {
+    cancelRequest.current = axios.CancelToken.source();
+
+    Socket.emit('joinUploadRoom', Fid);
+
+    setUploadPhase('uploading');
+
+    const res = await axios.post(`${import.meta.env.VITE_API_URL}/user/posts/${Fid}`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+      cancelToken: cancelRequest.current.token,
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const uploadProgress = Math.round((progressEvent.loaded * 30) / progressEvent.total);
+          setPercent(uploadProgress);
         }
-    };
+      },
+      timeout: 300000,
+    });
+
+    const result = res.data;
+    if (result && result.newPost) {
+      // Success is now handled by WebSocket 'complete' phase
+      addPost(result.newPost);
+      console.log(result.uploadFile, "for checking url");
+      Socket.emit("NewPostUploded", { upload: true });
+      setTimeout(() => ModelCloseClicked(false), 1500);
+    } else {
+      throw new Error(result.message || "Failed to upload");
+    }
+  } catch (err) {
+    if (axios.isCancel(err)) {
+      setUploadStatus('idle');
+      setError("Upload cancelled");
+    } else if (err.code === 'ECONNABORTED') {
+      setError("Upload timed out. Please try again with a smaller file or better connection.");
+      setUploadStatus('error');
+    } else if (err.response) {
+      // Server responded with error status
+      const status = err.response.status;
+      const message = err.response.data?.message || "Upload failed";
+      
+      switch (status) {
+        case 400:
+          setError(message || "Missing required fields");
+          break;
+        case 401:
+          setError("Please log in again to upload content");
+          break;
+        case 403:
+          setError("You don't have permission to upload content");
+          break;
+        case 404:
+          setError("User not found. Please check your account");
+          break;
+        case 413:
+          setError("File too large. Please choose a smaller file");
+          break;
+        case 415:
+          setError("Unsupported file type");
+          break;
+        case 500:
+        case 502:
+        case 503:
+          setError("Server error. Please try again later");
+          break;
+        default:
+          setError(message || "Upload failed. Please try again.");
+      }
+      setUploadStatus('error');
+    } else if (err.request) {
+      // Network error
+      setError("Network error. Please check your connection and try again.");
+      setUploadStatus('error');
+    } else {
+      // Other errors
+      setError(err.message || "An unexpected error occurred");
+      setUploadStatus('error');
+    }
+    setLoading(false);
+  }
+};
 
     const handleCheckSelectedData = () => {
         if (!Selected) {
@@ -552,51 +625,62 @@ const Post = ({ ModelCloseClicked }) => {
                             </div>
 
                             {uploadStatus === 'uploading' && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-6"
-                            >
-                                <div className="flex justify-between items-center mb-3">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-neutral-800 p-4 rounded-xl border border-neutral-700 mb-6"
+                                >
+                                    <div className="flex justify-between items-center mb-3">
                                     <div>
-                                        <span className="text-white text-sm font-medium block">
-                                            {uploadPhase === 'compressing' ? 'Compressing...' : 
-                                             uploadPhase === 'uploading' ? 'Uploading...' : 'Preparing...'}
+                                        <span className="text-white text-sm font-medium block capitalize">
+                                        {uploadPhase.replace(/_/g, ' ')}
+                                        {uploadPhase === 'compressing' && ' video'}
                                         </span>
                                         <span className="text-blue-500 text-xs">
-                                            {Selected && uploadPhase === 'compressing' ? 
-                                             `This may take a while for ${formatFileSize(Selected.size)} video` : ''}
+                                        {uploadPhase === 'compressing' && Selected ? 
+                                            `Compressing ${formatFileSize(Selected.size)} - ${Percent}%` : 
+                                            uploadPhase === 'uploading_to_cdn' ? 'Uploading to cloud storage...' :
+                                            uploadPhase === 'processing' ? 'Processing your file...' :
+                                            'Uploading...'}
                                         </span>
                                     </div>
                                     <span className="text-blue-500 text-sm font-bold">{Percent}%</span>
-                                </div>
-                                
-                                <div className="w-full bg-neutral-700 rounded-full h-2.5 mb-2 relative overflow-hidden">
+                                    </div>
+                                    
+                                    <div className="w-full bg-neutral-700 rounded-full h-2.5 mb-2 relative overflow-hidden">
                                     <div 
                                         className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2.5 rounded-full transition-all duration-300 ease-out"
                                         style={{ width: `${Percent}%` }}
                                     ></div>
                                     {Percent > 0 && Percent < 100 && (
                                         <div className="absolute top-0 left-0 w-full h-full animate-pulse">
-                                            <div className="bg-white/20 h-full w-10 -skew-x-12 animate-shimmer"></div>
+                                        <div 
+                                            className="bg-white/20 h-full w-10 -skew-x-12 animate-shimmer"
+                                            style={{ 
+                                            animationDuration: Percent > 80 ? '1s' : '2s',
+                                            opacity: Percent > 80 ? 0.3 : 0.2 
+                                            }}
+                                        ></div>
                                         </div>
                                     )}
-                                </div>
-                                
-                                <div className="flex justify-between items-center">
+                                    </div>
+                                    
+                                    <div className="flex justify-between items-center">
                                     <p className="text-neutral-400 text-xs">
-                                        {uploadPhase === 'compressing' ? 'Optimizing for web...' : 
-                                         uploadPhase === 'uploading' ? 'Sending to server...' : 'Getting ready...'}
+                                        {uploadPhase === 'compressing' ? 'Video compression in progress...' : 
+                                        uploadPhase === 'uploading_to_cdn' ? 'Finalizing upload...' : 
+                                        uploadPhase === 'processing' ? 'Processing your file...' : 'Uploading...'}
                                     </p>
                                     <button 
-                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-full transition-colors"
+                                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-full transition-colors disabled:opacity-50"
                                         onClick={handleCancelUpload}
+                                        disabled={uploadPhase === 'complete'}
                                     >
                                         Cancel
                                     </button>
-                                </div>
-                            </motion.div>
-                        )}
+                                    </div>
+                                </motion.div>
+                                )}
 
                             {uploadStatus === 'success' && (
                                 <motion.div 
