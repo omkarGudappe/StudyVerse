@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const AvatarSchema = new mongoose.Schema({
-    url:{type:String, default:""},
+    url:{type:String, default:"https://api.iconify.design/mdi/account-circle.svg?color=%238c8c8c"},
     publicId:{type:String, default:""}
 } , { _id: false });
 

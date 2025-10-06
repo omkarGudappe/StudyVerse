@@ -1,29 +1,34 @@
-import React , { useContext , createContext, useState , useEffect } from 'react'
+import React, { useContext, createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
 const UserDataContext = createContext();
 
-export const UserDataContextExport = () => {
-    return useContext(UserDataContext);
-}
+export const UserDataContextExport = () => useContext(UserDataContext);
 
- const CurrentUserContexProvider = ({ children }) => {
+const CurrentUserContexProvider = ({ children }) => {
   const [ProfileData, setProfileData] = useState([]);
   const [FirebaseUid, setFirebaseUid] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const token = localStorage.getItem('token');
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
-  useEffect(() => {    
+  // Listen for token changes (e.g., after login)
+  useEffect(() => {
+    const handleStorage = () => {
+      setToken(localStorage.getItem('token'));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!token) return;
     const FetchDataFromBackEnd = async () => {
       try {
         setLoading(true);
         const FetchProfileData = await axios.get(`${import.meta.env.VITE_API_URL}/user/profile`, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        );
+          headers: { Authorization: `Bearer ${token}` }
+        });
         setProfileData(FetchProfileData.data.userProfile);
         setError(null);
       } catch (err) {
@@ -37,7 +42,7 @@ export const UserDataContextExport = () => {
   }, [token]);
 
   return (
-    <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error, setProfileData }}>
+    <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error, setProfileData, token }}>
       {children}
     </UserDataContext.Provider>
   );
