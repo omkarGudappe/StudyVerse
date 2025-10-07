@@ -40,7 +40,15 @@ const MessageContact = ({ open, onClose }) => {
           setIsLoading(true);
           setError(null);
           setActiveTab('search');
-          const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/search?query=${searchTerm}`);
+          const token = localStorage.getItem('token');
+          const res = await axios.get(`
+            ${import.meta.env.VITE_API_URL}/user/searchUser?query=${searchTerm}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            }
+          );
           const Data = res.data;
           if (Data.users) {
             setSearchResults(Data.users);

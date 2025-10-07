@@ -24,6 +24,7 @@ const StudyVerseMain = () => {
   const observer = useRef(null);
   const searchRef = useRef(null);
   const loadMoreRef = useRef(null);
+  const [videoStates, setVideoStates] = useState({});
 
   const {
     posts,
@@ -187,8 +188,6 @@ const StudyVerseMain = () => {
             if (entry.isIntersecting) {
               setActivePost(videoId);
 
-              videoElement.muted = true;
-
               videoElement.play().catch((error) => {});
             } else {
               if (activePost === videoId) {
@@ -247,17 +246,13 @@ const StudyVerseMain = () => {
 
     if (videoElement) {
       if (videoElement.paused) {
-        videoElement.muted = false;
-
-        videoElement
-          .play()
+        videoElement.play()
           .then(() => {
             setActivePost(postId);
           })
           .catch((error) => {});
       } else {
         videoElement.pause();
-
         setActivePost(null);
       }
     }
@@ -270,6 +265,21 @@ const StudyVerseMain = () => {
   const handleVideoPause = (postId) => {
     if (activePost === postId) {
       setActivePost(null);
+    }
+  };
+
+  const handleMuteToggle = (postId, e) => {
+    e.stopPropagation();
+    const videoElement = videoRefs.current[postId];
+    if (videoElement) {
+      videoElement.muted = !videoElement.muted;
+      setVideoStates(prev => ({
+        ...prev,
+        [postId]: {
+          ...prev[postId],
+          muted: videoElement.muted
+        }
+      }));
     }
   };
 
@@ -588,8 +598,6 @@ const StudyVerseMain = () => {
                 key={post._id}
                 className="bg-neutral-800/40 lg:w-2xl w-full backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
               >
-                {/* Post Header */}
-
                 <div className="p-5 border-b border-neutral-700/30 relative">
                   <div className="flex items-center gap-3">
                     <div className="relative">
@@ -728,7 +736,7 @@ const StudyVerseMain = () => {
                   </div>
 
                   {post.files?.url && (
-                    <div className="mb-4 max-h-80 h-80 overflow-hidden border border-neutral-700/30">
+                    <div className="mb-4 max-h-80 h-80 overflow-hidden border border-neutral-700/30 relative">
                       {post.files?.url.endsWith(".mp4") ||
                       post.files?.url.endsWith(".webm") ||
                       post.files?.url.endsWith(".mov") ? (
@@ -740,13 +748,30 @@ const StudyVerseMain = () => {
                             onClick={(e) => handleVideoClick(post._id, e)}
                             onPlay={() => handleVideoPlay(post._id)}
                             onPause={() => handleVideoPause(post._id)}
-                            muted
                             loop
                             playsInline
                           >
                             <source src={post.files.url} type="video/mp4" />
                             Your browser does not support the video tag.
                           </video>
+
+                          <div className="absolute bottom-3 right-3 flex gap-2">
+                            <button
+                              onClick={(e) => handleMuteToggle(post._id, e)}
+                              className="w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
+                            >
+                              {videoRefs.current[post._id]?.muted ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072M12 6a9 9 0 010 12m-4.5-9.5L12 3v18l-4.5-4.5H4a1 1 0 01-1-1v-7a1 1 0 011-1h3.5z" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
 
                           {activePost !== post._id && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
