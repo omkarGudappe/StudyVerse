@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect  } from 'react'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useNotesStore } from '../../../StateManagement/StoreNotes';
@@ -45,6 +45,17 @@ const NotesTitle = ({ open, onClose , editor }) => {
         setIsLoading(false);
     }
   };
+
+    useEffect(() => {
+        if (open) {
+            document.body.style.overflow = "hidden";
+        } else {
+            document.body.style.overflow = "auto";
+        }
+        return () => {
+            document.body.style.overflow = "auto";
+        };
+    }, [open]);
 
   const handleClose = () => {
     setTitle('');

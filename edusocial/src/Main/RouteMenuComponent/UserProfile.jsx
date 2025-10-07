@@ -154,7 +154,7 @@ const UserProfile = () => {
                   {UserProfileData?.username || "username"}
                 </p>
                 <p className={`text-gray-400 ${isPrivateAccount && !hasAccess ? 'blur-sm' : ''}`}>
-                <p className="text-gray-400">{UserProfileData?.education?.standard || UserProfileData?.education?.degree} <sup>{UserProfileData?.education?.stream || `${UserProfileData?.education?.currentYear} Year`  || ""}</sup></p>
+                <h3 className="font-medium">{UserProfileData?.education?.standard ? `${UserProfileData?.education?.standard}st` : UserProfileData?.education?.degree} <sup>{UserProfileData?.education?.stream ? UserProfileData?.education?.stream : UserProfileData?.education?.currentYear ? `${UserProfileData?.education?.currentYear} Year`  : ""}</sup></h3>
                 </p>
               </div>
 

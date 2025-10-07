@@ -60,7 +60,17 @@ const MessageContact = ({ open, onClose }) => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, activeTab]);
 
-  // Debounced search function for modal
+  useEffect(() => {
+    if (showGroupModal) {
+        document.body.style.overflow = "hidden";
+    } else {
+        document.body.style.overflow = "auto";
+    }
+    return () => {
+        document.body.style.overflow = "auto";
+    };
+  }, [showGroupModal]);
+
   useEffect(() => {
     if (!showGroupModal) return;
     

@@ -332,7 +332,10 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
             <OpenPostModel 
                 open={openPostModel.status} 
                 onClose={handleClosePostModal} 
-                Id={openPostModel.id} 
+                Id={openPostModel.id}
+                posts={posts}
+                UpdatePosts={(posts)=> setPosts(posts)}
+                from = 'Profile'
             />
         </div>
     );

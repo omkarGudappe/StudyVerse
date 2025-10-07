@@ -395,6 +395,46 @@ Router.get('/single/:id', async (req, res) => {
     }
 });
 
+Router.put('/update/:id', AuthMiddleware, async(req, res) => {
+    const { id } = req.params;
+    const { heading, description, visibility } = req.body;
+
+    try{
+        const update = await Posts.findByIdAndUpdate(
+            id,
+            {
+                heading,
+                description,
+                visibility,
+            },
+            { new: true },
+        )
+        .select('heading description visibility')
+
+        if(!update) {
+            return res.status(404).json({message: 'Post not found'})
+        }
+        res.json({ok: true, message: 'Post update successfully', post: update})
+    } catch(err) {
+       res.status(500).json({message: 'Internal server Error, Please try again later'});
+    }
+})
+
+Router.delete('/delete/:id', AuthMiddleware, async(req, res) => {
+    try{
+        const DeletePost = await Posts.findByIdAndDelete(
+            req.params.id,
+        )
+
+        if(DeletePost) {
+            return res.json({ok: true, message: 'Post Delete Successfully'})
+        }
+        res.status(404).json({message: 'Post not found'});
+    } catch(err) {
+        res.status(500).json({message: 'Internal server error'});
+    }
+})
+
 // Router.post('/share', async (req, res) => {
 //   try {
 //     const { postId, recipientId, senderId } = req.body;

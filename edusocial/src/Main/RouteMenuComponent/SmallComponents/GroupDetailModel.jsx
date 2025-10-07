@@ -118,9 +118,8 @@ const GroupDetailModel = ({ groupId, GroupData, onClose, currentUser, UpdateGrou
       return;
     }
 
-    setPreviewImage(URL.createObjectURL(file)); // For preview only
+    setPreviewImage(URL.createObjectURL(file));
     setGetChanged(true);
-    // Store the File object for upload
     setUploadingFile(file);
   };
 
@@ -255,6 +254,7 @@ useEffect(() => {
   document.addEventListener("mousedown", handleClickOutside);
   return () => document.removeEventListener("mousedown", handleClickOutside);
 }, []);
+
   const toggleMemberSelection = (user) => {
     if (selectedNewMembers.some(member => member._id === user._id)) {
       setSelectedNewMembers(selectedNewMembers.filter(member => member._id !== user._id));
@@ -451,7 +451,6 @@ useEffect(() => {
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
             className="bg-neutral-900 rounded-2xl w-full max-w-md max-h-[85vh] overflow-hidden border border-neutral-700 shadow-2xl"
           >
-            {/* Header */}
             <div className="p-6 border-b border-neutral-700 bg-gradient-to-r from-neutral-800 to-neutral-900 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold text-white">Group Info</h2>
@@ -467,7 +466,6 @@ useEffect(() => {
               </div>
             </div>
 
-            {/* Loading Overlay */}
             {loading && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20 rounded-2xl">
                 <div className="flex flex-col items-center gap-3">
@@ -478,7 +476,6 @@ useEffect(() => {
             )}
 
             <div className="overflow-y-auto no-scrollbar lenis max-h-[calc(85vh-120px)] scrollbar-thin scrollbar-thumb-neutral-700 scrollbar-track-transparent">
-              {/* Group Header Section */}
               <div className="relative p-6 border-b border-neutral-700">
                 <div className="flex flex-col items-center text-center">
                   <div className="relative group mb-4">
@@ -569,7 +566,6 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Tabs */}
               <div className="border-b border-neutral-700">
                 <div className="flex">
                   <button
@@ -678,7 +674,6 @@ useEffect(() => {
                                   ⋮
                                 </button>
 
-                                {/* Dropdown menu */}
                                 {MenuBtn.status && MenuBtn.memberId === member?.member?._id && (
                                   <div
                                     ref={dropdownRef}

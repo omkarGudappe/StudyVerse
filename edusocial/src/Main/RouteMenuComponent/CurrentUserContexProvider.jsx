@@ -12,7 +12,6 @@ const CurrentUserContexProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  // Listen for token changes (e.g., after login)
   useEffect(() => {
     const handleStorage = () => {
       setToken(localStorage.getItem('token'));

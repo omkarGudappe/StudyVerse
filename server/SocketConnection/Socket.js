@@ -102,16 +102,19 @@ module.exports = function (io) {
             );
           }
         } else if (title === "UnPeer") {
+          console.log(title);
           await User.findByIdAndUpdate(
             Id,
             { $pull: { connections: fromID } },
             { new: true }
           );
+          console.log("Demo working 1")
           await User.findByIdAndUpdate(
             fromID,
             { $pull: { MyConnections: Id } },
             { new: true }
           );
+          console.log("Demo working 2")
         } else {
           await User.findByIdAndUpdate(
             Id,

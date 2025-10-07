@@ -1,37 +1,23 @@
 import React, { useState, useEffect, useContext } from 'react'
 import axios from 'axios';
 import { UserDataContextExport } from '../CurrentUserContexProvider';
+import AddComment from '../Functions/AddComment';
 
-const CommentModel = ({ open, postId, onClose, PostownerId }) => {
+const CommentModel = ({ open, postId, UpdateComment,onClose, PostownerId }) => {
     const [comments, setComments] = useState([]);
     const [loading, setLoading] = useState(false);
     const [newComment, setNewComment] = useState("");
     const { ProfileData } = UserDataContextExport();
 
     const handleAddComment = async () => {
-        try {
-            if (!newComment.trim()) return;
-            if (!ProfileData?._id) {
-                console.log("User not logged in");
-                return;
-            }
+        const Result = await AddComment(postId, newComment, PostownerId, ProfileData?._id);
 
-            const res = await axios.post(
-                `${import.meta.env.VITE_API_URL}/posts/comments/${postId}`,
-                {
-                    userId: ProfileData._id,
-                    comment: newComment.trim(),
-                    PostownerId: PostownerId,
-                }
-            );
-
-            if (res.data.ok) {
-                setComments(prev => [res.data.comment, ...prev]);
-                setNewComment("");
-
-            }
-        } catch (err) {
-            console.log(err?.response?.data?.message || err.message);
+        if(Result.ok) {
+            setComments(prev => [Result.res, ...prev]);
+            UpdateComment(postId)
+            setNewComment('');
+        } else {
+            console.log(Result.err)
         }
     };
 
@@ -50,10 +36,8 @@ const CommentModel = ({ open, postId, onClose, PostownerId }) => {
                     
                     if (Array.isArray(commentsData)) {
                         setComments(commentsData);
-                        // console.log('Comments 1:', commentsData);
                     } else if (commentsData && Array.isArray(commentsData.comments)) {
                         setComments(commentsData.comments);
-                        // console.log('Comments 2:', commentsData.comments);
                     } else {
                         console.error('Unexpected comments format:', commentsData);
                         setComments([]);
@@ -143,7 +127,7 @@ const CommentModel = ({ open, postId, onClose, PostownerId }) => {
                                         {comment.author?.avatar ? (
                                             <img 
                                                 src={comment.author.avatar} 
-                                                alt={`${comment.author.firstName} ${comment.author.lastName}`}
+                                                alt={`U`}
                                                 className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                                             />
                                         ) : (
@@ -154,7 +138,7 @@ const CommentModel = ({ open, postId, onClose, PostownerId }) => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="text-white font-medium text-sm">
-                                                    {comment.author?.firstName} {comment.author?.lastName}
+                                                    {comment.author?.username}
                                                 </h4>
                                                 <span className="text-neutral-400 text-xs">
                                                     {new Date(comment.createdAt).toLocaleDateString()}

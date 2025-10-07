@@ -172,12 +172,10 @@ import { create } from 'zustand'
 import axios from "axios";
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-// Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 const DEFAULT_LIMIT = 10;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Store for user notes
 export const useNotesStore = create(
   persist(
     (set, get) => ({
@@ -195,11 +193,9 @@ export const useNotesStore = create(
       
       clearNotes: () => set({ notes: null, lastFetched: null }),
       
-      // Fetch notes with caching
       fetchNotes: async (userId, forceRefresh = false) => {
         const state = get();
         
-        // Return cached data if it's still valid and not forcing refresh
         if (!forceRefresh && state.notes && state.lastFetched && 
             (Date.now() - state.lastFetched) < CACHE_DURATION) {
           return state.notes;
@@ -230,19 +226,16 @@ export const useNotesStore = create(
         }
       },
       
-      // Add a new note
       addNote: (newNote) => set((state) => ({
         notes: state.notes ? [newNote, ...state.notes] : [newNote]
       })),
       
-      // Update an existing note
       updateNote: (noteId, updatedData) => set((state) => ({
         notes: state.notes ? state.notes.map(note => 
           note._id === noteId ? { ...note, ...updatedData } : note
         ) : null
       })),
       
-      // Delete a note
       deleteNote: (noteId) => set((state) => ({
         notes: state.notes ? state.notes.filter(note => note._id !== noteId) : null
       }))
@@ -256,7 +249,6 @@ export const useNotesStore = create(
 );
 
 
-// In StoreNotes.js - Update the usePostsStore
 export const usePostsStore = create((set, get) => ({
   posts: [],
   loading: false,
@@ -266,7 +258,6 @@ export const usePostsStore = create((set, get) => ({
   page: 1,
   limit: DEFAULT_LIMIT,
   lastFetched: null,
-  // Add a new state to track if data is already loaded
   isDataLoaded: false,
 
   clearPosts: () => set({ 
@@ -275,10 +266,9 @@ export const usePostsStore = create((set, get) => ({
     hasMore: true, 
     initialLoading: false,
     lastFetched: null,
-    isDataLoaded: false // Reset when explicitly clearing
+    isDataLoaded: false
   }),
 
-  // Add this method to mark data as loaded
   setDataLoaded: (loaded = true) => set({ isDataLoaded: loaded }),
 
   addPost: (newPost) => set((state) => ({
@@ -293,11 +283,9 @@ export const usePostsStore = create((set, get) => ({
     )
   })),
 
-  // Modify fetchPosts to prevent unnecessary fetches
   fetchPosts: async (userId, loadMore = false, forceRefresh = false) => {
     const currentState = get();
     
-    // Prevent fetching if data is already loaded and not forcing refresh
     if (!forceRefresh && !loadMore && currentState.isDataLoaded && currentState.posts.length > 0) {
       console.log("Posts already loaded, skipping fetch");
       set({ initialLoading: false, loading: false });
@@ -306,8 +294,7 @@ export const usePostsStore = create((set, get) => ({
     
     if (loadMore && !currentState.hasMore) return;
     
-    // Enhanced cache check - only use cache for 2 minutes instead of 5
-    const CACHE_THRESHOLD = 2 * 60 * 1000; // 2 minutes
+    const CACHE_THRESHOLD = 2 * 60 * 1000;
     if (!forceRefresh && !loadMore && currentState.posts.length > 0 && 
         currentState.lastFetched && (Date.now() - currentState.lastFetched) < CACHE_THRESHOLD) {
       console.log("Using cached posts");

@@ -62,6 +62,17 @@ const MobileContact = () => {
   }, [searchTerm, activeTab]);
 
   useEffect(() => {
+    if (showGroupModal) {
+        document.body.style.overflow = "hidden";
+    } else {
+        document.body.style.overflow = "auto";
+    }
+    return () => {
+        document.body.style.overflow = "auto";
+    };
+  }, [showGroupModal]);
+
+  useEffect(() => {
     if (!showGroupModal) return;
     
     const delayDebounceFn = setTimeout(() => {

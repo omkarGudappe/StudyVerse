@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UserDataContextExport } from './CurrentUserContexProvider';
 import axios from 'axios';
+import FlashcardCreator from "../RouteMenuComponent/AIModel/FlashcardCreator";
+import FlashcardView from "../RouteMenuComponent/AIModel/FlashcardView";
 
 const Challenges = () => {
   const { ProfileData } = UserDataContextExport();
@@ -16,55 +18,20 @@ const Challenges = () => {
   });
   const [quizHistory, setQuizHistory] = useState([]);
   const [loadingQuizzes, setLoadingQuizzes] = useState(true);
+  const [flashcards, setFlashcards] = useState([]);
+  const [openFlashcardCreator, setOpenFlashcardCreator] = useState(false);
 
-  // Mock flashcard sets data
-  const flashcardSets = [
-    { 
-      id: 1, 
-      title: 'JavaScript Basics', 
-      cards: 15, 
-      difficulty: 'Beginner', 
-      progress: 75,
-      category: 'Programming',
-      color: 'from-blue-500 to-cyan-400'
-    },
-    { 
-      id: 2, 
-      title: 'React Hooks Mastery', 
-      cards: 20, 
-      difficulty: 'Intermediate', 
-      progress: 40,
-      category: 'Web Development',
-      color: 'from-purple-500 to-pink-400'
-    },
-    { 
-      id: 3, 
-      title: 'CSS Grid Layout', 
-      cards: 12, 
-      difficulty: 'Beginner', 
-      progress: 100,
-      category: 'Design',
-      color: 'from-green-500 to-emerald-400'
-    },
-    { 
-      id: 4, 
-      title: 'Data Structures', 
-      cards: 25, 
-      difficulty: 'Advanced', 
-      progress: 30,
-      category: 'Computer Science',
-      color: 'from-orange-500 to-red-400'
-    }
-  ];
+  const addFlashcard = (newCard) => {
+    setFlashcards([...flashcards, newCard]);
+    setOpenFlashcardCreator(false);
+  };
 
   useEffect(() => {
-    console.log("Fetching quiz data for user:", ProfileData?._id);
     if(!ProfileData?._id) return;
     
     const fetchQuizHistory = async () => {
       try {
         setLoadingQuizzes(true);
-        console.log("Fetching quiz history...");
         const userId = ProfileData._id;
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/quiz/${userId}`);
 
@@ -74,13 +41,10 @@ const Challenges = () => {
             ...prevStats,
             quizzesCompleted: res.data.totalCompleted || 0
           }));
-          console.log("Quiz history loaded:", res.data.quizHistory?.length, "quizzes");
         } else {
-          console.log("No quiz data found");
           setQuizHistory([]);
         }
       } catch(err) {
-        console.log("Error fetching quiz history:", err.message);
         setQuizHistory([]);
       } finally {
         setLoadingQuizzes(false);
@@ -90,7 +54,6 @@ const Challenges = () => {
     fetchQuizHistory();
   }, [ProfileData]);
 
-  // Transform quiz history for display
   const transformQuizHistory = () => {
     return quizHistory.map((session, index) => ({
       id: session.sessionId || `session-${index + 1}`,
@@ -127,14 +90,6 @@ const Challenges = () => {
     if (difficultyCount.medium >= difficultyCount.easy && difficultyCount.medium >= difficultyCount.hard) 
       return 'Medium';
     return 'Easy';
-  };
-
-  const handleCreateFlashcard = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      console.log('Creating new flashcard set...');
-    }, 1000);
   };
 
   const getDifficultyBadgeColor = (difficulty) => {
@@ -269,7 +224,6 @@ const Challenges = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 text-white">
-      {/* Navigation Header */}
       <nav className="sticky top-0 z-40 bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-700/50">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -309,9 +263,7 @@ const Challenges = () => {
         </div>
       </nav>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Tab Navigation */}
         <div className="flex space-x-1 bg-neutral-800/50 rounded-2xl p-1 backdrop-blur-sm border border-neutral-700/30 mb-8">
           <button
             onClick={() => setActiveTab('flashcards')}
@@ -345,7 +297,6 @@ const Challenges = () => {
           </button>
         </div>
 
-        {/* Tab Content */}
         <AnimatePresence mode="wait">
           {activeTab === 'flashcards' ? (
             <motion.div
@@ -355,7 +306,6 @@ const Challenges = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Flashcards Header */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className="bg-gradient-to-br from-purple-600/20 to-amber-400/20 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-purple-500/30"
@@ -372,39 +322,53 @@ const Challenges = () => {
                       <span className="px-3 py-1 bg-green-500/20 text-green-300 rounded-full text-sm">Collaborative</span>
                     </div>
                   </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={handleCreateFlashcard}
-                    disabled={isLoading}
-                    className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-purple-500/25"
-                  >
-                    {isLoading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Creating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        <span>Create New Set</span>
-                      </>
-                    )}
-                  </motion.button>
+                  <div className="relative">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setOpenFlashcardCreator(!openFlashcardCreator)}
+                      disabled={isLoading}
+                      className="bg-gradient-to-r from-purple-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-purple-500/25"
+                    >
+                      {isLoading ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Creating...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span>Create New Set</span>
+                        </>
+                      )}
+                    </motion.button>
+                    
+                    <AnimatePresence>
+                      {openFlashcardCreator && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                          className="absolute top-full right-0 mt-4 z-50 w-96"
+                        >
+                          <FlashcardCreator onAdd={addFlashcard} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </motion.div>
 
-              {/* Flashcards Grid */}
               <div>
                 <h3 className="text-xl font-semibold text-white mb-6">Your Flashcard Sets</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {flashcardSets.map((flashcard) => (
-                    <FlashcardCard key={flashcard.id} flashcard={flashcard} />
+                  {flashcards.map((card, index) => (
+                    <FlashcardView key={index} card={card} />
                   ))}
                 </div>
               </div>
@@ -417,7 +381,6 @@ const Challenges = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
             >
-              {/* Quizzes Header */}
               <motion.div
                 whileHover={{ scale: 1.02 }}
                 className="bg-gradient-to-br from-amber-600/20 to-orange-400/20 backdrop-blur-sm rounded-2xl p-6 mb-8 border border-amber-500/30"
@@ -465,7 +428,6 @@ const Challenges = () => {
                 </div>
               </motion.div>
 
-              {/* Quizzes Grid */}
               <div>
                 <h3 className="text-xl font-semibold text-white mb-6">
                   Your Quiz History ({displayQuizzes.length} completed)
@@ -511,7 +473,6 @@ const Challenges = () => {
           )}
         </AnimatePresence>
 
-        {/* Mobile Stats */}
         <div className="md:hidden mt-8">
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-neutral-800/50 rounded-xl p-4 text-center border border-neutral-700/30">

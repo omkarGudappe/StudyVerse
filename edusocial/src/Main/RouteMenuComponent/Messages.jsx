@@ -1076,9 +1076,9 @@ const Messages = () => {
 
       {openPostModel.status && (
         <OpenPostModel
-          postId={openPostModel.id}
+          Id={openPostModel.id}
           onClose={handleClosePostModal}
-          onShare={sharePostInChat}
+          open={openPostModel.status}
         />
       )}
 
