@@ -4,8 +4,30 @@ const Posts = require('../Db/UserPost');
 const User = require('../Db/User');
 const AuthMiddleware = require('../AuthVerify/AuthMiddleware');
 const userSocketMap = require('../SocketConnection/socketMap');
-const { getIo } = require('../SocketConnection/socketInstance'); // Import the getter
+const { getIo } = require('../SocketConnection/socketInstance');
 const Group = require('../Db/GroupChat');
+const mongoose = require('mongoose');
+
+const NodeCache = require('node-cache'); 
+const rateLimit = require('express-rate-limit');
+
+const searchCache = new NodeCache({ 
+    stdTTL: 300,
+    checkperiod: 60,
+    maxKeys: 10000 
+});
+
+const searchLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000,
+    max: 30,
+    message: {
+        ok: false,
+        message: 'Too many search requests, please try again later.'
+    },
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
 
 Router.get('/:id', async (req, res) => {
     const { id } = req.params;
@@ -259,25 +281,45 @@ Router.post('/comments/:postId', async (req, res) => {
 
 Router.get('/usersPosts/:uid', async (req, res) => {
     const { uid } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 6;
+    const skip = (page - 1) * limit;
 
-   try{
-       if(!uid) {
-            return res.status(404).json({ message: "Missing Requirment"});
+    try {
+        if (!uid) {
+            return res.status(404).json({ message: "Missing Requirement" });
         }
 
-        const UserPosts = await Posts.find({ author: uid})
-        .sort({ createdAt: -1 });
+        const UserPosts = await Posts.find({ author: uid })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
 
-        if(!UserPosts){
-            return res.json({message: "User don't have any Post yet"})
+        const totalCount = await Posts.countDocuments({ author: uid });
+
+        if (!UserPosts || UserPosts.length === 0) {
+            return res.json({ 
+                ok: true, 
+                UserPosts: [],
+                totalCount: 0,
+                currentPage: page,
+                totalPages: Math.ceil(totalCount / limit)
+            });
         }
 
-        res.json({ok: true, UserPosts});
-   }catch(err){
-    console.log(err.message);
-    res.json({message: err.message})
-   }
-})
+        res.json({ 
+            ok: true, 
+            UserPosts, 
+            totalCount,
+            currentPage: page,
+            totalPages: Math.ceil(totalCount / limit),
+            hasMore: page < Math.ceil(totalCount / limit)
+        });
+    } catch (err) {
+        console.log(err.message);
+        res.status(500).json({ message: err.message });
+    }
+});
 
 
 Router.post('/share', async (req, res) => {
@@ -419,6 +461,272 @@ Router.put('/update/:id', AuthMiddleware, async(req, res) => {
        res.status(500).json({message: 'Internal server Error, Please try again later'});
     }
 })
+
+Router.post('/lesson/search', searchLimiter, AuthMiddleware, async (req, res) => {
+    const startTime = Date.now();
+    let cacheHit = false;
+
+    try {
+        const { query, page = 1, limit = 20, sortBy = 'relevance' } = req.query;
+        const userId = req.user?._id;
+
+        if (!query || query.trim().length === 0) {
+            return res.status(400).json({
+                ok: false,
+                message: "Search query is required",
+                errorCode: "SEARCH_QUERY_REQUIRED"
+            });
+        }
+
+        if (query.trim().length > 100) {
+            return res.status(400).json({
+                ok: false,
+                message: "Search query too long",
+                errorCode: "QUERY_TOO_LONG"
+            });
+        }
+
+        const searchQuery = query.trim().toLowerCase();
+        const pageNum = Math.max(1, parseInt(page));
+        const limitNum = Math.min(Math.max(1, parseInt(limit)), 50);
+        const skip = (pageNum - 1) * limitNum;
+
+        const cacheKey = `search:${searchQuery}:${pageNum}:${limitNum}:${sortBy}`;
+
+        if (pageNum === 1) {
+            const cachedResults = searchCache.get(cacheKey);
+            if (cachedResults) {
+                cacheHit = true;
+                console.log(`[SEARCH] Cache hit for: "${searchQuery}" - ${Date.now() - startTime}ms`);
+                
+                return res.status(200).json({
+                    ok: true,
+                    data: cachedResults,
+                    cached: true,
+                    responseTime: Date.now() - startTime
+                });
+            }
+        }
+
+        const textSearchQuery = {
+            $text: { $search: searchQuery },
+            contentType: "lesson"
+        };
+
+        const selectFields = {
+            heading: 1,
+            description: 1,
+            files: 1,
+            likes: 1,
+            comments: 1,
+            tags: 1,
+            category: 1,
+            duration: 1,
+            views: 1,
+            author: 1,
+            createdAt: 1,
+            contentType: 1,
+            score: { $meta: "textScore" }
+        };
+
+        let dbQuery = mongoose.model("Posts")
+            .find(textSearchQuery)
+            .select(selectFields)
+            .lean();
+
+        switch(sortBy) {
+            case 'newest':
+                dbQuery = dbQuery.sort({ createdAt: -1 });
+                break;
+            case 'oldest':
+                dbQuery = dbQuery.sort({ createdAt: 1 });
+                break;
+            case 'most-liked':
+                dbQuery = dbQuery.sort({ likesCount: -1, createdAt: -1 });
+                break;
+            case 'most-viewed':
+                dbQuery = dbQuery.sort({ views: -1, createdAt: -1 });
+                break;
+            default: // relevance
+                dbQuery = dbQuery.sort({ score: { $meta: "textScore" }, createdAt: -1 });
+        }
+
+        const [lessons, totalCount] = await Promise.all([
+            dbQuery
+                .skip(skip)
+                .limit(limitNum)
+                .populate({
+                    path: 'author',
+                    select: 'firstName lastName username',
+                    populate: {
+                        path: 'UserProfile',
+                        select: 'avatar.url'
+                    }
+                })
+                .maxTimeMS(10000),
+            mongoose.model("Posts")
+                .countDocuments(textSearchQuery)
+                .maxTimeMS(5000)
+        ]);
+
+        const enhancedLessons = await enhanceLessonsWithUserData(lessons, userId);
+
+        const responseData = {
+            lessons: enhancedLessons,
+            pagination: {
+                currentPage: pageNum,
+                totalPages: Math.ceil(totalCount / limitNum),
+                totalResults: totalCount,
+                resultsInPage: enhancedLessons.length,
+                hasNext: (skip + limitNum) < totalCount,
+                hasPrev: pageNum > 1
+            },
+            searchMetadata: {
+                query: searchQuery,
+                sortBy: sortBy
+            }
+        };
+
+        if (pageNum === 1) {
+            searchCache.set(cacheKey, responseData);
+        }
+
+        const responseTime = Date.now() - startTime;
+        console.log(`[SEARCH] "${searchQuery}" - ${lessons.length} results - ${responseTime}ms`);
+
+        res.status(200).json({
+            ok: true,
+            data: responseData,
+            cached: false,
+            responseTime: responseTime
+        });
+
+    } catch (error) {
+        const responseTime = Date.now() - startTime;
+        console.error(`[SEARCH_ERROR] ${error.message} - ${responseTime}ms`);
+
+        // Specific error handling
+        if (error.name === 'MongoError' && error.code === 50) {
+            return res.status(408).json({
+                ok: false,
+                message: "Search timeout, please try again",
+                errorCode: "SEARCH_TIMEOUT"
+            });
+        }
+
+        try {
+            const fallbackResults = await fallbackSearch(req, res);
+            if (fallbackResults) {
+                console.log(`[SEARCH] Used fallback for: "${req.query.query}"`);
+                return;
+            }
+        } catch (fallbackError) {
+            console.error('[SEARCH] Fallback also failed:', fallbackError);
+        }
+
+        res.status(500).json({
+            ok: false,
+            message: "Search service temporarily unavailable",
+            errorCode: "SEARCH_SERVICE_UNAVAILABLE",
+            responseTime: responseTime
+        });
+    }
+});
+
+async function enhanceLessonsWithUserData(lessons, userId) {
+    if (!userId || !lessons.length) {
+        return lessons.map(lesson => ({
+            ...lesson,
+            userLiked: false,
+            likesCount: lesson.likes?.length || 0,
+            commentsCount: lesson.comments?.length || 0
+        }));
+    }
+
+    const userLikedMap = new Map();
+    
+    lessons.forEach(lesson => {
+        if (lesson.likes && lesson.likes.length > 0) {
+            const isLiked = lesson.likes.some(like => 
+                (typeof like === 'object' ? like._id : like).toString() === userId.toString()
+            );
+            userLikedMap.set(lesson._id.toString(), isLiked);
+        }
+    });
+
+    return lessons.map(lesson => ({
+        ...lesson,
+        userLiked: userLikedMap.get(lesson._id.toString()) || false,
+        likesCount: lesson.likes?.length || 0,
+        commentsCount: lesson.comments?.length || 0,
+        likes: undefined,
+        comments: undefined
+    }));
+}
+
+async function fallbackSearch(req, res) {
+    const { query, page = 1, limit = 20 } = req.query;
+    const userId = req.user?._id;
+    
+    const searchQuery = query.trim();
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+    const skip = (pageNum - 1) * limitNum;
+
+    const searchRegex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+    const regexQuery = {
+        contentType: "lesson",
+        $or: [
+            { heading: { $regex: searchRegex } },
+            { description: { $regex: searchRegex } }
+        ]
+    };
+
+    const [lessons, totalCount] = await Promise.all([
+        mongoose.model("Posts")
+            .find(regexQuery)
+            .select('heading description files tags category duration views author createdAt')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limitNum)
+            .populate({
+                path: 'author',
+                select: 'firstName lastName username',
+                populate: {
+                    path: 'UserProfile',
+                    select: 'avatar.url'
+                }
+            })
+            .lean()
+            .maxTimeMS(15000),
+        mongoose.model("Posts").countDocuments(regexQuery)
+    ]);
+
+    const enhancedLessons = await enhanceLessonsWithUserData(lessons, userId);
+
+    res.status(200).json({
+        ok: true,
+        data: {
+            lessons: enhancedLessons,
+            pagination: {
+                currentPage: pageNum,
+                totalPages: Math.ceil(totalCount / limitNum),
+                totalResults: totalCount,
+                resultsInPage: enhancedLessons.length,
+                hasNext: (skip + limitNum) < totalCount,
+                hasPrev: pageNum > 1
+            },
+            searchMetadata: {
+                query: searchQuery,
+                fallbackUsed: true
+            }
+        },
+        cached: false
+    });
+
+    return true;
+}
 
 Router.delete('/delete/:id', AuthMiddleware, async(req, res) => {
     try{

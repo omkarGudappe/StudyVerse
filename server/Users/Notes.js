@@ -2,6 +2,7 @@ const express = require('express');
 const Router = express.Router();
 const User = require('../Db/User');
 const Notes = require('../Db/NotesSchema');
+const Posts = require('../Db/UserPost');
 
 Router.get('/:userName' , async (req, res) => {
     try{
@@ -134,6 +135,27 @@ Router.get('/usernotes/:ID', async (req, res) => {
         res.status(500).json({message: err.message});
         console.log(err.message);
     }
-})
+});
+
+
+//pdf Notes
+Router.get('/:id/pdf', async (req, res) => {
+
+    const { id } = req.params;
+
+    try{
+        const note = await Posts.findById(id)
+        .select('files.url auther')
+        .lean();
+
+        if(!note) {
+            return res.status(404).json({ message: "Note not found" });
+        }
+        res.json({note})
+    } catch(error) {
+        res.status(500).json({ message: error.message });
+    }
+
+});
 
 module.exports = Router

@@ -33,21 +33,22 @@ const UserSchema = new mongoose.Schema({
     authorEmail: { type: mongoose.Schema.Types.ObjectId, ref: "Auth" },
     firstName: {
         type: String,
-        required: true,
-        trim: true
+        trim: true,
+        default: null,
     },
     lastName: {
         type: String,
-        required: true,
-        trim: true
+        trim: true,
+        default: null,
     },
     dob:{
         type:Date,
-        required:true,
+        default: null,
     },
     username:{
         type:String,
-        trim:true
+        trim:true,
+        default: null,
     },
     gender:{
         type:String,
@@ -58,7 +59,6 @@ const UserSchema = new mongoose.Schema({
         level: { 
             type: String, 
             enum: ["school", "higher_secondary", "undergraduate", "postgraduate", "other"], 
-            required: true 
         },
 
         standard: { 
@@ -93,7 +93,6 @@ const UserSchema = new mongoose.Schema({
         },
         institute: {
             type: String, 
-            required: true 
         },
 
         startYear: { 
@@ -134,6 +133,18 @@ const UserSchema = new mongoose.Schema({
 
     Uid:{type:String, unique:true},
     firebaseUid:{type:String, unique:true},
+
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+    },
+
+    password: {
+        type: String,
+        required: true,
+    },
+
 }, { timestamps: true });
 
 UserSchema.set("toJSON", {
@@ -144,6 +155,10 @@ UserSchema.set("toJSON", {
     }
 });
 
+UserSchema.index({ connections: 1 });
+UserSchema.index({ MyConnections: 1 });
+UserSchema.index({ connectionRequests: 1 });
+UserSchema.index({ email: 1 });
 UserSchema.index({ username: 1 });
 UserSchema.index({ firebaseUid: 1 });
 UserSchema.index({ Uid: 1 });

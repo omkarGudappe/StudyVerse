@@ -15,7 +15,6 @@ const LogIn = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { Login, SignUp, NewUser } = EmailContextExport();
   const [enterOtp, setEnterOtp] = useState(false);
   const [hidePassword, setHidePassword] = useState(false);
   const [hideConfirmPassword, setHideConfirmPassword] = useState(false);
@@ -23,6 +22,7 @@ const LogIn = () => {
   const [checkIsJustSignInByGoogle, setCheckIsJustSignInByGoogle] = useState(false);
   const navigate = useNavigate();
   const otpInputRefs = useRef([]);
+  const { Login, SignUp, NewUser } = EmailContextExport();
 
   // Clear errors after 5 seconds
   useEffect(() => {

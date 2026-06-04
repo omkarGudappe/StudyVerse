@@ -10,12 +10,12 @@ import TextAlign from "@tiptap/extension-text-align";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
-import { createLowlight } from 'lowlight';
+import { createLowlight } from "lowlight";
 import Mathematics from "@tiptap/extension-mathematics";
 import Placeholder from "@tiptap/extension-placeholder";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
-import {Table} from "@tiptap/extension-table";
+import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableHeader from "@tiptap/extension-table-header";
 import TableCell from "@tiptap/extension-table-cell";
@@ -23,7 +23,8 @@ import { ReactRenderer } from "@tiptap/react";
 import tippy from "tippy.js";
 import Suggestion from "@tiptap/suggestion";
 import NotesTitle from "./SmallComponents/NotesTitle";
-import axios from 'axios';
+import { createPortal } from "react-dom";
+import axios from "axios";
 import {
   FaBold,
   FaItalic,
@@ -60,52 +61,49 @@ import {
   FaStrikethrough,
   FaIndent,
   FaOutdent,
-  FaColumns
+  FaColumns,
 } from "react-icons/fa";
-import { 
-  BiMath, 
-  BiCollapseVertical, 
+import {
+  BiMath,
+  BiCollapseVertical,
   BiExpandVertical,
-  BiReset
+  BiReset,
 } from "react-icons/bi";
-import { 
-  BsTypeH1, 
-  BsTypeH2, 
-  BsTypeH3, 
-  BsBlockquoteLeft, 
+import {
+  BsTypeH1,
+  BsTypeH2,
+  BsTypeH3,
+  BsBlockquoteLeft,
   BsCodeSquare,
   BsCardChecklist,
   BsEmojiSmile,
   BsThreeDotsVertical,
-  BsJustify
+  BsJustify,
 } from "react-icons/bs";
-import { 
-  MdOutlineTextFields, 
-  MdFormatColorText, 
+import {
+  MdOutlineTextFields,
+  MdFormatColorText,
   MdOutlineTableChart,
   MdOutlineCheckBoxOutlineBlank,
   MdCheckBoxOutlineBlank,
-  MdHorizontalRule
+  MdHorizontalRule,
 } from "react-icons/md";
-import { 
-  TbMathFunction, 
+import {
+  TbMathFunction,
   TbLetterCaseToggle,
-  TbColumnInsertRight ,
+  TbColumnInsertRight,
   TbRowInsertBottom,
   TbTableExport,
-  TbTableImport
+  TbTableImport,
 } from "react-icons/tb";
-import { 
-  RiFileWord2Line, 
+import {
+  RiFileWord2Line,
   RiCharacterRecognitionLine,
   RiMarkdownLine,
   RiDeleteColumn,
-  RiDeleteRow
+  RiDeleteRow,
 } from "react-icons/ri";
-import { 
-  AiOutlineLineHeight,
-  AiOutlineClear
-} from "react-icons/ai";
+import { AiOutlineLineHeight, AiOutlineClear } from "react-icons/ai";
 import EmojiPicker from "emoji-picker-react";
 import "katex/dist/katex.min.css";
 import { useNotesStore } from "../../StateManagement/StoreNotes";
@@ -115,9 +113,9 @@ import Subscript from "@tiptap/extension-subscript";
 import { UserDataContextExport } from "./CurrentUserContexProvider";
 
 const Mention = Node.create({
-  name: 'mention',
+  name: "mention",
   inline: true,
-  group: 'inline',
+  group: "inline",
   selectable: false,
   atom: true,
 
@@ -142,22 +140,24 @@ const Mention = Node.create({
 
   renderHTML({ node, HTMLAttributes }) {
     return [
-      'span',
-      mergeAttributes({ 'data-type': 'mention' }, HTMLAttributes),
+      "span",
+      mergeAttributes({ "data-type": "mention" }, HTMLAttributes),
       `@${node.attrs.label}`,
     ];
   },
 
   addCommands() {
     return {
-      insertMention: (attributes) => ({ chain }) => {
-        return chain()
-          .insertContent({
-            type: this.name,
-            attrs: attributes,
-          })
-          .run();
-      },
+      insertMention:
+        (attributes) =>
+        ({ chain }) => {
+          return chain()
+            .insertContent({
+              type: this.name,
+              attrs: attributes,
+            })
+            .run();
+        },
     };
   },
 });
@@ -185,12 +185,7 @@ const Collapsible = Node.create({
 
   renderHTML({ HTMLAttributes }) {
     const attrs = mergeAttributes(HTMLAttributes);
-    return [
-      "details",
-      attrs,
-      ["summary", 0],
-      ["div", 0],
-    ];
+    return ["details", attrs, ["summary", 0], ["div", 0]];
   },
 
   addCommands() {
@@ -204,7 +199,10 @@ const Collapsible = Node.create({
             const node = $from.node(depth);
             if (node.type.name === this.name) {
               const pos = $from.before(depth);
-              const newAttrs = { ...node.attrs, collapsed: !node.attrs.collapsed };
+              const newAttrs = {
+                ...node.attrs,
+                collapsed: !node.attrs.collapsed,
+              };
               tr.setNodeMarkup(pos, node.type, newAttrs);
               if (dispatch) dispatch(tr);
               return true;
@@ -220,7 +218,6 @@ const Collapsible = Node.create({
       const dom = document.createElement("details");
       const summary = document.createElement("summary");
       const contentWrapper = document.createElement("div");
-
       if (!node.attrs.collapsed) dom.setAttribute("open", "");
       summary.textContent = node.attrs.summary || "Details";
 
@@ -252,7 +249,7 @@ const FontFamily = TextStyle.extend({
     return {
       fontFamily: {
         default: null,
-        parseHTML: (element) => element.style.fontFamily?.replace(/['"]/g, ''),
+        parseHTML: (element) => element.style.fontFamily?.replace(/['"]/g, ""),
         renderHTML: (attributes) => {
           if (!attributes.fontFamily) return {};
           return { style: `font-family: ${attributes.fontFamily}` };
@@ -312,18 +309,18 @@ const LineHeight = TextStyle.extend({
 
 const lowlight = createLowlight();
 
-// Enhanced Table extension with better styling and controls
+// Enhanced Table extension with better styling and
 const CustomTable = Table.extend({
   addAttributes() {
     return {
       ...this.parent?.(),
       style: {
         default: null,
-        parseHTML: element => element.getAttribute('style'),
-        renderHTML: attributes => {
+        parseHTML: (element) => element.getAttribute("style"),
+        renderHTML: (attributes) => {
           return {
-            style: `width: 100%; border-collapse: collapse; ${attributes.style || ''}`,
-            class: 'custom-table'
+            style: `width: 100%; border-collapse: collapse; ${attributes.style || ""}`,
+            class: "custom-table",
           };
         },
       },
@@ -333,304 +330,342 @@ const CustomTable = Table.extend({
   addCommands() {
     return {
       ...this.parent?.(),
-      addColumnBefore: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            // Find the table node
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === 'table') {
-                const tablePos = $from.before(depth);
-                const table = node;
-                
-                // Get current column index
-                const colIndex = $from.index(depth);
-                
-                // Create a new column
-                const newCols = [];
-                for (let i = 0; i < table.content.content.length; i++) {
-                  const row = table.content.content[i];
-                  const newCells = [];
-                  
-                  // Copy all cells, inserting new cell at colIndex
-                  for (let j = 0; j < row.content.content.length; j++) {
-                    if (j === colIndex) {
-                      // Insert empty cell
-                      const cellType = row.content.content[j].type;
-                      newCells.push(cellType.createAndFill());
-                    }
-                    newCells.push(row.content.content[j]);
-                  }
-                  
-                  newCols.push(row.type.create(row.attrs, newCells));
-                }
-                
-                const newTable = table.type.create(table.attrs, newCols);
-                if (dispatch) {
-                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
-                }
-                return true;
-              }
-            }
-            return false;
-          })
-          .run();
-      },
-      addColumnAfter: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            // Find the table node
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === 'table') {
-                const tablePos = $from.before(depth);
-                const table = node;
-                
-                // Get current column index
-                const colIndex = $from.index(depth);
-                
-                // Create a new column
-                const newCols = [];
-                for (let i = 0; i < table.content.content.length; i++) {
-                  const row = table.content.content[i];
-                  const newCells = [];
-                  
-                  // Copy all cells, inserting new cell after colIndex
-                  for (let j = 0; j < row.content.content.length; j++) {
-                    newCells.push(row.content.content[j]);
-                    if (j === colIndex) {
-                      // Insert empty cell after current column
-                      const cellType = row.content.content[j].type;
-                      newCells.push(cellType.createAndFill());
-                    }
-                  }
-                  
-                  newCols.push(row.type.create(row.attrs, newCells));
-                }
-                
-                const newTable = table.type.create(table.attrs, newCols);
-                if (dispatch) {
-                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
-                }
-                return true;
-              }
-            }
-            return false;
-          })
-          .run();
-      },
-      deleteColumn: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            // Find the table node
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === 'table') {
-                const tablePos = $from.before(depth);
-                const table = node;
-                
-                // Get current column index
-                const colIndex = $from.index(depth);
-                
-                // Don't delete if it's the only column
-                if (table.firstChild.content.content.length <= 1) {
-                  return false;
-                }
-                
-                // Create a new table without the column
-                const newCols = [];
-                for (let i = 0; i < table.content.content.length; i++) {
-                  const row = table.content.content[i];
-                  const newCells = [];
-                  
-                  // Copy all cells except the one at colIndex
-                  for (let j = 0; j < row.content.content.length; j++) {
-                    if (j !== colIndex) {
+      addColumnBefore:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              // Find the table node
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === "table") {
+                  const tablePos = $from.before(depth);
+                  const table = node;
+
+                  // Get current column index
+                  const colIndex = $from.index(depth);
+
+                  // Create a new column
+                  const newCols = [];
+                  for (let i = 0; i < table.content.content.length; i++) {
+                    const row = table.content.content[i];
+                    const newCells = [];
+
+                    // Copy all cells, inserting new cell at colIndex
+                    for (let j = 0; j < row.content.content.length; j++) {
+                      if (j === colIndex) {
+                        // Insert empty cell
+                        const cellType = row.content.content[j].type;
+                        newCells.push(cellType.createAndFill());
+                      }
                       newCells.push(row.content.content[j]);
                     }
+
+                    newCols.push(row.type.create(row.attrs, newCells));
                   }
-                  
-                  newCols.push(row.type.create(row.attrs, newCells));
-                }
-                
-                const newTable = table.type.create(table.attrs, newCols);
-                if (dispatch) {
-                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
-                }
-                return true;
-              }
-            }
-            return false;
-          })
-          .run();
-      },
-      addRowBefore: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            // Find the table node
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === 'table') {
-                const tablePos = $from.before(depth);
-                const table = node;
-                
-                // Get current row index
-                const rowIndex = $from.index(depth - 1);
-                
-                // Create a new row with empty cells
-                const firstRow = table.firstChild;
-                const newCells = [];
-                for (let i = 0; i < firstRow.content.content.length; i++) {
-                  const cellType = firstRow.content.content[i].type;
-                  newCells.push(cellType.createAndFill());
-                }
-                
-                const newRow = firstRow.type.create(firstRow.attrs, newCells);
-                
-                // Insert the new row
-                const newRows = [];
-                for (let i = 0; i < table.content.content.length; i++) {
-                  if (i === rowIndex) {
-                    newRows.push(newRow);
+
+                  const newTable = table.type.create(table.attrs, newCols);
+                  if (dispatch) {
+                    tr.replaceWith(
+                      tablePos,
+                      tablePos + table.nodeSize,
+                      newTable,
+                    );
                   }
-                  newRows.push(table.content.content[i]);
+                  return true;
                 }
-                
-                const newTable = table.type.create(table.attrs, newRows);
-                if (dispatch) {
-                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
-                }
-                return true;
               }
-            }
-            return false;
-          })
-          .run();
-      },
-      addRowAfter: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            // Find the table node
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === 'table') {
-                const tablePos = $from.before(depth);
-                const table = node;
-                
-                // Get current row index
-                const rowIndex = $from.index(depth - 1);
-                
-                // Create a new row with empty cells
-                const firstRow = table.firstChild;
-                const newCells = [];
-                for (let i = 0; i < firstRow.content.content.length; i++) {
-                  const cellType = firstRow.content.content[i].type;
-                  newCells.push(cellType.createAndFill());
-                }
-                
-                const newRow = firstRow.type.create(firstRow.attrs, newCells);
-                
-                // Insert the new row
-                const newRows = [];
-                for (let i = 0; i < table.content.content.length; i++) {
-                  newRows.push(table.content.content[i]);
-                  if (i === rowIndex) {
-                    newRows.push(newRow);
+              return false;
+            })
+            .run();
+        },
+      addColumnAfter:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              // Find the table node
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === "table") {
+                  const tablePos = $from.before(depth);
+                  const table = node;
+
+                  // Get current column index
+                  const colIndex = $from.index(depth);
+
+                  // Create a new column
+                  const newCols = [];
+                  for (let i = 0; i < table.content.content.length; i++) {
+                    const row = table.content.content[i];
+                    const newCells = [];
+
+                    // Copy all cells, inserting new cell after colIndex
+                    for (let j = 0; j < row.content.content.length; j++) {
+                      newCells.push(row.content.content[j]);
+                      if (j === colIndex) {
+                        // Insert empty cell after current column
+                        const cellType = row.content.content[j].type;
+                        newCells.push(cellType.createAndFill());
+                      }
+                    }
+
+                    newCols.push(row.type.create(row.attrs, newCells));
                   }
+
+                  const newTable = table.type.create(table.attrs, newCols);
+                  if (dispatch) {
+                    tr.replaceWith(
+                      tablePos,
+                      tablePos + table.nodeSize,
+                      newTable,
+                    );
+                  }
+                  return true;
                 }
-                
-                const newTable = table.type.create(table.attrs, newRows);
-                if (dispatch) {
-                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
-                }
-                return true;
               }
-            }
-            return false;
-          })
-          .run();
-      },
-      deleteRow: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            // Find the table node
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === 'table') {
-                const tablePos = $from.before(depth);
-                const table = node;
-                
-                // Get current row index
-                const rowIndex = $from.index(depth - 1);
-                
-                // Don't delete if it's the only row
-                if (table.content.content.length <= 1) {
-                  return false;
+              return false;
+            })
+            .run();
+        },
+      deleteColumn:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              // Find the table node
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === "table") {
+                  const tablePos = $from.before(depth);
+                  const table = node;
+
+                  // Get current column index
+                  const colIndex = $from.index(depth);
+
+                  // Don't delete if it's the only column
+                  if (table.firstChild.content.content.length <= 1) {
+                    return false;
+                  }
+
+                  // Create a new table without the column
+                  const newCols = [];
+                  for (let i = 0; i < table.content.content.length; i++) {
+                    const row = table.content.content[i];
+                    const newCells = [];
+
+                    // Copy all cells except the one at colIndex
+                    for (let j = 0; j < row.content.content.length; j++) {
+                      if (j !== colIndex) {
+                        newCells.push(row.content.content[j]);
+                      }
+                    }
+
+                    newCols.push(row.type.create(row.attrs, newCells));
+                  }
+
+                  const newTable = table.type.create(table.attrs, newCols);
+                  if (dispatch) {
+                    tr.replaceWith(
+                      tablePos,
+                      tablePos + table.nodeSize,
+                      newTable,
+                    );
+                  }
+                  return true;
                 }
-                
-                // Create a new table without the row
-                const newRows = [];
-                for (let i = 0; i < table.content.content.length; i++) {
-                  if (i !== rowIndex) {
+              }
+              return false;
+            })
+            .run();
+        },
+      addRowBefore:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              // Find the table node
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === "table") {
+                  const tablePos = $from.before(depth);
+                  const table = node;
+
+                  // Get current row index
+                  const rowIndex = $from.index(depth - 1);
+
+                  // Create a new row with empty cells
+                  const firstRow = table.firstChild;
+                  const newCells = [];
+                  for (let i = 0; i < firstRow.content.content.length; i++) {
+                    const cellType = firstRow.content.content[i].type;
+                    newCells.push(cellType.createAndFill());
+                  }
+
+                  const newRow = firstRow.type.create(firstRow.attrs, newCells);
+
+                  // Insert the new row
+                  const newRows = [];
+                  for (let i = 0; i < table.content.content.length; i++) {
+                    if (i === rowIndex) {
+                      newRows.push(newRow);
+                    }
                     newRows.push(table.content.content[i]);
                   }
+
+                  const newTable = table.type.create(table.attrs, newRows);
+                  if (dispatch) {
+                    tr.replaceWith(
+                      tablePos,
+                      tablePos + table.nodeSize,
+                      newTable,
+                    );
+                  }
+                  return true;
                 }
-                
-                const newTable = table.type.create(table.attrs, newRows);
-                if (dispatch) {
-                  tr.replaceWith(tablePos, tablePos + table.nodeSize, newTable);
-                }
-                return true;
               }
-            }
-            return false;
-          })
-          .run();
-      },
-      deleteTable: () => ({ chain, state, dispatch }) => {
-        return chain()
-          .command(({ tr }) => {
-            const { selection } = state;
-            const { $from } = selection;
-            
-            for (let depth = $from.depth; depth > 0; depth--) {
-              const node = $from.node(depth);
-              if (node.type.name === this.name) {
-                const start = $from.before(depth);
-                const end = $from.after(depth);
-                if (dispatch) {
-                  tr.delete(start, end);
+              return false;
+            })
+            .run();
+        },
+      addRowAfter:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              // Find the table node
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === "table") {
+                  const tablePos = $from.before(depth);
+                  const table = node;
+
+                  // Get current row index
+                  const rowIndex = $from.index(depth - 1);
+
+                  // Create a new row with empty cells
+                  const firstRow = table.firstChild;
+                  const newCells = [];
+                  for (let i = 0; i < firstRow.content.content.length; i++) {
+                    const cellType = firstRow.content.content[i].type;
+                    newCells.push(cellType.createAndFill());
+                  }
+
+                  const newRow = firstRow.type.create(firstRow.attrs, newCells);
+
+                  // Insert the new row
+                  const newRows = [];
+                  for (let i = 0; i < table.content.content.length; i++) {
+                    newRows.push(table.content.content[i]);
+                    if (i === rowIndex) {
+                      newRows.push(newRow);
+                    }
+                  }
+
+                  const newTable = table.type.create(table.attrs, newRows);
+                  if (dispatch) {
+                    tr.replaceWith(
+                      tablePos,
+                      tablePos + table.nodeSize,
+                      newTable,
+                    );
+                  }
+                  return true;
                 }
-                return true;
               }
-            }
-            return false;
-          })
-          .run();
-      },
+              return false;
+            })
+            .run();
+        },
+      deleteRow:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              // Find the table node
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === "table") {
+                  const tablePos = $from.before(depth);
+                  const table = node;
+
+                  // Get current row index
+                  const rowIndex = $from.index(depth - 1);
+
+                  // Don't delete if it's the only row
+                  if (table.content.content.length <= 1) {
+                    return false;
+                  }
+
+                  // Create a new table without the row
+                  const newRows = [];
+                  for (let i = 0; i < table.content.content.length; i++) {
+                    if (i !== rowIndex) {
+                      newRows.push(table.content.content[i]);
+                    }
+                  }
+
+                  const newTable = table.type.create(table.attrs, newRows);
+                  if (dispatch) {
+                    tr.replaceWith(
+                      tablePos,
+                      tablePos + table.nodeSize,
+                      newTable,
+                    );
+                  }
+                  return true;
+                }
+              }
+              return false;
+            })
+            .run();
+        },
+      deleteTable:
+        () =>
+        ({ chain, state, dispatch }) => {
+          return chain()
+            .command(({ tr }) => {
+              const { selection } = state;
+              const { $from } = selection;
+
+              for (let depth = $from.depth; depth > 0; depth--) {
+                const node = $from.node(depth);
+                if (node.type.name === this.name) {
+                  const start = $from.before(depth);
+                  const end = $from.after(depth);
+                  if (dispatch) {
+                    tr.delete(start, end);
+                  }
+                  return true;
+                }
+              }
+              return false;
+            })
+            .run();
+        },
     };
   },
 });
 
-const NotesEditor = ({content , Id}) => {
+const NotesEditor = ({ content, Id }) => {
   const [color, setColor] = useState("#ffffff");
   const [bgColor, setBgColor] = useState("#fffd88");
   const [fontSize, setFontSize] = useState("16px");
@@ -662,7 +697,12 @@ const NotesEditor = ({content , Id}) => {
   const [OpenNotesTitleModel, setOpenNotesTitleModel] = useState(false);
   const [EditorContentData, setEditorContentData] = useState(content || null);
   const { ProfileData } = UserDataContextExport();
-  
+  const buttonRef = useRef(null);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  // const {  } = useNotesStore()
+
+  const [showMobileToolbar, setShowMobileToolbar] = useState(false);
+
   // Update date every minute
   useEffect(() => {
     const timer = setInterval(() => {
@@ -674,7 +714,10 @@ const NotesEditor = ({content , Id}) => {
   // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+      if (
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target)
+      ) {
         setShowEmojiPicker(false);
       }
     };
@@ -685,105 +728,106 @@ const NotesEditor = ({content , Id}) => {
   }, []);
 
   // Custom Image extension with resizing
-const ResizableImage = Image.extend({
-  name: 'resizableImage',
+  const ResizableImage = Image.extend({
+    name: "resizableImage",
 
-  addAttributes() {
-    return {
-      ...this.parent?.(),
-      width: {
-        default: null,
-        parseHTML: element => element.style.width || null,
-        renderHTML: attributes => {
-          if (!attributes.width) return {};
-          return { style: `width: ${attributes.width}; max-width: 100%; height: auto;` };
+    addAttributes() {
+      return {
+        ...this.parent?.(),
+        width: {
+          default: null,
+          parseHTML: (element) => element.style.width || null,
+          renderHTML: (attributes) => {
+            if (!attributes.width) return {};
+            return {
+              style: `width: ${attributes.width}; max-width: 100%; height: auto;`,
+            };
+          },
         },
-      },
-      height: {
-        default: null,
-        parseHTML: element => element.style.height || null,
-        renderHTML: attributes => {
-          if (!attributes.height) return {};
-          return { style: `height: ${attributes.height};` };
+        height: {
+          default: null,
+          parseHTML: (element) => element.style.height || null,
+          renderHTML: (attributes) => {
+            if (!attributes.height) return {};
+            return { style: `height: ${attributes.height};` };
+          },
         },
-      },
-    };
-  },
-
-  addNodeView() {
-    return ({ node, getPos, editor }) => {
-      const dom = document.createElement('div');
-      dom.className = 'image-resize-container';
-      dom.style.position = 'relative';
-      dom.style.display = 'inline-block';
-      dom.style.maxWidth = '100%';
-
-      const img = document.createElement('img');
-      img.src = node.attrs.src;
-      img.alt = node.attrs.alt || '';
-      img.style.width = node.attrs.width || 'auto';
-      img.style.height = node.attrs.height || 'auto';
-      img.style.maxWidth = '100%';
-      img.className = 'resizable-image';
-
-      // resize handle
-      const handle = document.createElement('div');
-      handle.className = 'image-resize-handle';
-      handle.innerHTML = '↔';
-      Object.assign(handle.style, {
-        position: 'absolute',
-        right: '0',
-        bottom: '0',
-        background: '#9333ea',
-        color: 'white',
-        width: '16px',
-        height: '16px',
-        borderRadius: '4px',
-        cursor: 'nwse-resize',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '12px',
-      });
-
-      dom.appendChild(img);
-      dom.appendChild(handle);
-
-      // resize logic
-      let startX, startWidth;
-      const onMouseMove = e => {
-        const dx = e.clientX - startX;
-        const newWidth = Math.max(50, startWidth + dx);
-        img.style.width = `${newWidth}px`;
       };
+    },
 
-      const onMouseUp = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+    addNodeView() {
+      return ({ node, getPos, editor }) => {
+        const dom = document.createElement("div");
+        dom.className = "image-resize-container";
+        dom.style.position = "relative";
+        dom.style.display = "inline-block";
+        dom.style.maxWidth = "100%";
 
-        // update node attrs in editor
-        if (typeof getPos === 'function') {
-          const tr = editor.view.state.tr.setNodeMarkup(getPos(), undefined, {
-            ...node.attrs,
-            width: img.style.width,
-          });
-          editor.view.dispatch(tr);
-        }
+        const img = document.createElement("img");
+        img.src = node.attrs.src;
+        img.alt = node.attrs.alt || "";
+        img.style.width = node.attrs.width || "auto";
+        img.style.height = node.attrs.height || "auto";
+        img.style.maxWidth = "100%";
+        img.className = "resizable-image";
+
+        // resize handle
+        const handle = document.createElement("div");
+        handle.className = "image-resize-handle";
+        handle.innerHTML = "↔";
+        Object.assign(handle.style, {
+          position: "absolute",
+          right: "0",
+          bottom: "0",
+          background: "#9333ea",
+          color: "white",
+          width: "16px",
+          height: "16px",
+          borderRadius: "4px",
+          cursor: "nwse-resize",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "12px",
+        });
+
+        dom.appendChild(img);
+        dom.appendChild(handle);
+
+        // resize logic
+        let startX, startWidth;
+        const onMouseMove = (e) => {
+          const dx = e.clientX - startX;
+          const newWidth = Math.max(50, startWidth + dx);
+          img.style.width = `${newWidth}px`;
+        };
+
+        const onMouseUp = () => {
+          document.removeEventListener("mousemove", onMouseMove);
+          document.removeEventListener("mouseup", onMouseUp);
+
+          // update node attrs in editor
+          if (typeof getPos === "function") {
+            const tr = editor.view.state.tr.setNodeMarkup(getPos(), undefined, {
+              ...node.attrs,
+              width: img.style.width,
+            });
+            editor.view.dispatch(tr);
+          }
+        };
+
+        handle.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+          startX = e.clientX;
+          startWidth = parseInt(img.style.width) || img.offsetWidth;
+          document.addEventListener("mousemove", onMouseMove);
+          document.addEventListener("mouseup", onMouseUp);
+        });
+
+        return { dom };
       };
-
-      handle.addEventListener('mousedown', e => {
-        e.preventDefault();
-        startX = e.clientX;
-        startWidth = parseInt(img.style.width) || img.offsetWidth;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      });
-
-      return { dom };
-    };
-  },
-});
-
+    },
+  });
 
   const editor = useEditor({
     extensions: [
@@ -807,7 +851,7 @@ const ResizableImage = Image.extend({
       Collapsible,
       TextAlign.configure({
         types: ["heading", "paragraph", "image"],
-        alignments: ['left', 'center', 'right', 'justify'],
+        alignments: ["left", "center", "right", "justify"],
       }),
       TaskList,
       TaskItem.configure({
@@ -818,7 +862,7 @@ const ResizableImage = Image.extend({
       }),
       Mathematics.configure({
         HTMLAttributes: {
-          class: 'math-element',
+          class: "math-element",
         },
         // Add evaluation options if needed
         evaluation: true,
@@ -837,48 +881,57 @@ const ResizableImage = Image.extend({
         inline: true,
         allowBase64: true,
         HTMLAttributes: {
-          class: 'embedded-image',
+          class: "embedded-image",
         },
       }),
       CustomTable.configure({
         resizable: true,
         HTMLAttributes: {
-          class: 'custom-table',
+          class: "custom-table",
         },
       }),
       TableRow.configure({
         HTMLAttributes: {
-          class: 'table-row',
+          class: "table-row",
         },
       }),
       TableHeader.configure({
         HTMLAttributes: {
-          class: 'table-header',
+          class: "table-header",
         },
       }),
       TableCell.configure({
         HTMLAttributes: {
-          class: 'table-cell',
+          class: "table-cell",
         },
       }),
-       Superscript.configure({
+      Superscript.configure({
         HTMLAttributes: {
-          class: 'superscript',
+          class: "superscript",
         },
       }),
       Subscript.configure({
         HTMLAttributes: {
-          class: 'subscript',
+          class: "subscript",
         },
       }),
       Mention.configure({
         suggestion: {
           items: ({ query }) => {
             return [
-              "John Doe", "Jane Smith", "Alice Johnson", "Bob Brown", 
-              "Emma Wilson", "Michael Davis", "Sarah Miller", "David Garcia"
-            ].filter(item => item.toLowerCase().startsWith(query.toLowerCase()))
-            .slice(0, 5);
+              "John Doe",
+              "Jane Smith",
+              "Alice Johnson",
+              "Bob Brown",
+              "Emma Wilson",
+              "Michael Davis",
+              "Sarah Miller",
+              "David Garcia",
+            ]
+              .filter((item) =>
+                item.toLowerCase().startsWith(query.toLowerCase()),
+              )
+              .slice(0, 5);
           },
           render: () => {
             let component;
@@ -939,43 +992,50 @@ const ResizableImage = Image.extend({
     content: "<p>Start writing your notes here...</p>",
     onUpdate: ({ editor }) => {
       const text = editor.getText();
-      setWordCount(text.split(/\s+/).filter(word => word.length > 0).length);
+      setWordCount(text.split(/\s+/).filter((word) => word.length > 0).length);
       setCharCount(text.length);
       setSavedStatus("unsaved");
-      
-      // Check if cursor is in a table
+
       const { selection } = editor.state;
       const { $from } = selection;
       let inTable = false;
       for (let i = $from.depth; i > 0; i--) {
-        if ($from.node(i).type.name === 'table') {
+        if ($from.node(i).type.name === "table") {
           inTable = true;
           break;
         }
       }
       setShowTableControls(inTable);
-      
-      if(Id) {
+
+      if (Id) {
         const userId = ProfileData?._id;
-       clearTimeout(window.autoSaveTimeout);
-       window.autoSaveTimeout = setTimeout(async () => {
-        try {
-          setSavedStatus("saving");
-          const jsonContent = editor.getJSON();
+        clearTimeout(window.autoSaveTimeout);
+        window.autoSaveTimeout = setTimeout(async () => {
+          try {
+            setSavedStatus("saving");
+            const jsonContent = editor.getJSON();
 
-          const res = await axios.put(`${import.meta.env.VITE_API_URL}/Notes/update/${Id}`, {
-            content: jsonContent,
-            userId, 
-          });
+            const res = await axios.put(
+              `${import.meta.env.VITE_API_URL}/Notes/update/${Id}`,
+              {
+                content: jsonContent,
+                userId,
+              },
+            );
 
-          if(res.data.ok){
-            setSavedStatus("saved");
+            if (res.data.ok) {
+              setSavedStatus("saved");
+            } else {
+            }
+          } catch (err) {
+            console.error(
+              err.response.data.message,
+              "Auto-save error:",
+              err.message,
+            );
+            setSavedStatus("error");
           }
-        } catch (err) {
-          console.error(err.response.data.message ,"Auto-save error:", err.message);
-          setSavedStatus("error");
-        }
-      }, 4000);
+        }, 4000);
       } else {
         clearTimeout(window.autoSaveTimeout);
         window.autoSaveTimeout = setTimeout(() => {
@@ -984,33 +1044,43 @@ const ResizableImage = Image.extend({
           setTimeout(() => setSavedStatus("saved"), 500);
         }, 2000);
       }
+
+      // Scroll cursor into view on mobile when typing
+      if (typeof window !== 'undefined') {
+        setTimeout(() => {
+          const selection = editor.state.selection;
+          const node = editor.view.nodeDOM(selection.from);
+          if (node) {
+            node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 50);
+      }
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-invert max-w-none focus:outline-none',
+        class: "prose prose-invert max-w-none focus:outline-none",
         style: `font-family: ${fontFamily}; font-size: ${fontSize}; line-height: ${lineHeight}`,
       },
     },
   });
 
   useEffect(() => {
-    if(!content) return;
-    if(content){
-      console.log("Content here",content)
-      editor.commands.setContent(content)
+    if (!content) return;
+    if (content) {
+      console.log("Content here", content);
+      editor.commands.setContent(content);
     }
-  } , [editor ,content , Id])
+  }, [editor, content, Id]);
 
   useEffect(() => {
-    if(Id){
-
+    if (Id) {
     }
-  })
+  });
 
   // Handle fullscreen toggle
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
-      editorRef.current.requestFullscreen().catch(err => {
+      editorRef.current.requestFullscreen().catch((err) => {
         console.error(`Error attempting to enable fullscreen: ${err.message}`);
       });
       setIsFullscreen(true);
@@ -1026,9 +1096,19 @@ const ResizableImage = Image.extend({
   const addLink = () => {
     if (linkUrl) {
       if (linkText) {
-        editor.chain().focus().setLink({ href: linkUrl }).insertContent(linkText).run();
+        editor
+          .chain()
+          .focus()
+          .setLink({ href: linkUrl })
+          .insertContent(linkText)
+          .run();
       } else {
-        editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run();
+        editor
+          .chain()
+          .focus()
+          .extendMarkRange("link")
+          .setLink({ href: linkUrl })
+          .run();
       }
       setShowLinkModal(false);
       setLinkUrl("");
@@ -1036,27 +1116,35 @@ const ResizableImage = Image.extend({
     }
   };
 
- const addImage = () => {
-  if (imageUrl) {
-    editor.chain().focus().setImage({ 
-      src: imageUrl, 
-      alt: imageAlt,
-      width: '100%',
-      height: 'auto'
-    }).run();
-    setShowImageModal(false);
-    setImageUrl("");
-    setImageAlt("");
-  }
-};
+  const addImage = () => {
+    if (imageUrl) {
+      editor
+        .chain()
+        .focus()
+        .setImage({
+          src: imageUrl,
+          alt: imageAlt,
+          width: "100%",
+          height: "auto",
+        })
+        .run();
+      setShowImageModal(false);
+      setImageUrl("");
+      setImageAlt("");
+    }
+  };
 
   // Add math equation
   const addMathEquation = () => {
     if (mathLatex) {
-      editor.chain().focus().insertContent({ 
-        type: "math", 
-        attrs: { latex: mathLatex } 
-      }).run();
+      editor
+        .chain()
+        .focus()
+        .insertContent({
+          type: "math",
+          attrs: { latex: mathLatex },
+        })
+        .run();
       setShowMathModal(false);
       setMathLatex("");
     }
@@ -1065,11 +1153,15 @@ const ResizableImage = Image.extend({
   // Add table with custom dimensions
   const addTable = () => {
     if (tableRows > 0 && tableCols > 0) {
-      editor.chain().focus().insertTable({ 
-        rows: tableRows, 
-        cols: tableCols, 
-        withHeaderRow: tableHeader
-      }).run();
+      editor
+        .chain()
+        .focus()
+        .insertTable({
+          rows: tableRows,
+          cols: tableCols,
+          withHeaderRow: tableHeader,
+        })
+        .run();
       setShowTableModal(false);
     }
   };
@@ -1082,22 +1174,22 @@ const ResizableImage = Image.extend({
   const exportAsMarkdown = () => {
     const content = editor.getHTML();
     const markdown = content
-      .replace(/<h1>(.*?)<\/h1>/g, '# $1\n')
-      .replace(/<h2>(.*?)<\/h2>/g, '## $1\n')
-      .replace(/<h3>(.*?)<\/h3>/g, '### $1\n')
-      .replace(/<strong>(.*?)<\/strong>/g, '**$1**')
-      .replace(/<em>(.*?)<\/em>/g, '*$1*')
-      .replace(/<ul>(.*?)<\/ul>/g, '$1')
-      .replace(/<li>(.*?)<\/li>/g, '- $1\n')
-      .replace(/<p>(.*?)<\/p>/g, '$1\n')
-      .replace(/<br\s*\/?>/g, '\n')
-      .replace(/<[^>]*>/g, '');
-    
-    const blob = new Blob([markdown], { type: 'text/markdown' });
+      .replace(/<h1>(.*?)<\/h1>/g, "# $1\n")
+      .replace(/<h2>(.*?)<\/h2>/g, "## $1\n")
+      .replace(/<h3>(.*?)<\/h3>/g, "### $1\n")
+      .replace(/<strong>(.*?)<\/strong>/g, "**$1**")
+      .replace(/<em>(.*?)<\/em>/g, "*$1*")
+      .replace(/<ul>(.*?)<\/ul>/g, "$1")
+      .replace(/<li>(.*?)<\/li>/g, "- $1\n")
+      .replace(/<p>(.*?)<\/p>/g, "$1\n")
+      .replace(/<br\s*\/?>/g, "\n")
+      .replace(/<[^>]*>/g, "");
+
+    const blob = new Blob([markdown], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'notes.md';
+    a.download = "notes.md";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1106,25 +1198,36 @@ const ResizableImage = Image.extend({
 
   const exportAsHTML = () => {
     const content = editor.getHTML();
-    const blob = new Blob([content], { type: 'text/html' });
+    const blob = new Blob([content], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'notes.html';
+    a.download = "notes.html";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
+  const handleMoreClick = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: window.innerWidth < 700 ? rect.bottom + 10 : rect.bottom + 4,
+        left: window.innerWidth < 700 ? rect.left - 150 : rect.left - 20,
+      });
+    }
+    setShowMoreOptions(!showMoreOptions);
+  };
+
   const printDocument = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
         <head>
           <title>Print Document</title>
           <style>
-            body { font-family: ${fontFamily}; font-size: ${fontSize}; padding: 20px; }
+            body { font-family: ${fontFamily}; font-size: ${fontSize}; }
             .ProseMirror { all: initial; }
             table { border-collapse: collapse; width: 100%; }
             th, td { border: 1px solid #ddd; padding: 8px; }
@@ -1146,9 +1249,17 @@ const ResizableImage = Image.extend({
 
   if (!editor) return null;
 
-  const ToolbarButton = ({ onClick, active, children, title, className = "", disabled = false }) => {
+  const ToolbarButton = ({
+    onClick,
+    active,
+    children,
+    title,
+    className = "",
+    disabled = false,
+  }) => {
     return (
       <button
+        ref={title === "More Options" ? buttonRef : null}
         onClick={onClick}
         title={title}
         disabled={disabled}
@@ -1191,7 +1302,6 @@ const ResizableImage = Image.extend({
     };
 
     useEffect(() => setSelectedIndex(0), [items]);
-
     return items.length > 0 ? (
       <div className="bg-neutral-800 border border-neutral-700 rounded-lg shadow-lg overflow-hidden">
         {items.map((item, index) => (
@@ -1207,77 +1317,39 @@ const ResizableImage = Image.extend({
     ) : null;
   };
 
-  return (
-    <div className={`min-h-screen overflow-x-hidden mb-15 lg:mb-0 bg-neutral-900 text-white ${isFullscreen ? "fixed inset-0 z-50" : ""}`} ref={editorRef}>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-b border-purple-700 px-4 py-3 flex justify-between items-center">
-        <div className="flex flex-col gap-5">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            StudyVerse Notes
-          </h1>
-          <p className="text-purple-200 text-sm">Your personal digital notebook</p>
-        </div>
-        <div className="flex flex-col items-center gap-4">
-          <div className="flex gap-2">
-            <button 
-              onClick={toggleFullscreen}
-              className="p-2 rounded-lg bg-purple-700 hover:bg-purple-600 transition-colors text-white"
-              title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-              {isFullscreen ? (
-                  <div className="h-5 w-5 text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="0 0 640 640">
-                      <path d="M520 288L376 288C362.7 288 352 277.3 352 264L352 120C352 110.3 357.8 101.5 366.8 97.8C375.8 94.1 386.1 96.2 393 103L433 143L506.4 69.6C510 66 514.9 64 520 64C525.1 64 530 66 533.7 69.7L570.4 106.4C574 110 576 114.9 576 120C576 125.1 574 130 570.3 133.7L497 207L537 247C543.9 253.9 545.9 264.2 542.2 273.2C538.5 282.2 529.7 288 520 288zM520 352C529.7 352 538.5 357.8 542.2 366.8C545.9 375.8 543.9 386.1 537 393L497 433L570.4 506.4C574 510 576.1 514.9 576.1 520.1C576.1 525.3 574.1 530.1 570.4 533.8L533.7 570.5C530 574 525.1 576 520 576C514.9 576 510 574 506.3 570.3L433 497L393 537C386.1 543.9 375.8 545.9 366.8 542.2C357.8 538.5 352 529.7 352 520L352 376C352 362.7 362.7 352 376 352L520 352zM264 352C277.3 352 288 362.7 288 376L288 520C288 529.7 282.2 538.5 273.2 542.2C264.2 545.9 253.9 543.9 247 537L207 497L133.6 570.4C130 574 125.1 576 120 576C114.9 576 110 574 106.3 570.3L69.7 533.7C66 530 64 525.1 64 520C64 514.9 66 510 69.7 506.3L143 433L103 393C96.1 386.1 94.1 375.8 97.8 366.8C101.5 357.8 110.3 352 120 352L264 352zM120 288C110.3 288 101.5 282.2 97.8 273.2C94.1 264.2 96.2 253.9 103 247L143 207L69.7 133.7C66 130 64 125.1 64 120C64 114.9 66 110 69.7 106.3L106.3 69.7C110 66 114.9 64 120 64C125.1 64 130 66 133.7 69.7L207 143L247 103C253.9 96.1 264.2 94.1 273.2 97.8C282.2 101.5 288 110.3 288 120L288 264C288 277.3 277.3 288 264 288L120 288z"/>
-                    </svg>
-                  </div>
-                ) : (
-                  <div className="h-5 w-5 text-white">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" viewBox="0 0 640 640">
-                      <path d="M264 96L120 96C106.7 96 96 106.7 96 120L96 264C96 273.7 101.8 282.5 110.8 286.2C119.8 289.9 130.1 287.8 137 281L177 241L256 320L177 399L137 359C130.1 352.1 119.8 350.1 110.8 353.8C101.8 357.5 96 366.3 96 376L96 520C96 533.3 106.7 544 120 544L264 544C273.7 544 282.5 538.2 286.2 529.2C289.9 520.2 287.9 509.9 281 503L241 463L320 384L399 463L359 503C352.1 509.9 350.1 520.2 353.8 529.2C357.5 538.2 366.3 544 376 544L520 544C533.3 544 544 533.3 544 520L544 376C544 366.3 538.2 357.5 529.2 353.8C520.2 350.1 509.9 352.1 503 359L463 399L384 320L463 241L503 281C509.9 287.9 520.2 289.9 529.2 286.2C538.2 282.5 544 273.7 544 264L544 120C544 106.7 533.3 96 520 96L376 96C366.3 96 357.5 101.8 353.8 110.8C350.1 119.8 352.2 130.1 359 137L399 177L320 256L241 177L281 137C287.9 130.1 289.9 119.8 286.2 110.8C282.5 101.8 273.7 96 264 96z"/>
-                    </svg>
-                  </div>
-                )}
-            </button>
-            <button 
-              onClick={()=> setOpenNotesTitleModel(!OpenNotesTitleModel) }
-              className="p-2 rounded-lg flex justify-center items-center gap-2 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition-colors text-white"
-              title="Save"
-            >
-              <FaSave />
-              Save
-            </button>
-          </div>
-          <span className="text-sm text-purple-200">
-            {currentDate.toLocaleDateString()} {currentDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-      </div>
 
-      {/* Main Toolbar */}
-      <div className="bg-neutral-800 border-b border-purple-700 px-4 py-2 sticky top-0 z-10">
-        <div className="flex lg:flex-wrap lg:overflow-x-hidden scroll-smooth scroll-mt-4 overflow-x-auto items-center gap-2">
+   const MainToolBar = () => (
+      <>
+        <div className="flex flex-wrap lg:overflow-x-hidden scroll-smooth scroll-mt-4 items-center gap-2">
           <div className="flex items-center gap-2 mr-2 ">
-            <ToolbarButton title="Save" onClick={() => setSavedStatus("saving")}>
+            <ToolbarButton
+              title="Save"
+              onClick={() => setSavedStatus("saving")}
+            >
               <FaSave />
             </ToolbarButton>
+
             <div className="relative group">
               <ToolbarButton title="Export">
                 <FaFileExport />
               </ToolbarButton>
+
               <div className="absolute left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <button 
+                <button
                   onClick={exportAsMarkdown}
                   className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
                 >
                   <RiMarkdownLine /> Export as Markdown
                 </button>
-                <button 
+
+                <button
                   onClick={exportAsHTML}
                   className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
                 >
                   <RiFileWord2Line /> Export as HTML
                 </button>
-                <button 
+
+                <button
                   onClick={printDocument}
                   className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
                 >
@@ -1290,67 +1362,105 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Font Family */}
+
           <div className="flex items-center gap-2 bg-purple-700 rounded-lg px-2">
             <FaFont className="text-purple-200" />
+
             <select
               value={fontFamily}
               onChange={(e) => {
                 setFontFamily(e.target.value);
-                editor.chain().focus().setFontFamily(e.target.value).run();
+
+                editor
+                  .chain()
+                  .focus()
+                  .setFontFamily(e.target.value)
+                  .run();
               }}
               className="border-0 bg-purple-700 text-white px-2 py-1 text-sm focus:outline-none"
             >
               <option value="Segoe UI">Segoe UI</option>
+
               <option value="Arial">Arial</option>
+
               <option value="Georgia">Georgia</option>
+
               <option value="Courier New">Courier New</option>
+
               <option value="Times New Roman">Times New Roman</option>
+
               <option value="Comic Sans MS">Comic Sans MS</option>
+
               <option value="Verdana">Verdana</option>
+
               <option value="Montserrat">Montserrat</option>
+
               <option value="Roboto">Roboto</option>
             </select>
           </div>
 
           {/* Font Size */}
+
           <div className="flex items-center gap-2 bg-purple-700 rounded-lg px-2">
             <FaTextHeight className="text-purple-200" />
+
             <select
               value={fontSize}
               onChange={(e) => {
                 setFontSize(e.target.value);
+
                 editor.chain().focus().setFontSize(e.target.value).run();
               }}
               className="bg-purple-700 border-0 text-white px-2 py-1 text-sm focus:outline-none"
             >
               <option value="12px">12</option>
+
               <option value="14px">14</option>
+
               <option value="16px">16</option>
+
               <option value="18px">18</option>
+
               <option value="20px">20</option>
+
               <option value="24px">24</option>
+
               <option value="32px">32</option>
+
               <option value="40px">40</option>
+
               <option value="48px">48</option>
             </select>
           </div>
 
           {/* Line Height */}
+
           <div className="flex items-center gap-2 bg-purple-700 rounded-lg px-2">
             <AiOutlineLineHeight className="text-purple-200" />
+
             <select
               value={lineHeight}
               onChange={(e) => {
                 setLineHeight(e.target.value);
-                editor.chain().focus().setLineHeight(e.target.value).run();
+
+                editor
+                  .chain()
+                  .focus()
+                  .setLineHeight(e.target.value)
+                  .run();
               }}
               className="bg-purple-700 border-0 text-white px-2 py-1 text-sm focus:outline-none"
             >
               <option value="1">1.0</option>
+
               <option value="1.2">1.2</option>
+
               <option value="1.5">1.5</option>
+
               <option value="1.8">1.8</option>
+
               <option value="2">2.0</option>
+
               <option value="2.5">2.5</option>
             </select>
           </div>
@@ -1358,6 +1468,7 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Text Formatting */}
+
           <ToolbarButton
             onClick={() => editor.chain().focus().toggleBold().run()}
             active={editor.isActive("bold")}
@@ -1399,7 +1510,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().toggleSuperscript().run()}
+            onClick={() =>
+              editor.chain().focus().toggleSuperscript().run()
+            }
             active={editor.isActive("superscript")}
             title="Superscript"
           >
@@ -1420,27 +1533,39 @@ const ResizableImage = Image.extend({
             <ToolbarButton title="Text Case">
               <TbLetterCaseToggle />
             </ToolbarButton>
+
             <div className="absolute z-20 left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-              <button 
-                onClick={() => editor.chain().focus().setTextCase("uppercase").run()}
+              <button
+                onClick={() =>
+                  editor.chain().focus().setTextCase("uppercase").run()
+                }
                 className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <LuCaseSensitive /> UPPERCASE
               </button>
-              <button 
-                onClick={() => editor.chain().focus().setTextCase("lowercase").run()}
+
+              <button
+                onClick={() =>
+                  editor.chain().focus().setTextCase("lowercase").run()
+                }
                 className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <LuCaseSensitive /> lowercase
               </button>
-              <button 
-                onClick={() => editor.chain().focus().setTextCase("capitalize").run()}
+
+              <button
+                onClick={() =>
+                  editor.chain().focus().setTextCase("capitalize").run()
+                }
                 className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <LuCaseSensitive /> Capitalize
               </button>
-              <button 
-                onClick={() => editor.chain().focus().unsetTextCase().run()}
+
+              <button
+                onClick={() =>
+                  editor.chain().focus().unsetTextCase().run()
+                }
                 className="w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
               >
                 <BiReset /> Normal Case
@@ -1449,15 +1574,18 @@ const ResizableImage = Image.extend({
           </div>
 
           {/* Color Picker */}
+
           <div className="flex items-center gap-2 bg-purple-700 rounded-lg px-2 py-1">
             <label className="text-sm text-purple-200 flex items-center gap-1">
               <MdFormatColorText /> Text:
             </label>
+
             <input
               type="color"
               value={color}
               onChange={(e) => {
                 setColor(e.target.value);
+
                 editor.chain().focus().setColor(e.target.value).run();
               }}
               className="w-6 h-6 border border-purple-600 rounded cursor-pointer bg-transparent"
@@ -1469,12 +1597,18 @@ const ResizableImage = Image.extend({
             <label className="text-sm text-purple-200 flex items-center gap-1">
               <FaPalette /> Bg:
             </label>
+
             <input
               type="color"
               value={bgColor}
               onChange={(e) => {
                 setBgColor(e.target.value);
-                editor.chain().focus().toggleHighlight({ color: e.target.value }).run();
+
+                editor
+                  .chain()
+                  .focus()
+                  .toggleHighlight({ color: e.target.value })
+                  .run();
               }}
               className="w-6 h-6 border border-purple-600 rounded cursor-pointer bg-transparent"
               title="Background Color"
@@ -1484,9 +1618,12 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Headings */}
+
           <div className="flex items-center gap-1">
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 1 }).run()
+              }
               active={editor.isActive("heading", { level: 1 })}
               title="Heading 1"
             >
@@ -1494,7 +1631,9 @@ const ResizableImage = Image.extend({
             </ToolbarButton>
 
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 2 }).run()
+              }
               active={editor.isActive("heading", { level: 2 })}
               title="Heading 2"
             >
@@ -1502,7 +1641,9 @@ const ResizableImage = Image.extend({
             </ToolbarButton>
 
             <ToolbarButton
-              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+              onClick={() =>
+                editor.chain().focus().toggleHeading({ level: 3 }).run()
+              }
               active={editor.isActive("heading", { level: 3 })}
               title="Heading 3"
             >
@@ -1513,8 +1654,11 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Lists */}
+
           <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            onClick={() =>
+              editor.chain().focus().toggleBulletList().run()
+            }
             active={editor.isActive("bulletList")}
             title="Bullet List"
           >
@@ -1522,7 +1666,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            onClick={() =>
+              editor.chain().focus().toggleOrderedList().run()
+            }
             active={editor.isActive("orderedList")}
             title="Numbered List"
           >
@@ -1538,7 +1684,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().sinkListItem("listItem").run()}
+            onClick={() =>
+              editor.chain().focus().sinkListItem("listItem").run()
+            }
             disabled={!editor.can().sinkListItem("listItem")}
             title="Indent List Item"
           >
@@ -1546,7 +1694,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().liftListItem("listItem").run()}
+            onClick={() =>
+              editor.chain().focus().liftListItem("listItem").run()
+            }
             disabled={!editor.can().liftListItem("listItem")}
             title="Outdent List Item"
           >
@@ -1556,8 +1706,11 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Alignment */}
+
           <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("left").run()}
+            onClick={() =>
+              editor.chain().focus().setTextAlign("left").run()
+            }
             active={editor.isActive({ textAlign: "left" })}
             title="Align Left"
           >
@@ -1565,7 +1718,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("center").run()}
+            onClick={() =>
+              editor.chain().focus().setTextAlign("center").run()
+            }
             active={editor.isActive({ textAlign: "center" })}
             title="Align Center"
           >
@@ -1573,7 +1728,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("right").run()}
+            onClick={() =>
+              editor.chain().focus().setTextAlign("right").run()
+            }
             active={editor.isActive({ textAlign: "right" })}
             title="Align Right"
           >
@@ -1581,7 +1738,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+            onClick={() =>
+              editor.chain().focus().setTextAlign("justify").run()
+            }
             active={editor.isActive({ textAlign: "justify" })}
             title="Justify"
           >
@@ -1591,8 +1750,11 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Block Elements */}
+
           <ToolbarButton
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            onClick={() =>
+              editor.chain().focus().toggleBlockquote().run()
+            }
             active={editor.isActive("blockquote")}
             title="Blockquote"
           >
@@ -1615,7 +1777,9 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            onClick={() =>
+              editor.chain().focus().setHorizontalRule().run()
+            }
             title="Insert Horizontal Line"
           >
             <MdHorizontalRule />
@@ -1624,6 +1788,7 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Insert Elements */}
+
           <ToolbarButton
             onClick={() => setShowLinkModal(true)}
             title="Insert Link"
@@ -1652,6 +1817,7 @@ const ResizableImage = Image.extend({
             >
               <BsEmojiSmile />
             </ToolbarButton>
+
             {showEmojiPicker && (
               <div className="absolute left-0 z-50 mt-1">
                 <EmojiPicker onEmojiClick={onEmojiClick} />
@@ -1662,6 +1828,7 @@ const ResizableImage = Image.extend({
           <ToolbarDivider />
 
           {/* Undo/Redo */}
+
           <ToolbarButton
             onClick={() => editor.chain().focus().undo().run()}
             disabled={!editor.can().undo()}
@@ -1679,84 +1846,116 @@ const ResizableImage = Image.extend({
           </ToolbarButton>
 
           <ToolbarButton
-            onClick={() => editor.chain().focus().clearNodes().unsetAllMarks().run()}
+            onClick={() =>
+              editor.chain().focus().clearNodes().unsetAllMarks().run()
+            }
             title="Clear Formatting"
           >
             <AiOutlineClear />
           </ToolbarButton>
 
           {/* More Options */}
+
           <div className="relative group">
-            <ToolbarButton
-              onClick={() => setShowMoreOptions(!showMoreOptions)}
-              title="More Options"
-            >
+            <ToolbarButton onClick={handleMoreClick} title="More Options">
               <BsThreeDotsVertical />
             </ToolbarButton>
-            {showMoreOptions && (
-              <div className="absolute left-0 mt-1 w-48 bg-neutral-800 border border-purple-600 rounded-lg shadow-lg z-60">
-                <button 
-                  onClick={() => editor.chain().focus().toggleCollapsible().run()}
-                  className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+
+            {showMoreOptions &&
+              createPortal(
+                <div
+                  className="fixed z-100 w-48 bg-neutral-800 border border-purple-600 
+
+                        rounded-lg shadow-lg transition-all duration-150"
+                  style={{
+                    top: dropdownPos.top,
+
+                    left: dropdownPos.left,
+                  }}
                 >
-                  <FaCaretSquareDown /> Collapsible Section
-                </button>
-                <button 
-                  onClick={() => editor.chain().focus().insertContent("@").run()}
-                  className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
-                >
-                  <RiCharacterRecognitionLine /> Mention
-                </button>
-                <button 
-                  onClick={() => editor.chain().focus().setHardBreak().run()}
-                  className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
-                >
-                  <BiCollapseVertical /> Line Break
-                </button>
-              </div>
-            )}
+                  <button
+                    onClick={() =>
+                      editor.chain().focus().toggleCollapsible().run()
+                    }
+                    className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                  >
+                    <FaCaretSquareDown /> Collapsible Section
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      editor.chain().focus().insertContent("@").run()
+                    }
+                    className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                  >
+                    <RiCharacterRecognitionLine /> Mention
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      editor.chain().focus().setHardBreak().run()
+                    }
+                    className="block w-full text-left px-4 py-2 hover:bg-purple-700 flex items-center gap-2"
+                  >
+                    <BiCollapseVertical /> Line Break
+                  </button>
+                </div>,
+
+                document.body,
+              )}
           </div>
         </div>
 
         {showTableControls && (
           <div className="flex items-center gap-2 mt-2 pt-2 border-t border-purple-700">
             <span className="text-sm text-purple-200">Table Tools:</span>
+
             <ToolbarButton
-              onClick={() => editor.chain().focus().addColumnBefore().run()}
+              onClick={() =>
+                editor.chain().focus().addColumnBefore().run()
+              }
               title="Add Column Before"
             >
-              <TbColumnInsertRight  />
+              <TbColumnInsertRight />
             </ToolbarButton>
+
             <ToolbarButton
-              onClick={() => editor.chain().focus().addColumnAfter().run()}
+              onClick={() =>
+                editor.chain().focus().addColumnAfter().run()
+              }
               title="Add Column After"
             >
-              <TbColumnInsertRight  className="rotate-180" />
+              <TbColumnInsertRight className="rotate-180" />
             </ToolbarButton>
+
             <ToolbarButton
               onClick={() => editor.chain().focus().deleteColumn().run()}
               title="Delete Column"
             >
               <RiDeleteColumn />
             </ToolbarButton>
+
             <ToolbarButton
               onClick={() => editor.chain().focus().addRowBefore().run()}
               title="Add Row Before"
             >
               <TbRowInsertBottom />
             </ToolbarButton>
+
             <ToolbarButton
               onClick={() => editor.chain().focus().addRowAfter().run()}
               title="Add Row After"
             >
               <TbRowInsertBottom className="rotate-180" />
             </ToolbarButton>
+
             <ToolbarButton
               onClick={() => editor.chain().focus().deleteRow().run()}
               title="Delete Row"
             >
               <RiDeleteRow />
             </ToolbarButton>
+
             <ToolbarButton
               onClick={() => editor.chain().focus().deleteTable().run()}
               title="Delete Table"
@@ -1765,10 +1964,115 @@ const ResizableImage = Image.extend({
             </ToolbarButton>
           </div>
         )}
+      </>
+    )
+
+  return (
+    <div
+      className={`min-h-screen overflow-x-hidden mb-15 lg:mb-0  bg-neutral-900 text-white ${isFullscreen ? "fixed inset-0 z-50" : ""}`}
+      ref={editorRef}
+    >
+      {/* Header */}
+
+      {!showMobileToolbar && (
+        <button
+          onClick={() => setShowMobileToolbar(true)}
+          className="lg:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-full bg-purple-600 text-white shadow-lg"
+        >
+          Open Editor Tools
+        </button>
+      )}
+
+      <div className=" top-0 z-10 bg-neutral-900">
+        <div className="bg-gradient-to-r from-purple-900 to-indigo-900 border-b border-purple-700 px-4 py-3 flex justify-between items-center">
+          <div className="flex flex-col gap-5">
+            <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              StudyVerse Notes
+            </h1>
+            <p className="text-purple-200 text-sm">
+              Your personal digital notebook
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex gap-2">
+              <button
+                onClick={toggleFullscreen}
+                className="p-2 rounded-lg bg-purple-700 hover:bg-purple-600 transition-colors text-white"
+                title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              >
+                {isFullscreen ? (
+                  <div className="h-5 w-5 text-white">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="#fff"
+                      viewBox="0 0 640 640"
+                    >
+                      <path d="M520 288L376 288C362.7 288 352 277.3 352 264L352 120C352 110.3 357.8 101.5 366.8 97.8C375.8 94.1 386.1 96.2 393 103L433 143L506.4 69.6C510 66 514.9 64 520 64C525.1 64 530 66 533.7 69.7L570.4 106.4C574 110 576 114.9 576 120C576 125.1 574 130 570.3 133.7L497 207L537 247C543.9 253.9 545.9 264.2 542.2 273.2C538.5 282.2 529.7 288 520 288zM520 352C529.7 352 538.5 357.8 542.2 366.8C545.9 375.8 543.9 386.1 537 393L497 433L570.4 506.4C574 510 576.1 514.9 576.1 520.1C576.1 525.3 574.1 530.1 570.4 533.8L533.7 570.5C530 574 525.1 576 520 576C514.9 576 510 574 506.3 570.3L433 497L393 537C386.1 543.9 375.8 545.9 366.8 542.2C357.8 538.5 352 529.7 352 520L352 376C352 362.7 362.7 352 376 352L520 352zM264 352C277.3 352 288 362.7 288 376L288 520C288 529.7 282.2 538.5 273.2 542.2C264.2 545.9 253.9 543.9 247 537L207 497L133.6 570.4C130 574 125.1 576 120 576C114.9 576 110 574 106.3 570.3L69.7 533.7C66 530 64 525.1 64 520C64 514.9 66 510 69.7 506.3L143 433L103 393C96.1 386.1 94.1 375.8 97.8 366.8C101.5 357.8 110.3 352 120 352L264 352zM120 288C110.3 288 101.5 282.2 97.8 273.2C94.1 264.2 96.2 253.9 103 247L143 207L69.7 133.7C66 130 64 125.1 64 120C64 114.9 66 110 69.7 106.3L106.3 69.7C110 66 114.9 64 120 64C125.1 64 130 66 133.7 69.7L207 143L247 103C253.9 96.1 264.2 94.1 273.2 97.8C282.2 101.5 288 110.3 288 120L288 264C288 277.3 277.3 288 264 288L120 288z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="h-5 w-5 text-white">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="#fff"
+                      viewBox="0 0 640 640"
+                    >
+                      <path d="M264 96L120 96C106.7 96 96 106.7 96 120L96 264C96 273.7 101.8 282.5 110.8 286.2C119.8 289.9 130.1 287.8 137 281L177 241L256 320L177 399L137 359C130.1 352.1 119.8 350.1 110.8 353.8C101.8 357.5 96 366.3 96 376L96 520C96 533.3 106.7 544 120 544L264 544C273.7 544 282.5 538.2 286.2 529.2C289.9 520.2 287.9 509.9 281 503L241 463L320 384L399 463L359 503C352.1 509.9 350.1 520.2 353.8 529.2C357.5 538.2 366.3 544 376 544L520 544C533.3 544 544 533.3 544 520L544 376C544 366.3 538.2 357.5 529.2 353.8C520.2 350.1 509.9 352.1 503 359L463 399L384 320L463 241L503 281C509.9 287.9 520.2 289.9 529.2 286.2C538.2 282.5 544 273.7 544 264L544 120C544 106.7 533.3 96 520 96L376 96C366.3 96 357.5 101.8 353.8 110.8C350.1 119.8 352.2 130.1 359 137L399 177L320 256L241 177L281 137C287.9 130.1 289.9 119.8 286.2 110.8C282.5 101.8 273.7 96 264 96z" />
+                    </svg>
+                  </div>
+                )}
+              </button>
+              <button
+                onClick={() => setOpenNotesTitleModel(!OpenNotesTitleModel)}
+                className="p-2 rounded-lg flex justify-center items-center gap-2 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition-colors text-white"
+                title="Save"
+              >
+                <FaSave />
+                Save
+              </button>
+            </div>
+            <span className="text-sm text-purple-200">
+              {currentDate.toLocaleDateString()}{" "}
+              {currentDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+        </div>
+
+        <div
+          className={`lg:hidden fixed left-0 right-0 bottom-0 z-50 bg-neutral-800 border-t border-purple-700 transition-transform duration-300 ${
+            showMobileToolbar ? "translate-y-0" : "translate-y-full"
+          }`}
+        >
+          <div className="flex justify-between items-center p-3 border-b border-neutral-700">
+            <h3 className="font-semibold">Editor Tools</h3>
+
+            <button
+              onClick={() => setShowMobileToolbar(false)}
+              className="text-xl"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="p-3 overflow-x-auto">
+            <MainToolBar />
+          </div>
+        </div>
+
+        {/* Main Toolbar */}
+        <div className="hidden lg:block bg-neutral-800 border-b border-purple-700 px-4 py-2  sticky top-0 z-10">
+          <MainToolBar />
+        </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-6 z-5">
-        <EditorContent editor={editor} className="min-h-[70vh] text-wrap" />
+      <div className={`max-w-5xl mx-auto  px-4 py-6 z-5 ${showMobileToolbar ? 'pb-96' : 'pb-40'}`}>
+        <EditorContent 
+          editor={editor} 
+          className="min-h-[70vh] text-wrap focus:outline-none"
+        />
       </div>
 
       {showLinkModal && (
@@ -1777,7 +2081,9 @@ const ResizableImage = Image.extend({
             <h3 className="text-xl font-bold mb-4 text-white">Insert Link</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-purple-200 mb-1">URL</label>
+                <label className="block text-sm text-purple-200 mb-1">
+                  URL
+                </label>
                 <input
                   type="url"
                   value={linkUrl}
@@ -1787,7 +2093,9 @@ const ResizableImage = Image.extend({
                 />
               </div>
               <div>
-                <label className="block text-sm text-purple-200 mb-1">Text (optional)</label>
+                <label className="block text-sm text-purple-200 mb-1">
+                  Text (optional)
+                </label>
                 <input
                   type="text"
                   value={linkText}
@@ -1822,7 +2130,9 @@ const ResizableImage = Image.extend({
             <h3 className="text-xl font-bold mb-4 text-white">Insert Image</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-purple-200 mb-1">Image URL</label>
+                <label className="block text-sm text-purple-200 mb-1">
+                  Image URL
+                </label>
                 <input
                   type="url"
                   value={imageUrl}
@@ -1832,7 +2142,9 @@ const ResizableImage = Image.extend({
                 />
               </div>
               <div>
-                <label className="block text-sm text-purple-200 mb-1">Alt Text</label>
+                <label className="block text-sm text-purple-200 mb-1">
+                  Alt Text
+                </label>
                 <input
                   type="text"
                   value={imageAlt}
@@ -1864,10 +2176,14 @@ const ResizableImage = Image.extend({
       {showMathModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
           <div className="bg-neutral-800 p-6 rounded-lg w-96 border border-purple-600">
-            <h3 className="text-xl font-bold mb-4 text-white">Insert Math Equation</h3>
+            <h3 className="text-xl font-bold mb-4 text-white">
+              Insert Math Equation
+            </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-purple-200 mb-1">LaTeX Equation</label>
+                <label className="block text-sm text-purple-200 mb-1">
+                  LaTeX Equation
+                </label>
                 <textarea
                   value={mathLatex}
                   onChange={(e) => setMathLatex(e.target.value)}
@@ -1903,7 +2219,9 @@ const ResizableImage = Image.extend({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-purple-200 mb-1">Rows</label>
+                  <label className="block text-sm text-purple-200 mb-1">
+                    Rows
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -1914,7 +2232,9 @@ const ResizableImage = Image.extend({
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-purple-200 mb-1">Columns</label>
+                  <label className="block text-sm text-purple-200 mb-1">
+                    Columns
+                  </label>
                   <input
                     type="number"
                     min="1"
@@ -1933,7 +2253,10 @@ const ResizableImage = Image.extend({
                   onChange={(e) => setTableHeader(e.target.checked)}
                   className="w-4 h-4 text-purple-600 bg-neutral-700 border-purple-600 rounded focus:ring-purple-500"
                 />
-                <label htmlFor="tableHeader" className="text-sm text-purple-200">
+                <label
+                  htmlFor="tableHeader"
+                  className="text-sm text-purple-200"
+                >
                   Include header row
                 </label>
               </div>
@@ -1958,7 +2281,11 @@ const ResizableImage = Image.extend({
 
       {/* Notes Title Modal */}
       {OpenNotesTitleModel && !Id && (
-        <NotesTitle  open={setOpenNotesTitleModel} onClose={() => setOpenNotesTitleModel(!OpenNotesTitleModel)} editor={editor} />
+        <NotesTitle
+          open={setOpenNotesTitleModel}
+          onClose={() => setOpenNotesTitleModel(!OpenNotesTitleModel)}
+          editor={editor}
+        />
       )}
     </div>
   );

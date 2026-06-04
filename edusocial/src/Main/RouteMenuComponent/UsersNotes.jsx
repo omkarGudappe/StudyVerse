@@ -100,7 +100,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
 
 
     const NoteCard = ({ note, index }) => (
-       note.map((not) => (
+       note.map((note) => (
          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -108,7 +108,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
             className="group relative cursor-pointer bg-neutral-800 rounded-2xl border border-neutral-700 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
         >
             <button 
-                onClick={() => handleNoteClick(not)}
+                onClick={() => handleNoteClick(note)}
                 className="block  cursor-pointer p-6 pr-16 hover:bg-neutral-750 transition-colors duration-200"
             >
                 <div className="flex items-start gap-4">
@@ -129,30 +129,30 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                         </svg>
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                        <h3 className="text-white font-semibold text-lg mb-2 truncate">
-                            {not?.title}
+                    <div className="flex-1 ">
+                        <h3 className="text-white text-start text-wrap font-semibold text-lg mb-2 truncate">
+                            {note?.title}
                         </h3>
                         
-                        {not?.description && (
+                        {note?.description && (
                             <p className="text-neutral-400 text-sm mb-3 line-clamp-2">
-                                {truncateText(not?.description)}
+                                {truncateText(note?.description)}
                             </p>
                         )}
                         
                         <div className="flex items-center gap-4 text-xs text-neutral-500">
-                            {not?.createdAt && (
+                            {note?.createdAt && (
                                 <span className="flex items-center gap-1">
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
-                                    {formatDate(not?.createdAt)}
+                                    {formatDate(note?.createdAt)}
                                 </span>
                             )}
                             
-                            {not?.category && (
+                            {note?.category && (
                                 <span className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded-full text-xs">
-                                    {not?.category}
+                                    {note?.category}
                                 </span>
                             )}
                         </div>
@@ -164,13 +164,13 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteNote(not?.NoteId);
+                        handleDeleteNote(note?.NoteId);
                     }}
-                    disabled={deletingId === not?.NoteId}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200 opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                    disabled={deletingId === note?.NoteId}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200  group-hover:opacity-100 disabled:opacity-50"
                     title="Delete note"
                 >
-                    {deletingId === not?.NoteId ? (
+                    {deletingId === note?.NoteId ? (
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-red-400"></div>
                     ) : (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

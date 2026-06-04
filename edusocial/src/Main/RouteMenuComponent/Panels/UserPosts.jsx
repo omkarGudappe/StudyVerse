@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 import OpenPostModel from "../SmallComponents/OpenPostModel";
@@ -15,35 +15,85 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
         id: null
     });
 
-    useEffect(() => {
-        const fetchUsersPosts = async () => {
-            if (!userId) return;
-            
-            setLoading(true);
-            try {
-                const res = await axios.get(`${import.meta.env.VITE_API_URL}/posts/usersPosts/${userId}`);
-                
-                if (res.data.ok) {
-                    setPosts(res.data.UserPosts);
-                    getPostLength(res.data.UserPosts.length)
-                } else {
-                    setError('Failed to fetch posts');
-                }
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [initialLoad, setInitialLoad] = useState(true);
+
+    const observer = useRef();
+    const lastPostElementRef = useCallback(node => {
+        if (loadingMore) return;
+        if (observer.current) observer.current.disconnect();
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && hasMore) {
+                setPage(prevPage => prevPage + 1);
             }
-        };
+        });
+        if (node) observer.current.observe(node);
+    }, [loadingMore, hasMore]);
+
+    const fetchUsersPosts = async (pageNum = 1, isLoadMore = false) => {
+        if (!userId) return;
         
+        if (isLoadMore) {
+            setLoadingMore(true);
+        } else {
+            setLoading(true);
+            setInitialLoad(true);
+        }
+
+        try {
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/posts/usersPosts/${userId}?page=${pageNum}&limit=6`);
+            
+            if (res.data.ok) {
+                const newPosts = res.data.UserPosts;
+                
+                if (isLoadMore) {
+                    setPosts(prevPosts => [...prevPosts, ...newPosts]);
+                } else {
+                    setPosts(newPosts);
+                    getPostLength(res.data.totalCount || newPosts.length);
+                }
+
+                if (newPosts.length < 6) {
+                    setHasMore(false);
+                } else {
+                    setHasMore(true);
+                }
+            } else {
+                setError('Failed to fetch posts');
+            }
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+            setLoadingMore(false);
+            setInitialLoad(false);
+        }
+    };
+
+    useEffect(() => {
+        // Reset states when userId changes
+        setPosts([]);
+        setPage(1);
+        setHasMore(true);
+        setError(null);
+
         // Only fetch posts if account is not private or user has access
         if (!isPrivate) {
-            fetchUsersPosts();
+            fetchUsersPosts(1, false);
         } else {
             setLoading(false);
             setPosts([]);
+            setInitialLoad(false);
         }
     }, [userId, isPrivate]);
+
+    useEffect(() => {
+        if (page > 1 && !isPrivate) {
+            fetchUsersPosts(page, true);
+        }
+    }, [page]);
 
     const handleViewPost = (postId) => {
         setOpenPostModel({
@@ -100,18 +150,57 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
         };
     }, [activeVideo]);
 
-    if (loading) {
+    // Skeleton loading component
+    const PostSkeleton = ({ isLast = false }) => (
+        <div 
+            ref={isLast ? lastPostElementRef : null}
+            className="relative bg-gradient-to-b from-neutral-900 to-neutral-950 rounded-2xl overflow-hidden border border-neutral-700/30 shadow-lg animate-pulse"
+        >
+            <div className="p-5">
+                <div className="h-6 bg-neutral-700 rounded mb-3"></div>
+                <div className="h-4 bg-neutral-700 rounded w-3/4"></div>
+                
+                <div className="flex items-center mt-3">
+                    <div className="h-3 bg-neutral-700 rounded w-24"></div>
+                </div>
+            </div>
+            
+            <div className="mb-4 mx-4 rounded-xl overflow-hidden">
+                <div className="w-full h-48 bg-neutral-700 rounded-xl"></div>
+            </div>
+           
+           <div className='px-5 pb-4 flex justify-end items-center'>
+             <div className="h-9 bg-neutral-700 rounded-lg w-20"></div>
+           </div>
+        </div>
+    );
+
+    const LoadingSkeleton = () => {
         return (
             <div className="flex justify-center items-center py-16">
-                <div className="flex flex-col items-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-600 mb-4"></div>
-                    <p className=" text-white">Loading posts...</p>
+                <div className='bg-neutral-900 h-90 rounded-2xl w-sm'>
+                    <div className='p-5 flex flex-col gap-3 h-full w-full'>
+                        <div className='w-40 h-7 rounded-2xl bg-neutral-800 animate-pulse'></div>
+                        <div className='w-30 h-3 rounded-2xl bg-neutral-800 animate-pulse'></div>
+                        <div className='h-full w-full bg-neutral-800 rounded-2xl animate-pulse'></div>
+                        <div className='flex itmes-end justify-end bg-neutral-800 rounded-2xl animate-pulse h-10 w-20'></div>
+                    </div>
                 </div>
+            </div>
+        )
+    }
+
+    if (!loading && initialLoad) {
+        return (
+            <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4'>
+                {[1,2,3,4,5,6].map((item) => (
+                    <LoadingSkeleton key={item}/>
+                ))}
             </div>
         );
     }
 
-    if (error) {
+    if (error && !loadingMore) {
         return (
             <div className="text-center py-16  text-white">
                 <div className="bg-neutral-900/80 rounded-2xl p-8 max-w-md mx-auto border border-neutral-700/50">
@@ -180,7 +269,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
         );
     }
 
-    if (posts.length === 0) {
+    if (posts.length === 0 && !loading) {
         return (
             <div className="text-center py-16">
                 <div className="bg-gradient-to-br from-neutral-900/80 to-neutral-950/80 rounded-2xl p-10 max-w-md mx-auto border border-neutral-700/30">
@@ -211,9 +300,10 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-4">
-                {posts.map((post) => (
+                {posts.map((post, index) => (
                     <div 
                         key={post._id} 
+                        ref={index === posts.length - 1 ? lastPostElementRef : null}
                         className="relative bg-gradient-to-b from-neutral-900 to-neutral-950 rounded-2xl overflow-hidden border border-neutral-700/30 shadow-lg transition-all duration-300 hover:shadow-purple-500/20 hover:border-purple-500/50 hover:translate-y-[-4px] group"
                         onMouseEnter={() => setHoveredPost(post._id)}
                         onMouseLeave={() => setHoveredPost(null)}
@@ -221,7 +311,7 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
                         <div className="p-5">
                             {post.heading && (
                                 <h3 className="text-lg font-semibold  text-white mb-3 line-clamp-2 group-hover:text-purple-200 transition-colors">{post.heading}</h3>
-                            )}
+                               )}
                             
                             <p className="text-xs text-neutral-400 mb-3 flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -328,7 +418,26 @@ const UserPosts = ({ userId, getPostLength, isPrivate = false }) => {
                     </div>
                     
                 ))}
+                
+                {loadingMore && 
+                    Array.from({ length: 3 }).map((_, index) => (
+                        <PostSkeleton key={`skeleton-${index}`} isLast={index === 2 && hasMore} />
+                    ))
+                }
+                
+                {!hasMore && posts.length > 0 && (
+                    <div className="col-span-full text-center py-8">
+                        <div className="bg-neutral-900/50 rounded-2xl p-6 max-w-md mx-auto border border-neutral-700/30">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-purple-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="text-white font-medium">You've reached the end</p>
+                            <p className="text-neutral-400 text-sm mt-1">No more posts to load</p>
+                        </div>
+                    </div>
+                )}
             </div>
+            
             <OpenPostModel 
                 open={openPostModel.status} 
                 onClose={handleClosePostModal} 

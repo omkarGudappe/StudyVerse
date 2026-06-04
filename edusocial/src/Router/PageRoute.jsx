@@ -33,6 +33,7 @@ import Privacy from "../Main/RouteMenuComponent/Settings/Privacy";
 import Challenges from "../Main/RouteMenuComponent/Challenges";
 import QuizReview from "../Main/RouteMenuComponent/SmallComponents/QuizReview";
 import PublicNotes from "../Main/RouteMenuComponent/PublicNotes";
+import NotesPDF from "../Main/RouteMenuComponent/NotesPDF";
 
 const MenuWrapper = ({ children }) => {
   const location = useLocation();
@@ -174,6 +175,16 @@ const PageRoute = () => {
                 </MenuWrapper>
               }
             />
+
+            <Route
+              path="/pdf-notes/:id"
+              element={
+                <MenuWrapper>
+                  <NotesPDF />
+                </MenuWrapper>
+              }
+            />
+
             <Route
               path="/challenges/quiz"
               element={

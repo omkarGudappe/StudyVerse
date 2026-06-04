@@ -48,8 +48,22 @@ const PostSchema = new mongoose.Schema({
 }, {timestamps: true});
 
 PostSchema.index({
-  heading: "text",
-  description: "text"
+    heading: "text",
+    description: "text",
+    "author.firstName": "text", 
+    "author.lastName": "text",
+    "author.username": "text",
+    tags: "text"
+}, {
+    weights: {
+        heading: 10,
+        "author.firstName": 5,
+        "author.lastName": 5, 
+        "author.username": 5,
+        description: 3,
+        tags: 2
+    },
+    name: "lesson_search_index"
 });
 
 PostSchema.index({ contentType: 1, heading: "text", description: "text" });

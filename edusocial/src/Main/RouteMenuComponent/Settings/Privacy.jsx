@@ -130,20 +130,20 @@ const Privacy = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
-        <nav className="bg-neutral-900 border-b border-neutral-700 px-4 py-3 sticky top-0 z-10">
-          <div className="max-w-4xl flex items-center">
-              <button 
-                  onClick={() => navigate(-1)}
-                  className="p-2 rounded-lg hover:bg-neutral-700 transition-colors mr-4"
-              >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                  </svg>
-              </button>
-              <h1 className="text-xl font-semibold text-purple-400">Privacy Settings</h1>
-          </div>
-        </nav>
+      <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
+          <nav className="bg-neutral-900 border-b border-neutral-700 px-4 py-3 sticky top-0 z-10">
+            <div className="max-w-4xl flex items-center">
+                <button 
+                    onClick={() => navigate(-1)}
+                    className="p-2 rounded-lg hover:bg-neutral-700 transition-colors mr-4"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </button>
+                <h1 className="text-xl font-semibold text-purple-400">Privacy Settings</h1>
+            </div>
+          </nav>
       <div className="max-w-4xl mx-auto py-8 px-4">
         <div className="flex items-center gap-5 mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-600 to-amber-500 rounded-2xl shadow-lg">

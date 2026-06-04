@@ -5,7 +5,7 @@ import { auth } from '../../Auth/AuthProviders/FirebaseSDK';
 import Socket from '../../SocketConnection/Socket';
 import { usePostsStore } from '../../StateManagement/StoreNotes';
 
-const Post = ({ ModelCloseClicked }) => {
+const Post = ({ ModelCloseClicked, setPostMinimized }) => {
     const [Selected, setSelected] = useState(false);
     const [preview, setPreview] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
@@ -18,12 +18,23 @@ const Post = ({ ModelCloseClicked }) => {
         heading: "",
         description: "",
         image: "",
-        visibility: "",
+        visibility: "public",
     })
     const [PostContent, setPostContent] = useState("");
     const cancelRequest = useRef(null);
     const { addPost } = usePostsStore();
     const [uploadPhase, setUploadPhase] = useState('');
+    const [isMinimized, setIsMinimized] = useState(false);
+
+    const handleMinimize = () => {
+        setIsMinimized(true);
+        setPostMinimized(true);
+    };
+
+    const handleRestore = () => {
+        setIsMinimized(false);
+        setPostMinimized(false);
+    };
 
     const variants = {
         enter: (direction) => ({
@@ -54,7 +65,7 @@ const Post = ({ ModelCloseClicked }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
             ),
-            description: "Share images and photos",
+            description: "Share images and photos and short videos",
             color: "from-blue-500 to-cyan-500"
         },
         {
@@ -87,7 +98,7 @@ const Post = ({ ModelCloseClicked }) => {
             if (!selectedFile) return;
             
             const validTypes = {
-                post: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+                post: ['image/jpeg', 'image/png', 'image/gif', 'image/webp','video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-m4v'],
                 lesson: ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime', 'video/x-m4v'],
                 note: ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
             };
@@ -106,7 +117,7 @@ const Post = ({ ModelCloseClicked }) => {
                 return;
             }
             
-            if (PostContent === 'post' && fileSizeInMB > 10) {
+            if (PostContent === 'post' && fileSizeInMB > 100) {
                 setError(`Image files must be less than 10MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
                 return;
             }
@@ -283,6 +294,7 @@ const handleSubmit = async () => {
     if (result && result.newPost) {
       // Success is now handled by WebSocket 'complete' phase
       addPost(result.newPost);
+      console.log("New post added to store:", result.newPost);
       console.log(result.uploadFile, "for checking url");
       Socket.emit("NewPostUploded", { upload: true });
       setTimeout(() => ModelCloseClicked(false), 1500);
@@ -394,8 +406,18 @@ const handleSubmit = async () => {
     };
 
     return (
-        <div className='fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4'>
-            <motion.div 
+        <div className={` ${isMinimized ? '' : 'fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4'} `}>
+            {isMinimized ? (
+                <div className="fixed bottom-20 right-3 z-50">
+                    <button 
+                        className='p-4 rounded-full bg-neutral-800 cursor-pointer text-white shadow-lg hover:shadow-xl transition-all transform hover:scale-105' 
+                        onClick={handleRestore}
+                    >
+                        <p>Uploading... {Percent}%</p>
+                    </button>
+                </div>
+            ) : (
+             <motion.div 
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
@@ -406,15 +428,31 @@ const handleSubmit = async () => {
                     <h2 className='text-xl font-bold text-white'>
                         {page === 0 ? 'Create New Post' : page === 1 ? 'Add Content' : 'Final Details'}
                     </h2>
-                    <button 
-                        className='p-2 hover:bg-neutral-700 rounded-full transition-colors duration-200'
-                        onClick={ModelCloseClicked}
-                        disabled={uploadStatus === 'uploading'}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+
+                    <div className='flex gap-3'>
+                        {uploadStatus === 'uploading' && (
+                            <button
+                                className='p-2 hover:bg-neutral-700 rounded-full cursor-pointer transition-colors duration-200'
+                                onClick={handleMinimize}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className='text-neutral-400 w-4 h-4'
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" 
+                                    strokeWidth={2} stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M5 12h14" />
+                                </svg>
+                            </button>
+                        )}
+
+                        <button 
+                            className='p-2 hover:bg-neutral-700 cursor-pointer rounded-full transition-colors duration-200'
+                            onClick={ModelCloseClicked}
+                            disabled={uploadStatus === 'uploading'}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div className='w-full bg-neutral-800 h-1'>
@@ -494,14 +532,14 @@ const handleSubmit = async () => {
                                                 <img
                                                     src={preview}
                                                     alt="Preview"
-                                                    className="w-full h-64 object-cover rounded-xl"
+                                                    className="w-full h-64 object-contain rounded-xl"
                                                 />
                                             )}
                                             {Selected.type.startsWith("video/") && (
                                                 <video
                                                     src={preview}
                                                     controls
-                                                    className="w-full h-64 object-cover rounded-xl"
+                                                    className="w-full h-64 object-contain rounded-xl"
                                                 />
                                             )}
                                             {Selected.type === "application/pdf" && (
@@ -557,7 +595,7 @@ const handleSubmit = async () => {
                                                 <h3 className="text-lg font-medium text-white mb-2">Drop your file here</h3>
                                                 <p className="text-neutral-400 text-sm">or click to browse files</p>
                                                 <p className="text-xs text-neutral-500 mt-2">
-                                                    {PostContent === "post" ? "JPG, PNG, GIF, WEBP (Max 10MB)" : 
+                                                    {PostContent === "post" ? "JPG, PNG, GIF, WEBP, MP4 (Max 100MB)" : 
                                                      PostContent === "lesson" ? "MP4, WEBM, OGG (Max 100MB)" : 
                                                      "PDF, TXT, DOC, DOCX (Max 5MB)"}
                                                 </p>
@@ -568,7 +606,7 @@ const handleSubmit = async () => {
                                             onChange={handleFileChange}
                                             id='fileInput'
                                             name='image'
-                                            accept={PostContent === "post" ? 'image/*' : PostContent === "lesson" ? "video/*" : '.pdf,.txt,.doc,.docx'}
+                                            accept={PostContent === "post" ? 'image/*,video/*' : PostContent === "lesson" ? "video/*" : '.pdf,.txt,.doc,.docx'}
                                             className='hidden' 
                                         />
                                     </motion.div>
@@ -784,6 +822,7 @@ const handleSubmit = async () => {
                     )}
                 </AnimatePresence>
             </motion.div>
+        )}
         </div>
     )
 }

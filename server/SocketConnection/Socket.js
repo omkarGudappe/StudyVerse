@@ -442,8 +442,7 @@ socket.on("new-group-message", async ({ groupId, message, sender }) => {
         if (!post) return;
 
         const isLiked = post.likes.includes(userId);
-        console.log(isLiked);
-
+        
         const newNotification = {
           user: userId,
           Type: type,

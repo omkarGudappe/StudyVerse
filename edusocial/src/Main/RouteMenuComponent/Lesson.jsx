@@ -5,6 +5,7 @@ import Lenis from "@studio-freight/lenis";
 import Socket from '../../SocketConnection/Socket';
 import { Link } from 'react-router-dom';
 import Post from '../RouteMenuComponent/Post';
+import axios from 'axios'
 
 const Lesson = () => {
     const { Lessons, loading, error, hasMore, fetchLesson, loadMoreLesson } = useLessonStore();
@@ -25,6 +26,7 @@ const Lesson = () => {
     const [isScrolling, setIsScrolling] = useState(false);
     const [hoveredLesson, setHoveredLesson] = useState(null);
     const [showShareModal, setShowShareModal] = useState(null);
+    const [Loading, setLoading] = useState(false);
     
     const videoRefs = useRef({});
     const loadMoreRef = useRef(null);
@@ -56,7 +58,7 @@ const Lesson = () => {
     });
 
     // Sort lessons
-    const sortedLessons = [...filteredLessons].sort((a, b) => {
+    const sortedLessons = [...Lessons].sort((a, b) => {
         switch(sortBy) {
             case 'newest':
                 return new Date(b.createdAt) - new Date(a.createdAt);
@@ -70,6 +72,8 @@ const Lesson = () => {
                 return 0;
         }
     });
+
+
 
     // Infinite scroll observer
     useEffect(() => {
@@ -419,6 +423,89 @@ const Lesson = () => {
         }
     };
 
+   // Production-ready frontend search handler
+const handleSearchQuery = async (query, options = {}) => {
+    const { page = 1, limit = 20, sortBy = 'relevance' } = options;
+    
+    if (!query.trim()) {
+        useLessonStore.getState().clearSearchResults();
+        return { success: true, fromCache: false };
+    }
+
+    const startTime = Date.now();
+    
+    try {
+        // Client-side cache first
+        const cacheKey = `client-search:${query}:${page}:${sortBy}`;
+        const cached = sessionStorage.getItem(cacheKey);
+        
+        if (cached && page === 1) {
+            const parsed = JSON.parse(cached);
+            if (Date.now() - parsed.timestamp < 60000) { // 1 minute cache
+                // useLessonStore.getState().setSearchResults(parsed.data.lessons);
+                return { success: true, fromCache: true };
+            }
+        }
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const res = await axios.post(
+            `${import.meta.env.VITE_API_URL}/posts/lesson/search`,
+            {},
+            {
+                params: { query, page, limit, sortBy },
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'X-Request-ID': generateRequestId()
+                },
+                signal: controller.signal,
+                timeout: 15000
+            }
+        );
+
+        clearTimeout(timeoutId);
+
+        if (res.data.ok) {
+            // useLessonStore.getState().setSearchResults(res.data.data.lessons);
+            
+            if (page === 1 && !res.data.cached) {
+                sessionStorage.setItem(cacheKey, JSON.stringify({
+                    data: res.data.data,
+                    timestamp: Date.now()
+                }));
+            }
+
+            const responseTime = Date.now() - startTime;
+            console.log(`[CLIENT_SEARCH] "${query}" - ${responseTime}ms`);
+            
+            return { 
+                success: true, 
+                fromCache: res.data.cached,
+                responseTime 
+            };
+        }
+        
+        return { success: false, error: 'Search failed' };
+        
+    } catch (err) {
+        console.error(`[SEARCH_ERROR] "${query}" - ${err.message}`);
+        
+        if (err.code === 'ECONNABORTED' || err.name === 'AbortError') {
+            // Fallback to client-side search
+            fallbackClientSideSearch(query);
+            return { success: true, fromCache: false, fallback: true };
+        }
+        
+        return { success: false, error: err.message };
+    }
+};
+
+// Generate unique request ID for tracing
+const generateRequestId = () => {
+    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
     // Skeleton loader component
     const LessonSkeleton = () => (
         <div className="bg-neutral-800/40 backdrop-blur-sm rounded-2xl overflow-hidden shadow-xl border border-neutral-700/30 animate-pulse">
@@ -463,7 +550,6 @@ const Lesson = () => {
 
     return (
         <div className="lenis min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white">
-            {/* Mobile Search Bar */}
             <div 
                 className={`md:hidden fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-neutral-900/95 backdrop-blur-md border-b border-neutral-700/50 ${showSearchBar ? 'translate-y-0' : '-translate-y-full'} ${isScrolling ? 'opacity-90' : 'opacity-100'}`}
             >
@@ -491,7 +577,6 @@ const Lesson = () => {
                         </button>
                     </div>
 
-                    {/* Mobile Filters */}
                     {showFilters && (
                         <div className="mt-3 p-3 bg-neutral-800/80 rounded-xl border border-neutral-700/50 backdrop-blur-sm">
                             <div className="mb-3">
@@ -558,7 +643,6 @@ const Lesson = () => {
                     </div>
                     
                     <div className="hidden md:flex items-center gap-3">
-                        {/* Desktop Filters */}
                         <div className="relative group">
                             <button 
                                 className="flex items-center gap-2 px-3 py-2 bg-neutral-800/80 rounded-lg border border-neutral-700/50 hover:border-blue-500/50 transition-colors"
@@ -612,7 +696,7 @@ const Lesson = () => {
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <button className="p-3 transition-all h-full duration-300 bg-neutral-800/80 rounded-tr-full rounded-br-full border border-neutral-700/50 border-l-0 group-focus:border-blue-500/50">
+                            <button onClick={() =>handleSearchQuery(searchQuery)} className="p-3 transition-all h-full duration-300 bg-neutral-800/80 rounded-tr-full rounded-br-full border border-neutral-700/50 border-l-0 group-focus:border-blue-500/50">
                                 <svg xmlns="http://www.w3.org/2000/svg" className='h-4 w-4' fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                 </svg>
@@ -648,7 +732,6 @@ const Lesson = () => {
             </div>
             
             <div className="max-w-7xl pt-20 md:pt-8 mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Results Count */}
                 {searchQuery || categoryFilter !== 'all' ? (
                     <div className="mb-6 text-neutral-400">
                         {sortedLessons.length} {sortedLessons.length === 1 ? 'result' : 'results'} found
@@ -709,7 +792,7 @@ const Lesson = () => {
                             </>
                         )}
 
-                        {sortedLessons.map((lesson) => (
+                        {Lessons.map((lesson) => (
                             <div 
                                 key={lesson._id}
                                 className="bg-neutral-800/40 backdrop-blur-sm relative rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-neutral-600/50 border border-neutral-700/30 group"

@@ -20,12 +20,12 @@ const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId, isVide
       })
 
     useEffect(() => {
-        const handler = ({ postId, likes, liked }) => {
-        setPendingLikes(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(postId);
-            return newSet;
-        });
+      const handler = ({ postId, likes, liked }) => {
+        // setPendingLikes(prev => {
+        //     const newSet = new Set(prev);
+        //     newSet.delete(postId);
+        //     return newSet;
+        // });
     
         usePostsStore.getState().updatePostLikes(postId, likes);
         
@@ -38,7 +38,7 @@ const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId, isVide
             return newSet;
             });
         }
-        };
+      }
     
         Socket.on("post-like-updated", handler);
     
@@ -92,7 +92,7 @@ const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId, isVide
             setLocalLikedPosts(prev => new Set([...prev, postId]));
           }
           
-          setPendingLikes(prev => new Set([...prev, postId]));
+          // setPendingLikes(prev => new Set([...prev, postId]));
           
           Socket.emit("Handle-user-like", { postId, userId: UserId, type: "like" , toId: postAuthorId  });
           

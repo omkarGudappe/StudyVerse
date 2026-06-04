@@ -405,7 +405,7 @@ html, body {
   color: #d8b4fe;
   background: rgba(159, 122, 234, 0.1);
   border-radius: 8px;
-  padding: 1em 1em 1em 2.5em;
+  padding: 0.25em 0.25em 0.25em 2.5em;
 }
 
 .ProseMirror ol li {
@@ -421,14 +421,14 @@ html, body {
   color: #93c5fd;
   background: rgba(147, 197, 253, 0.1);
   border-radius: 8px;
-  padding: 1em 1em 1em 2.5em;
+  padding: 0.25em 0.25em 0.25em 2.5em;
 }
 
-.ProseMirror ul li {
+/* .ProseMirror ul li {
   margin: 0.5em 0;
-  padding: 0.25em 0;
+  padding: 0.15em 0;
   position: relative;
-}
+} */
 
 /* Beautiful Blockquote */
 .ProseMirror blockquote {
@@ -895,7 +895,6 @@ html, body {
   scrollbar-width: none;
 }
 
-
 .perspective {
   perspective: 1000px;
 }
@@ -911,4 +910,14 @@ html, body {
 
 .transform-style-preserve-3d {
   transform-style: preserve-3d;
+}
+
+/* Enhanced flashcard shadows and glow */
+.flashcard-glow {
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5);
+}
+
+.flashcard-glow:hover {
+  box-shadow: 0 20px 40px -5px rgba(168, 85, 247, 0.3), 
+              0 10px 30px -5px rgba(0, 0, 0, 0.5);
 }

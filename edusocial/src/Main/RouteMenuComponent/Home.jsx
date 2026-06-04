@@ -170,7 +170,7 @@ const StudyVerseMain = () => {
 
   const handleSharePost = (post) => {
     setShareModalOpen({ isOpen: true, post });
-    Socket.emit("SendContactUsers", { ID: ProfileData?._id });
+    // Socket.emit("SendContactUsers", { ID: ProfileData?._id });
   };
 
 
@@ -220,6 +220,8 @@ const StudyVerseMain = () => {
   }, [posts, activePost]);
 
   const formatDate = (dateString) => {
+   if(!dateString) return "";
+   try {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -238,6 +240,9 @@ const StudyVerseMain = () => {
       day: "numeric",
       year: diffDays > 365 ? "numeric" : undefined,
     });
+   } catch (error) {
+     return dateString;
+   }
   };
 
   const handleVideoClick = (postId, e) => {
@@ -445,7 +450,8 @@ const StudyVerseMain = () => {
           </div>
         </nav>
 
-        <div className="absolute top-20 w-full p-3">
+        {/* Search bar for mobile can be implemented here in the future if needed */}
+        {/* <div className="absolute top-20 w-full p-3">
           <div
             className="flex items-center"
             style={{
@@ -478,85 +484,87 @@ const StudyVerseMain = () => {
               </svg>
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 md:mt-0 mt-30">
-          <div className="hidden md:inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-600 to-amber-500 rounded-3xl mb-6 shadow-lg transform hover:scale-105 transition-transform duration-300">
-            <img
-              src="/LOGO/StudyVerseIcon.png"
-              alt="StudyVerse Logo"
-              className="w-14 h-14"
-            />
+      <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8">
+
+        {!initialLoading && (
+          <div className="text-center mb-12 md:mt-0 mt-30">
+            <div className="hidden md:inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-600 to-amber-500 rounded-3xl mb-6 shadow-lg transform hover:scale-105 transition-transform duration-300">
+              <img
+                src="/LOGO/StudyVerseIcon.png"
+                alt="StudyVerse Logo"
+                className="w-14 h-14"
+              />
+            </div>
+
+            <h1 className="text-4xl mt-5 md:mt-0 md:text-6xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent mb-4">
+              StudyVerse Community
+            </h1>
+
+            <p className="text-xl text-neutral-300 max-w-3xl mx-auto mb-8">
+              Discover, share and collaborate on the best study materials from
+              students worldwide
+            </p>
+
+            <div className="mt-8 flex justify-center space-x-4 flex-wrap gap-3">
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 text-purple-300 text-sm border border-purple-500/30">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+                Notes
+              </span>
+
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-amber-500/20 text-amber-300 text-sm border border-amber-500/30">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+                Videos
+              </span>
+
+              <span className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 text-sm border border-emerald-500/30">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5 mr-2"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                PDFs
+              </span>
+            </div>
           </div>
-
-          <h1 className="text-4xl mt-5 md:mt-0 md:text-6xl font-bold bg-gradient-to-r from-purple-400 to-amber-400 bg-clip-text text-transparent mb-4">
-            StudyVerse Community
-          </h1>
-
-          <p className="text-xl text-neutral-300 max-w-3xl mx-auto mb-8">
-            Discover, share and collaborate on the best study materials from
-            students worldwide
-          </p>
-
-          <div className="mt-8 flex justify-center space-x-4 flex-wrap gap-3">
-            <span className="inline-flex items-center px-4 py-2 rounded-full bg-purple-500/20 text-purple-300 text-sm border border-purple-500/30">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                />
-              </svg>
-              Notes
-            </span>
-
-            <span className="inline-flex items-center px-4 py-2 rounded-full bg-amber-500/20 text-amber-300 text-sm border border-amber-500/30">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                />
-              </svg>
-              Videos
-            </span>
-
-            <span className="inline-flex items-center px-4 py-2 rounded-full bg-emerald-500/20 text-emerald-300 text-sm border border-emerald-500/30">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              PDFs
-            </span>
-          </div>
-        </div>
-
+        )}
         {initialLoading ? (
           <LoadingSkeleton />
         ) : posts.length === 0 ? (
@@ -591,12 +599,12 @@ const StudyVerseMain = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-6 flex flex-col items-center justify-center">
+          <div className="space-y-3 flex flex-col items-center justify-center">
             {" "}
             {posts.map((post) => (
               <div
                 key={post._id}
-                className="bg-neutral-800/40 lg:w-2xl w-full backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
+                className="bg-neutral-800/40 lg:w-2xl w-full backdrop-blur-sm overflow-hidden shadow-2xl hover:shadow-neutral-900/30 transition-all duration-300 border border-neutral-700/30 hover:border-neutral-600/50"
               >
                 <div className="p-5 border-b border-neutral-700/30 relative">
                   <div className="flex items-center gap-3">
@@ -637,7 +645,7 @@ const StudyVerseMain = () => {
                       </h3>
 
                       <p className="text-xs text-neutral-400 flex items-center">
-                        <span>{formatDate(post.updatedAt)}</span>
+                        <span>{formatDate(post.createdAt)}</span>
 
                         <span className="mx-1">•</span>
 
@@ -736,7 +744,7 @@ const StudyVerseMain = () => {
                   </div>
 
                   {post.files?.url && (
-                    <div className="mb-4 max-h-80 h-80 overflow-hidden border border-neutral-700/30 relative">
+                    <div className="mb-4 max-h-100 h-auto px-5 overflow-hidden border border-neutral-700/30 relative">
                       {post.files?.url.endsWith(".mp4") ||
                       post.files?.url.endsWith(".webm") ||
                       post.files?.url.endsWith(".mov") ? (
@@ -744,7 +752,7 @@ const StudyVerseMain = () => {
                           <video
                             ref={(el) => (videoRefs.current[post._id] = el)}
                             data-video-id={post._id}
-                            className="w-full h-full object-cover cursor-pointer"
+                            className="w-full h-full object-contain cursor-pointer"
                             onClick={(e) => handleVideoClick(post._id, e)}
                             onPlay={() => handleVideoPlay(post._id)}
                             onPause={() => handleVideoPause(post._id)}
@@ -805,12 +813,13 @@ const StudyVerseMain = () => {
                         !post.files?.url.match(
                           /\.(jpg|jpeg|png|gif|webp|mp4|mov|webm)$/i
                         ) ? (
-                        <PdfViewer fileUrl={post?.files?.url} />
+                        <PdfViewer from='feed' id={post._id} fileUrl={post?.files?.url} />
                       ) : (
-                        <img
+                        <div className=" h-full flex items-center justify-center bg-black/10">
+                          <img
                           src={post.files.url}
                           alt={post.heading || "Study material"}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain"
                           loading="lazy"
                           onError={(e) => {
                             e.target.style.display = "none";
@@ -823,6 +832,7 @@ const StudyVerseMain = () => {
                             }
                           }}
                         />
+                        </div>
                       )}
                     </div>
                   )}
@@ -895,7 +905,8 @@ const StudyVerseMain = () => {
                       </button>
                     </div>
 
-                    <button className="text-neutral-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-neutral-700/50">
+                    {/* Bookmark functionality can be implemented here in the future if needed */}
+                    {/* <button className="text-neutral-400 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-neutral-700/50">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-4 w-4"
@@ -910,7 +921,7 @@ const StudyVerseMain = () => {
                           d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                         />
                       </svg>
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>
@@ -964,7 +975,7 @@ const StudyVerseMain = () => {
       {shareModalOpen.isOpen && (
         <Share
           onClose={() => setShareModalOpen({ isOpen: false, post: null })}
-          shareModalOpen={shareModalOpen}
+          shareModalOpen={shareModalOpen.isOpen}
           ProfileData={ProfileData}
         />
       )}

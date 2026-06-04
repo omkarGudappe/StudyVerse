@@ -1,4 +1,3 @@
-const { json } = require("express");
 const nodemailer = require("nodemailer");
 
 const sendMail = async (to , subject , otp) => {
@@ -12,10 +11,6 @@ const sendMail = async (to , subject , otp) => {
                 pass: process.env.EMAIL_PASS,
             }
         });
-
-        console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "Missing");
-
 
         const mailOptions = {
             from: process.env.EMAIL_USER,

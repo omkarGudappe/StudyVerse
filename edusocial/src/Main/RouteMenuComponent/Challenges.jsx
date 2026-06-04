@@ -351,12 +351,18 @@ const Challenges = () => {
                     <AnimatePresence>
                       {openFlashcardCreator && (
                         <motion.div
-                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                          className="absolute top-full right-0 mt-4 z-50 w-96"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                          onClick={() => setOpenFlashcardCreator(false)}
                         >
-                          <FlashcardCreator onAdd={addFlashcard} />
+                          <div className='mt-100' onClick={(e) => e.stopPropagation()}>
+                            <FlashcardCreator 
+                              onAdd={addFlashcard} 
+                              onClose={() => setOpenFlashcardCreator(false)}
+                            />
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>

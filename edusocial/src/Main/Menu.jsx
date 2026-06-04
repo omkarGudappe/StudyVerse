@@ -23,6 +23,7 @@ const Menu = () => {
   const [NotificationLength, setNotificationsLenght] = useState();
   const [PreviosActive, setPreviosActive] = useState(activeBtn);
   const navigate = useNavigate();
+  const [postMinimized, setPostMinimized] = useState(false);
 
   //   useEffect(() => {
   //   const checkSession = async () => {
@@ -118,8 +119,10 @@ const Menu = () => {
   }
 
    useEffect(() => {
-    const isAnyModalOpen = showPost || searchClicked || NotificationOpen || 
+    const isAnyModalOpen = (showPost && !postMinimized) || searchClicked || NotificationOpen || 
                           MessageContactClick || OpenUserNotes || showMoreMenu;
+
+    console.log("Cheking post ", showPost, "and minimized ", postMinimized);
 
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
@@ -134,7 +137,7 @@ const Menu = () => {
       document.body.style.overflow = 'unset';
       document.body.style.height = 'auto';
     };
-  }, [showPost, searchClicked, NotificationOpen, MessageContactClick, OpenUserNotes, showMoreMenu]);
+  }, [showPost, searchClicked, NotificationOpen, MessageContactClick, OpenUserNotes, showMoreMenu, postMinimized]);
 
    useEffect(() => {
     setShowPost(false);
@@ -333,9 +336,8 @@ const Menu = () => {
      const path = location.pathname.substring(1);
     const current = ["settings" , "notes", "profile" , "search", "createNotes" , "notification", "profile" , "messages" , "contactMessage", "lessons", ];
 
-    const dynamicRoutes = ["messages", "setting" ,"group-chat"];
+    const dynamicRoutes = ["messages", "setting" ,"group-chat", 'notes', 'pdf-notes'];
 
-    
     for (const route of dynamicRoutes) {
       if (path.startsWith(route + "/")) {
         return "hidden";
@@ -386,15 +388,15 @@ const Menu = () => {
           </AnimatePresence>
         </motion.div>
 
-        <div className="flex-1 lenis overflow-y-auto scroll-smooth scroll- py-6">
-          <div className="space-y-2 px-4">
+        <div className="flex-1 lenis overflow-y-auto scroll-smooth  py-2">
+          <div className="space-y-1 px-4">
             {LargScreen.map((item) => (
               <div className={`${item.id === 'notification' ? 'relative' : ''}`}>
                 <Link
                   key={item?.id}
                   to={getRoutePath(item.id)}
                   onClick={() => handleMenuItemClick(item.id, item.action)}
-                  className={`flex items-center cursor-pointer gap-4 p-4 rounded-xl transition-all duration-300 ${
+                  className={`flex items-center cursor-pointer gap-4 p-3 rounded-xl transition-all duration-300 ${
                     activeBtn === item.id
                       ? "bg-purple-600/20 border border-purple-500/30 text-purple-400 shadow-lg"
                       : "text-neutral-300 hover:bg-neutral-700/50 hover:text-white"
@@ -573,7 +575,7 @@ const Menu = () => {
         </AnimatePresence>
       </div>
 
-      {showPost && <Post ModelCloseClicked={() => {setActiveBtn(PreviosActive);setShowPost(false)}} />}
+      {showPost && <Post ModelCloseClicked={() => {setActiveBtn(PreviosActive);setShowPost(false)}} setPostMinimized={setPostMinimized} />}
     </>
   );
 };

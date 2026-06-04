@@ -11,6 +11,7 @@ const CurrentUserContexProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  const [userNotes, setUserNotes] = useState([]);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -41,7 +42,7 @@ const CurrentUserContexProvider = ({ children }) => {
   }, [token]);
 
   return (
-    <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error, setProfileData, token }}>
+    <UserDataContext.Provider value={{ ProfileData, FirebaseUid, loading, error, setProfileData, token, userNotes, setUserNotes }}>
       {children}
     </UserDataContext.Provider>
   );

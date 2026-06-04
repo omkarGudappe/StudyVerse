@@ -691,9 +691,7 @@ const FetchComments = useCallback(async (page = 1, loadMore = false) => {
         const res = await axios.get(
             `${import.meta.env.VITE_API_URL}/posts/comments/${postId}?page=${page}&limit=10`
         );
-        
-        console.log('API Response:', res.data);
-        
+                
         if (res.data.ok) {
             let commentsData = res.data.comments;
             

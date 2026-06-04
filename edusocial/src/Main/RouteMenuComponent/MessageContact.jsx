@@ -215,6 +215,17 @@ const MessageContact = ({ open, onClose }) => {
     }
   };
 
+  const handleTarget = () => {
+    if(!ProfileData._id) return 
+
+    if(ProfileData.name) {
+      console.log("Demo Profile data name is the name ", ProfileData.name);
+    } else {
+      console.log("Finding the name is getting some problem ProfileData is getting null ", ProfileData.name);
+    }
+    
+  }
+
   console.log("Chking group", groups);
 
   const UserCard = ({ user, isGroup = false, onClick, showCheckbox = false, isSelected = false }) => {
@@ -481,7 +492,7 @@ const MessageContact = ({ open, onClose }) => {
 
       <AnimatePresence>
         {showGroupModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={(e) => {setShowGroupModal(false); e.stopPropagation();} }>
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

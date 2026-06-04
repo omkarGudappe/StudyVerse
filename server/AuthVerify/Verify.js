@@ -5,7 +5,7 @@ const crypto = require("crypto");
 const User = require('../Db/User');
 const jwt = require('jsonwebtoken');
 const authMiddleware  = require('./AuthMiddleware');
-const Auth = require('../Db/UserAuth');
+const Auth = require('../Db/User');
 
 
 let otpStore = {};

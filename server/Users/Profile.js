@@ -4,6 +4,8 @@ const cloudinary = require('../CloudinaryStorage/cloudinary');
 const User = require('../Db/User');
 const Posts = require('../Db/UserPost');
 const authenticate = require('../AuthVerify/AuthMiddleware')
+const Chat = require("../Db/Chat");
+const GroupChat = require("../Db/GroupChat");
 
 const userSocketMap = require('../SocketConnection/socketMap');
 const { getIo } = require('../SocketConnection/socketInstance');
@@ -286,11 +288,11 @@ Router.get('/profile', authenticate, async (req , res) => {
 
 Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
   let compressionCleanup = null;
+  const io = getIo();
   
   try {
     const { Fid } = req.params;
     const { heading, description, visibility, contentType } = req.body;
-    const io = getIo();
 
     if (!heading?.trim() || !Fid) {
       return res.status(400).json({ message: "Title and user ID are required" });
@@ -426,6 +428,9 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
     if (compressionCleanup && fs.existsSync(compressionCleanup)) {
       fs.unlinkSync(compressionCleanup);
     }
+    
+    const UserData = await User.findOne({ firebaseUid: Fid })
+    .select('firstName lastName username UserProfile.avatar.url')
 
     // Create post in database
     const newPost = await Posts.create({
@@ -444,12 +449,31 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       contentType: contentType || 'post',
     });
 
+    const newPostObj = newPost.toObject();
+
+    newPostObj.author = {
+        _id: UserData._id,
+        firstName: UserData.firstName,
+        lastName: UserData.lastName,
+        username: UserData.username,
+        UserProfile: {
+            avatar: {
+                url:UserData.UserProfile?.avatar?.url,
+            },
+        },
+    };
+
+    newPostObj.comments = newPostObj.comments || [];
+    newPostObj.likes = newPostObj.likes || [];
+    newPostObj.share = newPostObj.share || [];
+
+
     // Final success
     emitProgress(100, 'complete', 'Upload completed successfully!');
 
     return res.status(201).json({
       message: "Content posted successfully",
-      newPost,
+      newPost: newPostObj,
       uploadFile: {
         url: uploadFile.secure_url,
         format: uploadFile.format,
@@ -1260,5 +1284,55 @@ Router.get('/userConnections/:id', async (req, res) => {
     }
 });
 
+Router.get('/userpeers/:id', async (req, res) => {
+
+    const ID = req.params.id;
+    console.log("Founded Id", ID);
+
+    if (!ID) {
+        return res.status(404).json({ message: "Id Not Foumd"})
+    }
+    
+      try {
+        const userChat = await Chat.findOne({ User1: ID })
+          .populate({
+            path: "OtherUser.User2",
+            select: "firstName lastName username UserProfile.avatar.url education firebaseUid",
+            options: { lean: true }
+          })
+          .lean();
+    
+        let sortedContacts = [];
+        if (userChat && userChat.OtherUser) {
+          sortedContacts = userChat.OtherUser
+            .filter(contact => contact.User2)
+            .sort((a, b) => {
+              const timeA = a.recentMessageTime ? new Date(a.recentMessageTime).getTime() : 0;
+              const timeB = b.recentMessageTime ? new Date(b.recentMessageTime).getTime() : 0;
+              return timeB - timeA; // Descending order (most recent first)
+            })
+            .slice(0, 100);
+        }
+    
+        // Update this part to sort groups by recentMessageTime
+        const userGroups = await GroupChat.find({ "members.member": ID })
+          .select("name members createdBy recentMessage recentMessageTime avatar")
+          .lean();
+    
+        const sortedGroups = userGroups
+          .filter(group => group)
+          .sort((a, b) => {
+            const timeA = a.recentMessageTime ? new Date(a.recentMessageTime).getTime() : 0;
+            const timeB = b.recentMessageTime ? new Date(b.recentMessageTime).getTime() : 0;
+            return timeB - timeA;
+          })
+          .slice(0, 50);
+    
+        return res.status(200).json({ message: "Users Found", User: sortedContacts || [], Groups: sortedGroups || [], ok: true })
+    
+      } catch (err) {
+        console.error("Error in SendContactUsers:", err);
+      }
+})
 
 module.exports = Router;

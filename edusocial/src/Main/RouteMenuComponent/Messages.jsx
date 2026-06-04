@@ -307,7 +307,7 @@ const Messages = () => {
       senderUid: senderFirebaseUid,
       text: newMessage.trim(),
       timestamp: Date.now(),
-      status: 'pending' // pending, sent, delivered, read
+      status: 'pending' // pending, sent, delivered, read2
     };
 
     if (isGroupChat) {
@@ -331,8 +331,6 @@ const Messages = () => {
     }));
 
     let fileUrlData = { url: "", type: "" };
-
-    
 
     if (selectedFile) {
       try {

@@ -283,6 +283,14 @@ export const usePostsStore = create((set, get) => ({
     )
   })),
 
+  updatePostComment: (postId, comment) => set((state) => ({
+    posts: state.posts.map(post => 
+      post.id === postId
+      ? { ...post, comment}
+      : post
+    )
+  })),
+
   fetchPosts: async (userId, loadMore = false, forceRefresh = false) => {
     const currentState = get();
     

@@ -20,6 +20,8 @@ const SearchResult = ({
   const notesData = searchResults.notes || [];
   const lessonsData = searchResults.lessons || [];
 
+  console.log('Search Results:', notesData);
+
   const getActiveData = () => {
     switch (activeTab) {
       case 'notes': return notesData;
@@ -121,7 +123,8 @@ const SearchResult = ({
       className="cursor-pointer group"
     >
       <Link
-        to={`/notes/${note._id}`}
+        to={`/pdf-notes/${note._id}`}
+        state={{ content: note.files.url }}
         onClick={onClose}
         className="flex items-center gap-4 p-4 bg-gradient-to-r from-neutral-800 to-neutral-900 rounded-2xl transition-all duration-300 border border-neutral-700 "
       >
