@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useLocation } from 'react-router-dom';
-import PDFViewer from './SmallComponents/PDFViewer';
+import PdfViewer from './SmallComponents/PDFViewer';
 import axios from "axios";
 
 const NotesPDF = () => {
@@ -42,7 +42,7 @@ const NotesPDF = () => {
 
     return (
       <div className="min-h-screen bg-neutral-900 w-full flex items-center justify-center">
-        <PDFViewer 
+        <PdfViewer 
           fileUrl={pdfUrl} 
           className="w-full h-screen"
         />

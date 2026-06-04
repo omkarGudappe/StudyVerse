@@ -32,7 +32,6 @@ function PdfViewer({ fileUrl, className = "", from = "", id }) {
         hasFetchedRef.current = true;
         currentFileUrlRef.current = fileUrl;
 
-        console.log('Fetching PDF from:', fileUrl);
         
         // Fetch the raw content from Cloudinary
         const response = await fetch(fileUrl);
@@ -49,10 +48,8 @@ function PdfViewer({ fileUrl, className = "", from = "", id }) {
         const objectUrl = URL.createObjectURL(pdfBlob);
         
         setPdfBlobUrl(objectUrl);
-        console.log('PDF blob URL created successfully');
         
       } catch (err) {
-        console.error('Error loading PDF:', err);
         setError(`Failed to load document: ${err.message}`);
         setLoading(false);
         hasFetchedRef.current = false;
@@ -95,11 +92,9 @@ function PdfViewer({ fileUrl, className = "", from = "", id }) {
     setNumPages(numPages);
     setLoading(false);
     setDocumentLoaded(true);
-    console.log('PDF loaded successfully, pages:', numPages);
   };
 
   const onDocumentLoadError = (error) => {
-    console.error('PDF document load error:', error);
     
     // More specific error handling
     if (error.message && error.message.includes('API version')) {
@@ -113,11 +108,10 @@ function PdfViewer({ fileUrl, className = "", from = "", id }) {
   };
 
   const onPageLoadSuccess = () => {
-    console.log('Page loaded successfully');
   };
 
   const onPageLoadError = (error) => {
-    console.error('PDF page load error:', error);
+    setError(`Failed to render page ${pageNumber}. The page may be corrupted or contain unsupported content.`);
   };
 
   const goToPreviousPage = () => {
@@ -126,7 +120,6 @@ function PdfViewer({ fileUrl, className = "", from = "", id }) {
 
   const goToNextPage = () => {
     setPageNumber(prev => Math.min(prev + 1, numPages || 1));
-    console.log('Navigating to page:', pageNumber + 1);
   };
 
   const zoomIn = () => {
