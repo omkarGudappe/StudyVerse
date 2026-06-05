@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Lenis from "@studio-freight/lenis";
 import { usePostsStore } from "../../StateManagement/StoreNotes";
 import Socket from "../../SocketConnection/Socket";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { UserDataContextExport } from "./CurrentUserContexProvider";
 import CommentModel from "./Panels/CommentModel";
 import PeerButtonManage from "./SmallComponents/PeerButtonManage";
@@ -25,6 +25,7 @@ const StudyVerseMain = () => {
   const searchRef = useRef(null);
   const loadMoreRef = useRef(null);
   const [videoStates, setVideoStates] = useState({});
+  const navigate = useNavigate();
 
   const {
     posts,
@@ -43,7 +44,7 @@ const StudyVerseMain = () => {
   });
 
   const [OpenBtnGroup, setOpenBtnGroup] = useState(false);
-  const { ProfileData } = UserDataContextExport();
+  const { ProfileData, error: profileError, loading: profileLoading } = UserDataContextExport();
   const [OpenCommentModel, setCommentModel] = useState({
     id: null,
     PostownerId: null,
@@ -304,6 +305,13 @@ const StudyVerseMain = () => {
     return FindLenght;
   }
 
+  const NavigateBack = () => {
+    localStorage.removeItem('token');
+    setTimeout(() => {
+      window.location.href = '/';
+    }, 3000);
+  }
+
   const PostSkeleton = () => {
     return (
       <div className="bg-neutral-800/40 lg:w-2xl backdrop-blur-sm rounded-3xl overflow-hidden shadow-2xl border border-neutral-700/30">
@@ -393,7 +401,42 @@ const StudyVerseMain = () => {
     );
   };
 
-  if (loading && posts.length === 0) {
+  if (profileError) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
+        <div className="text-center p-8 bg-neutral-800/70 backdrop-blur-sm rounded-2xl border border-neutral-700/50 max-w-md w-full shadow-2xl">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-500/20 rounded-full mb-6">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-8 w-8 text-red-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold mb-4">Oops! {profileError}</h2>
+          <button
+            onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/', { replace: true });
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 rounded-full hover:from-purple-500 hover:to-amber-400"
+          >
+            Sign In Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (profileLoading || (loading && posts.length === 0)) {
     return <LoadingSkeleton />;
   }
 

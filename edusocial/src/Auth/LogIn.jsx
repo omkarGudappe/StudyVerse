@@ -114,18 +114,16 @@ const LogIn = () => {
         // } else {
         //   addError("Invalid email or password");
         // }
-        console.log('My id',data.user.uid);
         try{
           const res = await axios.get(`${import.meta.env.VITE_API_URL}/Auth/UserDetail?email=${formData.email}&uid=${data.user.uid}`);
           if(res.data.exist){
             if (res.data.token) {
               localStorage.setItem("token", res.data.token);
             }
-            console.log('hello')
             navigate(`${res.data.route}`)
           }
         }catch(err){
-          console.log(err.message);
+          addError(getFirebaseErrorMessage(err) || "Failed to retrieve user details. Please try again.");
         }
       } else {
         const res = await SignUp(formData.email);

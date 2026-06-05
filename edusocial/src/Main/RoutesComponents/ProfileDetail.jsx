@@ -4,6 +4,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../Auth/AuthProviders/FirebaseSDK';
+import { UserDataContextExport } from  '../../Main/RouteMenuComponent/CurrentUserContexProvider';
 
 const ProfileDetail = () => {
     const [formData, setFormData] = useState({
@@ -30,8 +31,10 @@ const ProfileDetail = () => {
     const [popoverTimeouts, setPopoverTimeouts] = useState({});
     const navigate = useNavigate();
     const [debugInfo, setDebugInfo] = useState(null);
+    const { setToken } = UserDataContextExport();
 
     const userId = auth?.currentUser?.uid;
+    const userEmail = auth?.currentUser?.email;
 
     useEffect(() => {
         Object.entries(showPopovers).forEach(([field, isVisible]) => {
@@ -166,7 +169,6 @@ const ProfileDetail = () => {
 
     // Enhanced error handling function
     const handleApiError = (error) => {
-        console.error("API Error:", error);
         
         // Network errors
         if (!error.response) {
@@ -269,6 +271,7 @@ const ProfileDetail = () => {
                     endYear: formData.education.endYear || new Date().getFullYear() + 3
                 },
                 FUid: userId,
+                email: userEmail,
                 Uid: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
             };
             
@@ -292,7 +295,9 @@ const ProfileDetail = () => {
             
             const result = res.data;
 
-            if (result.ok) {
+            if (result.token) {
+                localStorage.setItem("token", result.token);
+                setToken(result.token);
                 setLoading(false);
                 navigate('/profileBio');
             } else {
@@ -580,17 +585,12 @@ const ProfileDetail = () => {
                     <h1 className="text-2xl font-bold text-center mb-6 text-white">Complete Your Profile</h1>
                     
                     {error && (
-                        <div className="mb-4 bg-rose-600 text-white p-3 rounded-lg flex items-start">
+                        <div className="mb-4 bg-rose-600 text-white p-3 rounded-lg flex items-start ">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
-                            <div>
+                            <div className='w-full break-words'>
                                 <span className="font-medium">{error}</span>
-                                {debugInfo && (
-                                    <div className="mt-2 text-xs opacity-75">
-                                        Debug: {JSON.stringify(debugInfo)}
-                                    </div>
-                                )}
                             </div>
                         </div>
                     )}

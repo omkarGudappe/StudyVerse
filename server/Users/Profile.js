@@ -6,6 +6,8 @@ const Posts = require('../Db/UserPost');
 const authenticate = require('../AuthVerify/AuthMiddleware')
 const Chat = require("../Db/Chat");
 const GroupChat = require("../Db/GroupChat");
+const UserAuth = require("../Db/UserAuth");
+const jwt = require('jsonwebtoken');
 
 const userSocketMap = require('../SocketConnection/socketMap');
 const { getIo } = require('../SocketConnection/socketInstance');
@@ -23,17 +25,26 @@ const upload = multer({ storage });
 
 
 Router.post('/userdetail', upload.none(), async (req, res) => {
-    const { firstName, lastName, dob, gender, education, Uid, FUid } = req.body;
+    const { firstName, lastName, dob, gender, education, Uid, FUid, email } = req.body;
 
     if (!firstName || !lastName || !dob || !gender || !education || !Uid || !FUid) {
         return res.json({ ok: false, message: "All fields are required" });
     }
+
+    const normalizedEmail = email?.toLowerCase().trim();
+    let isEmailExist = false;
 
     await User.findOne({ firebaseUid: FUid }).lean().then((existingUser) => {
         if (existingUser) {
             return res.json({ ok: false, message: "User already exists" });
         }
     });
+
+    const emailExists = await User.findOne({
+        email: normalizedEmail
+    }).lean();
+
+    const emailToSave = emailExists ? "" : normalizedEmail;
 
     try {
         let educationData;
@@ -51,18 +62,24 @@ Router.post('/userdetail', upload.none(), async (req, res) => {
             education: educationData,
             Uid,
             firebaseUid: FUid,
+            email: emailToSave,
             UserProfile: {
                 heading: "Hey there! I am using StudyVerse.",
                 description: "",
-                avatar: { url: "", publicId: "" }
-            }
+                avatar: { url: "", publicId: "" },
+            },
         });
+
+        const token = jwt.sign(
+            {id : user._id },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        )
 
         await user.save();
 
-        res.json({ ok: true, message: "User created successfully", user });
+        res.json({ ok: true, message: "User created successfully", user, token });
     } catch (error) {
-        console.error("Error creating user:", error);
         res.json({ ok: false, message: error.message || "Internal server error" });
     }
 });
@@ -108,7 +125,6 @@ Router.post('/profile', upload.single('image'), async (req, res) => {
 
         res.json({ message: "Profile updated successfully", code: "PROFILE_UPDATED", user: updatedUser });
     } catch (err) {
-        console.error("Error updating profile:", err);
         res.status(500).json({ message: "Internal server error", code: "INTERNAL_SERVER_ERROR" });
     }
 });
@@ -129,7 +145,6 @@ Router.get('/friend/username/:userName' , async (req, res) => {
         })
 
     }catch(err){
-        console.error("Somthing Wrong" , err);
         res.status(500).json({ok: false, message: err.message});
     }
 })
@@ -145,7 +160,6 @@ Router.get('/profile', authenticate, async (req , res) => {
             return res.json({ message: "User Not Found" });
         }
     }catch(err){
-        console.error("Error fetching user profile:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 });

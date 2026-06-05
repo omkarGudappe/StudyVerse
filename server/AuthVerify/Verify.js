@@ -166,7 +166,7 @@ Router.get('/UserDetail', async (req, res) => {
     }
 });
 
-Router.get('/verify-session', (req, res) => {
+Router.get('/verify-session', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -181,6 +181,13 @@ Router.get('/verify-session', (req, res) => {
         console.log("Invalid token: No user ID found");
       return res.status(401).json({ ok: false, message: "Invalid token" });
     }
+
+    const findUser = await User.findById({ id });
+
+    if(!findUser) {
+        return res.status(404).json({ ok: false, message: "User Not Exist"});
+    }
+
     console.log("Token verified for user ID:", id);
     res.json({ ok: true, user: decoded });
   } catch (err) {

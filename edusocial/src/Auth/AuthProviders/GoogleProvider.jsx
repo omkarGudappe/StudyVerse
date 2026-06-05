@@ -4,11 +4,14 @@ import { auth, googleProvider } from './FirebaseSDK';
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import getFirebaseErrorMessage from './FirebaseError';
+import { UserDataContextExport } from '../../Main/RouteMenuComponent/CurrentUserContexProvider';
+
 
 const GoogleProvider = ({ onSignInStatus, onError }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const { setToken } = UserDataContextExport();
 
     useEffect(() => {
         if (error) {
@@ -48,13 +51,19 @@ const GoogleProvider = ({ onSignInStatus, onError }) => {
             }
 
             const data = await response.json();
-
             if (data.exist === true) {
                 if (data.token) {
                     localStorage.setItem("token", data.token);
+                    setToken(data.token);
                 }
-                onSignInStatus && onSignInStatus(false);
-                navigate(data.route || '/home');
+                window.dispatchEvent(
+                    new CustomEvent('tokenUpdated', { detail: { token: data.token } })
+                );
+
+                setTimeout(() => {
+                    onSignInStatus && onSignInStatus(false);
+                    navigate(data.route || '/home');
+                }, 100);
             } else {
                 onSignInStatus && onSignInStatus(true);
                 navigate('/fillprofile');

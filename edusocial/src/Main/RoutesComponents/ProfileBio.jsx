@@ -460,14 +460,14 @@ const ProfileBio = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-4 w-full mt-4">
-              <button
+            {/*  <button
                 type="button"
                 onClick={handleSkip}
                 className="flex-1 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-200"
                 disabled={loading}
               >
                 Skip for Now
-              </button>
+              </button> */}
               <button
                 onClick={handleSubmit}
                 disabled={loading}

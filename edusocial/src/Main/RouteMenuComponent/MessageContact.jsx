@@ -54,7 +54,6 @@ const MessageContact = ({ open, onClose }) => {
             setSearchResults(Data.users);
           }
         } catch (err) {
-          console.error(err);
           setError(err.response?.data?.message || "Failed to search users");
           setSearchResults([]);
         } finally {
@@ -108,7 +107,6 @@ const MessageContact = ({ open, onClose }) => {
             setModalSearchResults(Data.users);
           }
         } catch (err) {
-          console.error(err);
           setModalSearchResults([]);
         } finally {
           setIsModalSearching(false);
@@ -208,25 +206,12 @@ const MessageContact = ({ open, onClose }) => {
         throw new Error(res.data.message);
       }
     } catch (err) {
-      console.error("Failed to create group:", err);
       setCreateError(err.response?.data?.message || err.message || "Failed to create group");
     } finally {
       setIsCreatingGroup(false);
     }
   };
 
-  const handleTarget = () => {
-    if(!ProfileData._id) return 
-
-    if(ProfileData.name) {
-      console.log("Demo Profile data name is the name ", ProfileData.name);
-    } else {
-      console.log("Finding the name is getting some problem ProfileData is getting null ", ProfileData.name);
-    }
-    
-  }
-
-  console.log("Chking group", groups);
 
   const UserCard = ({ user, isGroup = false, onClick, showCheckbox = false, isSelected = false }) => {
     const displayName = isGroup ? user.name : `${user.firstName} ${user.lastName}`;
