@@ -127,9 +127,31 @@ app.use('/api/user/AI', AI);
 app.use('/api/group', Group);
 app.use('/api/quiz', Quize);
 
-const port = process.env.PORT || 4000
+const port = process.env.PORT || 4000;
 connectDB();
+
+const { closeTransporter } = require('./AuthVerify/sendMail');
+
 server.listen(port, () => {
     console.log(`Server is Running on the http://localhost:${port}`);
+});
+
+// ✅ Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    closeTransporter();
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    closeTransporter();
+    server.close(() => {
+        console.log('Server closed');
+        process.exit(0);
+    });
 });
 

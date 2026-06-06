@@ -127,10 +127,13 @@ const LogIn = () => {
         }
       } else {
         const res = await SignUp(formData.email);
-        if (res.status) {
+        if (res.status || res.ok) {
+          // ✅ Show user-friendly success message
+          addError(res.userMessage || res.message || "Verification code sent successfully!");
           setEnterOtp(true);
         } else {
-          addError("Failed to send verification email. Please try again.");
+          // ✅ Show user-friendly error message
+          addError(res.userMessage || res.message || "Failed to send verification code. Please try again.");
         }
       }
     } catch (err) {
@@ -169,15 +172,19 @@ const LogIn = () => {
           setOtp(new Array(6).fill(""));
           setEnterOtp(false);
           setCheckIsJustSignInByGoogle(false);
-          navigate("/fillprofile");
+          // ✅ Show success message
+          addError("Account created successfully! Redirecting...");
+          setTimeout(() => navigate("/fillprofile"), 1500);
         } else {
-          addError(data.error || "Failed to create account");
+          // ✅ Show user-friendly error from API
+          addError(data.userMessage || data.error || "Failed to create account");
         }
       } else {
-        addError(result.message || "Invalid OTP code");
+        // ✅ Show user-friendly error message
+        addError(result.userMessage || result.message || "Invalid or expired OTP code. Please try again.");
       }
     } catch (err) {
-      addError(getFirebaseErrorMessage(err) || "Failed to verify OTP. Please try again.");
+      addError(getFirebaseErrorMessage(err) || err.message || "Failed to verify OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -204,8 +211,15 @@ const LogIn = () => {
   const resendOtp = async () => {
     try {
       setLoading(true);
-      await SignUp(formData.email);
-      addError("Verification code sent successfully!");
+      const res = await SignUp(formData.email);
+      
+      if (res.status || res.ok) {
+        // ✅ Show user-friendly success message
+        addError(res.userMessage || "Verification code resent! Check your email.");
+      } else {
+        // ✅ Show user-friendly error message
+        addError(res.userMessage || res.message || "Failed to resend code. Please try again.");
+      }
     } catch (err) {
       addError(getFirebaseErrorMessage(err) || "Failed to resend OTP");
     } finally {
@@ -258,7 +272,7 @@ const LogIn = () => {
               {errors.map((err) => (
                 <div 
                   key={err.id} 
-                  className="bg-rose-500/20 border border-rose-500 text-rose-200 px-4 py-3 rounded-lg flex items-start"
+                  className={` ${err.error === "Verification code sent! Check your email inbox." ? "bg-green-500/20 border-green-500 text-green-200" : "bg-rose-500/20 border-rose-500 text-rose-200"} border px-4 py-3 rounded-lg flex items-start`}
                 >
                   <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />

@@ -35,24 +35,36 @@ export const EmailContext = ({ children }) => {
                     body: JSON.stringify({ email })
                 });
                 const result = await res.json();
-                console.log("Result :", result);
-                if (!result.ok) {
-                    throw new Error(result.message || "Failed to send email");
-                } else {
-                    if (result.status) {
-                        
-                        alert("Email sent successfully, Please check your inbox. if you don't see it, please check your spam folder.");
-                    }else{
-                        alert("Somthing problem to send the otp. Please try again ");
-                    }
-                }
-                return { status: result.status, loading: false };
+                console.log("SignUp Result :", result);
+                
+                // ✅ Return the full result including userMessage
+                return { 
+                    status: result.ok,
+                    ok: result.ok,
+                    message: result.message || result.userMessage,
+                    userMessage: result.userMessage,
+                    error: result.error,
+                    loading: false 
+                };
             } else {
-                return { status: result.status, loading: false };
+                return { 
+                    status: false, 
+                    ok: false,
+                    message: "Email is required",
+                    userMessage: "Please enter a valid email address.",
+                    loading: false 
+                };
             }
         } catch (err) {
-            alert(err.message);
-            return { status: result.status, loading: false, error: err.message };
+            console.error("SignUp error:", err.message);
+            return { 
+                status: false, 
+                ok: false,
+                message: err.message,
+                userMessage: err.message || "Failed to send verification code. Please try again.",
+                error: err.message,
+                loading: false 
+            };
         }
     }
 

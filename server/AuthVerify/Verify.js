@@ -1,6 +1,6 @@
 const express = require('express');
 const Router = express.Router();
-const sendMail = require('./sendMail').sendMail;
+const { sendMail, sendMailAsync, sendMailWithRetry } = require('./sendMail');
 const crypto = require("crypto");
 const User = require('../Db/User');
 const jwt = require('jsonwebtoken');
@@ -14,21 +14,48 @@ Router.post('/verify' , async (req , res) => {
     try{
         const { email } = req.body;
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // ✅ Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ 
+                ok: false, 
+                message: "Invalid email address", 
+                userMessage: "Please enter a valid email address."
+            });
+        }
 
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
         otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
 
-        const Data = await sendMail(email , "Your OTP Code" , otp);
-        console.log("My otp" , otp);
+        console.log("📧 Sending OTP to:", email);
 
-        console.log(Data.status);
+        // ✅ Try to send email with retry logic (waits for result)
+        // If you want non-blocking, use sendMailAsync instead
+        const emailResult = await sendMailWithRetry(email, "Your OTP Code", otp, 2);
 
-        res.status(200).json({ ok: true , message: "email_sent" , status: Data.status });
+        if (!emailResult.status) {
+            // Email failed even after retries
+            console.error("❌ Failed to send OTP to:", email, emailResult.userMessage);
+            return res.status(500).json({ 
+                ok: false, 
+                message: emailResult.userMessage || "Failed to send verification code",
+                userMessage: emailResult.userMessage || "We couldn't send the verification code. Please check your email and try again."
+            });
+        }
+
+        // ✅ Email sent successfully
+        res.status(200).json({ 
+            ok: true, 
+            message: "email_sent",
+            userMessage: "Verification code sent! Check your email inbox."
+        });
 
     }catch(err){
-        console.error("❌ OTP not sent:", err.message);
-        console.log(Data.status);
-        res.status(500).json({ ok: false , message: "Internal Server Error" , status: Data.status });
+        res.status(500).json({ 
+            ok: false, 
+            message: "Internal Server Error",
+            userMessage: "Something went wrong. Please try again later."
+        });
     }
 })
 
