@@ -27,12 +27,10 @@ const CommentModel = ({
     );
 
     if (Result.ok) {
-      console.log(Result.res, "Result response after comment");
       setComments((prev) => [Result.res, ...prev]);
       UpdateComment(postId);
       setNewComment("");
     } else {
-      console.log(Result.err);
     }
   };
 
@@ -46,7 +44,6 @@ const CommentModel = ({
           `${import.meta.env.VITE_API_URL}/posts/comments/${postId}`
         );
 
-        console.log("API Response:", res.data);
 
         if (res.data.ok) {
           let commentsData = res.data.comments;
@@ -55,18 +52,15 @@ const CommentModel = ({
             usePostsStore.getState().updatePostComment(postId, commentsData);
             const getSingle = posts.filter(p => p._id === postId);
             getSingle.map(comm => {
-              console.log(comm);
             });
             setComments(commentsData);
           } else if (commentsData && Array.isArray(commentsData.comments)) {
             setComments(commentsData.comments);
           } else {
-            console.error("Unexpected comments format:", commentsData);
             setComments([]);
           }
         }
       } catch (err) {
-        console.log("Error:", err?.response?.data || err.message);
         setComments([]);
       } finally {
         setLoading(false);

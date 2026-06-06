@@ -123,7 +123,6 @@ const ProfileBio = () => {
   };
 
   const handleApiError = (error) => {
-    console.error("API Error:", error);
     
     if (!error.response) {
       return {
@@ -254,7 +253,6 @@ const ProfileBio = () => {
         },
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          console.log(`Upload Progress: ${progress}%`);
         }
       });
 

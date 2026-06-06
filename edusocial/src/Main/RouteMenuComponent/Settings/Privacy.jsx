@@ -36,14 +36,12 @@ const Privacy = () => {
             acceptAllPeersRequest: res.data.settings.acceptAllPeersRequest,
           };
 
-          console.log(apiSettings);
           
           setSettings(apiSettings);
           setOriginalSettings(apiSettings);
         }
       } catch (err) {
         const errorMsg = err?.response?.data?.message || err.message || 'Failed to load privacy settings';
-        console.error(errorMsg);
         setFetchError(errorMsg);
       } finally {
         setLoading(false);
@@ -101,7 +99,6 @@ const Privacy = () => {
       }
     } catch (err) {
       const errorMsg = err?.response?.data?.message || err.message || 'Failed to save privacy settings';
-      console.error(errorMsg);
       setSaveStatus({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);

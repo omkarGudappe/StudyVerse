@@ -269,7 +269,6 @@ const Lesson = () => {
             Socket.emit("Handle-user-like", { lessonId, userId: UserId, type: "like", toId: lessonAuthorId });
             
         } catch (err) {
-            console.log(err.message);
             setLocalLikedLessons(new Set(localLikedLessons));
             setPendingLikes(prev => {
                 const newSet = new Set(prev);
@@ -414,7 +413,7 @@ const Lesson = () => {
             navigator.share({
                 title: 'Check out this lesson on StudyVerse',
                 url: lessonUrl
-            }).catch(console.error);
+            }).catch();
         } else {
             navigator.clipboard.writeText(lessonUrl);
             // Show a toast notification that link was copied
@@ -477,7 +476,6 @@ const handleSearchQuery = async (query, options = {}) => {
             }
 
             const responseTime = Date.now() - startTime;
-            console.log(`[CLIENT_SEARCH] "${query}" - ${responseTime}ms`);
             
             return { 
                 success: true, 
@@ -489,7 +487,6 @@ const handleSearchQuery = async (query, options = {}) => {
         return { success: false, error: 'Search failed' };
         
     } catch (err) {
-        console.error(`[SEARCH_ERROR] "${query}" - ${err.message}`);
         
         if (err.code === 'ECONNABORTED' || err.name === 'AbortError') {
             // Fallback to client-side search

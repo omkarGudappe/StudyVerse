@@ -47,7 +47,6 @@ const MobileContact = () => {
             setSearchResults(Data.users);
           }
         } catch (err) {
-          console.error(err);
           setError(err.response?.data?.message || "Failed to search users");
           setSearchResults([]);
         } finally {
@@ -101,7 +100,6 @@ const MobileContact = () => {
             setModalSearchResults(Data.users);
           }
         } catch (err) {
-          console.error(err);
           setModalSearchResults([]);
         } finally {
           setIsModalSearching(false);
@@ -200,7 +198,6 @@ const MobileContact = () => {
         throw new Error(res.data.message);
       }
     } catch (err) {
-      console.error("Failed to create group:", err);
       setCreateError(err.response?.data?.message || err.message || "Failed to create group");
     } finally {
       setIsCreatingGroup(false);

@@ -33,7 +33,6 @@ const QuizReview = () => {
           setError('No quiz session specified');
         }
       } catch (error) {
-        console.error('Error loading quiz session:', error);
         setError('Failed to load quiz session');
       } finally {
         setIsLoading(false);

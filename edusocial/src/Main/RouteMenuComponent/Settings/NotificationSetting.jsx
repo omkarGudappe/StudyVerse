@@ -40,7 +40,6 @@ const NotificationSetting = () => {
         }
       } catch (err) {
         const errorMsg = err?.response?.data?.message || err.message || 'Failed to load settings';
-        console.error(errorMsg);
         setFetchError(errorMsg);
       } finally {
         setLoading(false);
@@ -69,7 +68,6 @@ const NotificationSetting = () => {
       [setting]: !prev[setting]
     }));
     setSaveStatus({ type: '', message: '' });
-    console.log(settings , "Setting ");
   };
 
   const handleSave = async () => {
@@ -90,7 +88,6 @@ const NotificationSetting = () => {
       }
     } catch (err) {
       const errorMsg = err?.response?.data?.message || err.message || 'Failed to save settings';
-      console.error(errorMsg);
       setSaveStatus({ type: 'error', message: errorMsg });
     } finally {
       setLoading(false);

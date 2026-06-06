@@ -8,7 +8,7 @@ import FlashcardView from "../RouteMenuComponent/AIModel/FlashcardView";
 
 const Challenges = () => {
   const { ProfileData } = UserDataContextExport();
-  const [activeTab, setActiveTab] = useState('flashcards');
+  const [activeTab, setActiveTab] = useState('quizzes');
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState({
     flashcardsCreated: 12,

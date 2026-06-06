@@ -28,12 +28,10 @@ const Search = ({ searchClicked, onClose }) => {
   const searchAPI = useCallback(async (term, page) => {
     const uid = ProfileData ? ProfileData._id : "";
     if(!uid) {
-      console.log('No user ID found');
       return null;
     }
 
     try {
-      console.log('Searching for:', term, 'page:', page);
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('No auth token found');
@@ -46,10 +44,8 @@ const Search = ({ searchClicked, onClose }) => {
           }
         }
       );
-      console.log('Search results:', res.data);
       return res.data;
     } catch (err) {
-      console.error('Search API error:', err);
       throw err;
     }
   }, [ProfileData]);
@@ -84,7 +80,6 @@ const Search = ({ searchClicked, onClose }) => {
           }
 
         } catch (err) {
-          console.error('Search error:', err);
           setError(err.response?.data?.message || "Failed to search");
           if (pagination.page === 1) {
             setSearchResults({ users: [], notes: [], lessons: [] });

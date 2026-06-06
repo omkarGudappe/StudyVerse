@@ -97,7 +97,6 @@ const GroupDetailModel = ({ groupId, GroupData, onClose, currentUser, UpdateGrou
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.message || 'Failed to update group details';
       showError(errorMessage);
-      console.error('Error updating group details:', err);
     } finally {
       setUploading(false);
       setLoading(false);
@@ -155,7 +154,6 @@ const GroupDetailModel = ({ groupId, GroupData, onClose, currentUser, UpdateGrou
   const makeAdmin = async (id) => {
     try {
       setLoading(true);
-      console.log("Making admin for user id: ", id);
       const token = localStorage.getItem('token');
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/group/${groupId}/members/${id}/admin`,
@@ -182,7 +180,6 @@ const GroupDetailModel = ({ groupId, GroupData, onClose, currentUser, UpdateGrou
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to make admin';
       showError(errorMessage);
-      console.error('Error making admin:', error);
     } finally {
       setLoading(false);
     }
@@ -222,10 +219,8 @@ const GroupDetailModel = ({ groupId, GroupData, onClose, currentUser, UpdateGrou
           !existingMemberIds.includes(user._id)
         );
         setAddMembersSearchResults(filteredUsers);
-        console.log("identifying the Result" , filteredUsers, "and", response?.data);
       }
     } catch (error) {
-      console.error('Error searching users:', error);
       setAddMembersSearchResults([]);
     } finally {
       setIsSearchingMembers(false);
@@ -274,7 +269,6 @@ useEffect(() => {
       const token = localStorage.getItem('token');
       const memberIds = selectedNewMembers.map(member => member._id);
 
-      console.log("members Ids", memberIds);
 
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/group/${groupId}/members`,
@@ -299,7 +293,6 @@ useEffect(() => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to add members';
       showError(errorMessage);
-      console.error('Error adding members:', error);
     } finally {
       setAddingMembers(false);
     }
@@ -327,7 +320,6 @@ useEffect(() => {
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message || 'Failed to leave group';
       showError(errorMessage);
-      console.error('Error leaving group:', error);
     } finally {
       setLoading(false);
     }
@@ -339,7 +331,6 @@ useEffect(() => {
       .includes(searchTerm.toLowerCase())
   );
 
-  console.log("filter data", filteredMembers);
   const isGroupAdmin = (memberId) => {
     return GroupData?.members?.some(member => member.member._id === memberId && member.isAdmin);
   };

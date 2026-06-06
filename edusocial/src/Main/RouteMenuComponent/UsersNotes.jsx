@@ -10,12 +10,12 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
     const [error, setError] = useState(null);
     const [Loading, setLoading] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
+    const [confirmationOpen, setConfirmationOpen] = useState({ open: false, noteId: null });
     const navigate = useNavigate();
 
     useEffect(() => {
         const FetchNotes = async () => {
             if (!open || !ProfileData?._id) return;
-            console.log("check");
             
             const ID = ProfileData._id;
             setLoading(true);
@@ -25,13 +25,11 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/Notes/usernotes/${ID}`)
                 if (res.data.ok) {
                     setNotes(res.data.notes);
-                    console.log("Checking backend data", res.data.notes)
                 } else {
                     throw new Error(res.data.message || "Failed to fetch notes");
                 }
             } catch (err) {
                 setError(err.response?.data?.message || err.message || "Failed to load notes");
-                console.error("Error fetching notes:", err);
             } finally {
                 setLoading(false);
             }
@@ -40,22 +38,21 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
     }, [open]);
 
     const handleDeleteNote = async (noteId) => {
-        if (!window.confirm("Are you sure you want to delete this note?")) return;
         
         setDeletingId(noteId);
         const uid = ProfileData?._id;
-        console.log("Cheking notes befoure deleting ", Notes);
         try {
+            setLoading(true);
             const res =  await axios.delete(`${import.meta.env.VITE_API_URL}/Notes/delete/${noteId}?userId=${uid}`);
             if(res.data.ok){
                 const newNote = Notes?.Notes?.filter(note => note?.NoteId !== noteId);
                 setNotes(prev => ({...prev, Notes: newNote}));
-                console.log("Checking notes from the response", Notes, 'and', )
             }
         } catch (err) {
             setError(err.response?.data?.message || "Failed to delete note");
-            console.error("Error deleting note:", err);
         } finally {
+            setConfirmationOpen({ open: false, noteId: null });
+            setLoading(false);
             setDeletingId(null);
         }
     };
@@ -97,6 +94,48 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
             ))}
         </div>
     );
+
+    const ConfirmationDialog = () => (
+         <div className="fixed inset-0 z-60 flex items-center justify-center bg-opacity-80 backdrop-blur-sm"  onClick={(e) => {setConfirmationOpen({ open: false, noteId: null }); e.stopPropagation()}}>
+            <div className="bg-neutral-900 rounded-2xl p-6 mx-4 max-w-md w-full border border-neutral-700 shadow-2xl transform transition-all" onClick={(e)=> e.stopPropagation()}>
+                <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">Delete Note</h3>
+                    <p className="text-neutral-400">Are you sure you want to delete this note? This action cannot be undone.</p>
+                </div>
+                <div className="flex space-x-3">
+                    <button
+                        onClick={() => setConfirmationOpen({ open: false, noteId: null })}
+                        className="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={() => handleDeleteNote(confirmationOpen.noteId)}
+                        disabled={Loading}
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                        {Loading ? (
+                            <div className="flex items-center space-x-2">
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                <span>Deleting...</span>
+                            </div>
+                        ) : (
+                            'Delete'
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+
+    if(confirmationOpen.open){
+        return <ConfirmationDialog />
+    }
 
 
     const NoteCard = ({ note, index }) => (
@@ -164,7 +203,7 @@ const UsersNotes = ({ open, onClose, ProfileData , from }) => {
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleDeleteNote(note?.NoteId);
+                        setConfirmationOpen({ open: true, noteId: note?.NoteId });
                     }}
                     disabled={deletingId === note?.NoteId}
                     className="absolute right-4 top-1/2 transform -translate-y-1/2 p-2 text-neutral-400 hover:text-red-400 transition-colors duration-200  group-hover:opacity-100 disabled:opacity-50"

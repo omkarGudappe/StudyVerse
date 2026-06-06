@@ -40,7 +40,6 @@ const Notification = ({ open, onClose, ProfileData }) => {
         });
 
         Socket.on("getNotify" , ({getNotify}) => {
-            console.log("my noti", getNotify);
         })
 
         Socket.on("Removed", ({ status, Id }) => {
@@ -87,11 +86,9 @@ const Notification = ({ open, onClose, ProfileData }) => {
                     Notification.push(notify)
                 ))
             }
-            console.log(Notification)
             setNotifications(Notification);
         } catch (err) {
             setError(err.response?.data?.message || "Failed to load notifications");
-            console.error("Error fetching notifications:", err);
         } finally {
             setIsLoading(false);
         }
@@ -99,7 +96,6 @@ const Notification = ({ open, onClose, ProfileData }) => {
 
     const handleAccept = (senderId , notificationId) => {
         const ID = ProfileData?._id ;
-    console.log("Accepting request - senderId:", senderId, "notificationId:", notificationId);
         setActiveActions(prev => ({ ...prev, [senderId]: 'accepting' }));
         Socket.emit("acceptRequest", { Id: ID, fromID: senderId, notificationId: notificationId });
     };
@@ -144,7 +140,6 @@ const Notification = ({ open, onClose, ProfileData }) => {
                 notif._id === notificationId ? { ...notif, read: true } : notif 
             ));
         } catch (error) {
-            console.error("Error marking notification as read:", error);
         }
     };
 
@@ -154,7 +149,6 @@ const Notification = ({ open, onClose, ProfileData }) => {
             await axios.delete(`${import.meta.env.VITE_API_URL}/user/${ID}/notifications`);
             setNotifications([]);
         } catch (error) {
-            console.error("Error clearing notifications:", error);
         }
     };
 
@@ -165,7 +159,6 @@ const Notification = ({ open, onClose, ProfileData }) => {
         try{
             Socket.emit("handle-delete-notification" , {Id , userId });
         }catch(err){
-            console.log(err.message);
         }finally{
             setNotificationId(false)
         }

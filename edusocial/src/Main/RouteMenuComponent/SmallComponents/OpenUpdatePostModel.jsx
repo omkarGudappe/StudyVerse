@@ -59,7 +59,6 @@ const OpenUpdatePostModel = ({ post, onClose, onUpdate }) => {
                 onClose();
             }
         } catch (err) {
-            console.log(err.message);
             const errorMessage = err.response?.data?.message || err.message || 'Failed to update post';
             showError(errorMessage);
         } finally {

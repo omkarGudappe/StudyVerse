@@ -122,7 +122,6 @@ const Menu = () => {
     const isAnyModalOpen = (showPost && !postMinimized) || searchClicked || NotificationOpen || 
                           MessageContactClick || OpenUserNotes || showMoreMenu;
 
-    console.log("Cheking post ", showPost, "and minimized ", postMinimized);
 
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';

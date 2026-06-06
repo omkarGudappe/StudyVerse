@@ -43,7 +43,6 @@ const Profile = () => {
         }
         setError(null);
       } catch (err) {
-        console.log(err);
         setError('Failed to load profile data');
       } finally {
         setLoading(false);
@@ -60,7 +59,6 @@ const Profile = () => {
   const scrollTo = (value, offset) => {
     const element = document.getElementById(value);
     if(element){
-      console.log(value);
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - offset;
 

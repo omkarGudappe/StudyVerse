@@ -1028,11 +1028,7 @@ const NotesEditor = ({ content, Id }) => {
             } else {
             }
           } catch (err) {
-            console.error(
-              err.response.data.message,
-              "Auto-save error:",
-              err.message,
-            );
+            
             setSavedStatus("error");
           }
         }, 4000);
@@ -1067,7 +1063,6 @@ const NotesEditor = ({ content, Id }) => {
   useEffect(() => {
     if (!content) return;
     if (content) {
-      console.log("Content here", content);
       editor.commands.setContent(content);
     }
   }, [editor, content, Id]);
@@ -1081,7 +1076,7 @@ const NotesEditor = ({ content, Id }) => {
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
       editorRef.current.requestFullscreen().catch((err) => {
-        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        console.error(`Error attempting to enable fullscreen mode: ${err.message}`);
       });
       setIsFullscreen(true);
     } else {

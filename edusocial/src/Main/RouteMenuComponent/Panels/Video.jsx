@@ -106,11 +106,9 @@ const Video = () => {
                     setIsPlaying(false);
                 }
             } else {
-                console.error('Lesson not found');
                 setVideoError('Lesson not found');
             }
         } catch (err) {
-            console.error('Error loading lesson:', err);
             setVideoError('Error loading lesson');
         } finally {
             setIsLoadingLesson(false);
@@ -128,7 +126,6 @@ const Video = () => {
                 setSavedTimestamps(response.data.timestamps || []);
             }
         } catch (error) {
-            console.log('No saved notes found or error loading notes');
         }
     };
 
@@ -142,7 +139,6 @@ const Video = () => {
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
         } catch (error) {
-            console.error('Error saving notes:', error);
         }
     };
 
@@ -174,7 +170,6 @@ const Video = () => {
                 setPeersList(res.data.Connections);
             }
         } catch (err) {
-            console.log(err.message);
         }
     };
 
@@ -196,7 +191,6 @@ const Video = () => {
                 setShowShareModal(false);
             }
         } catch (error) {
-            console.error("Error sharing lesson:", error);
         }
     };
 
@@ -224,7 +218,6 @@ const Video = () => {
             link.remove();
             
         } catch (error) {
-            console.error('Download error:', error);
         } finally {
             setIsDownloading(false);
         }
@@ -327,7 +320,6 @@ const Video = () => {
             const handleError = (e) => {
                 setIsVideoLoading(false);
                 setIsVideoWaiting(false);
-                console.error('Video error:', e);
                 setVideoError('Failed to load video. Please check your connection.');
             };
             
@@ -452,7 +444,7 @@ const Video = () => {
         setCurrentTime(newTime);
         
         if (isPlaying) {
-            videoRef.current.play().catch(console.error);
+            videoRef.current.play().catch();
         }
     };
 
@@ -490,7 +482,7 @@ const Video = () => {
         setSeekPreviewVisible(false);
         
         if (isPlaying) {
-            videoRef.current.play().catch(console.error);
+            videoRef.current.play().catch();
         }
     };
 
@@ -521,7 +513,6 @@ const Video = () => {
                 .slice(0, 3);
             setRelatedLessons(related);
         } catch (error) {
-            console.error('Error fetching related lessons:', error);
         } finally {
             setIsLoadingRelated(false);
         }
@@ -531,7 +522,6 @@ const Video = () => {
         if (videoRef.current) {
             if (videoRef.current.paused) {
                 videoRef.current.play().catch(error => {
-                    console.error('Play failed:', error);
                     setVideoError('Failed to play video');
                 });
             } else {
@@ -647,7 +637,6 @@ const Video = () => {
         try {
             if (!comment.trim()) return;
             if (!ProfileData?._id) {
-                console.log("User not logged in");
                 return;
             }
 
@@ -664,13 +653,11 @@ const Video = () => {
             );
 
             if (res.data.ok) {
-                console.log("Comment added:", res.data.comment);
                 useLessonStore.getState().addCommentToLesson(postId, res.data.comment);
                 setComments(prev => [res.data.comment, ...prev]);
                 setComment("");
             }
         } catch (err) {
-            console.log(err?.response?.data?.message || err.message);
         } finally {
             setCommentLoading(false);
         }
@@ -709,12 +696,10 @@ const FetchComments = useCallback(async (page = 1, loadMore = false) => {
                 setTotalComments(res.data.pagination?.totalComments || 0);
                 setCommentsPage(page);
             } else {
-                console.error('Unexpected comments format:', commentsData);
                 if (!loadMore) setComments([]);
             }
         }
     } catch (err) {
-        console.log('Error:', err?.response?.data || err.message);
         if (!loadMore) setComments([]);
     } finally {
         setLoading(false);
@@ -809,7 +794,7 @@ useEffect(() => {
         setVideoError(null);
         if (videoRef.current) {
             videoRef.current.load();
-            videoRef.current.play().catch(console.error);
+            videoRef.current.play().catch(error => {});
         }
     };
 

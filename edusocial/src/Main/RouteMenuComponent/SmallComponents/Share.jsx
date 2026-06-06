@@ -19,20 +19,16 @@ const Share = ({ onClose, shareModalOpen, ProfileData }) => {
     const FetchCurrentUserPeer = async () => {
         if(!ProfileData) return;
         const ID = ProfileData?._id;
-            console.log("middle");
             setLoading(true);
             try{
                 const res = await axios.get(
                     `${import.meta.env.VITE_API_URL}/user/userpeers/${ID}`,
                 )
-                console.log("middle working");
                 if(res.data.ok) {
                     if(res.data.User.length > 0) setContacts(res.data.User)
                     if(res.data.Groups.length > 0) setGroups(res.data.Groups)
                 }
-                console.log("end");
             } catch(err) {
-                console.log(err.res.data.message || err.message);
                 setError(true);
                 setLoading(false);
             } finally {
@@ -42,7 +38,6 @@ const Share = ({ onClose, shareModalOpen, ProfileData }) => {
 
     useEffect(() => {
         if(contacts.length < 1 || groups.length < 1) {
-            console.log("Checking lenght", contacts.length, "and", groups.length);
             FetchCurrentUserPeer();
         }
 
@@ -106,7 +101,6 @@ const Share = ({ onClose, shareModalOpen, ProfileData }) => {
             onClose();
             
         } catch (error) {
-            console.error("Error sharing post:", error);
             alert("Failed to share post to some recipients");
         } finally {
             setIsSharing(false);

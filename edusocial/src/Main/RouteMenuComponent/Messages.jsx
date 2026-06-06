@@ -107,7 +107,6 @@ const Messages = () => {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/friend/username/${userName}`);
         setOtherUser(res.data.user);
       } catch (error) {
-        console.error("Error fetching user:", error);
       } finally {
         setIsFetching(false);
       }
@@ -123,9 +122,7 @@ const Messages = () => {
         
         if (res.data.ok && res.data.group) {
           setGroupData(res.data.group);
-          console.log(res.data.group.members);
         } else {
-          console.error("Unexpected response structure:", res.data);
           setGroupData({
             _id: groupId,
             name: "Unknown Group",
@@ -133,7 +130,6 @@ const Messages = () => {
           });
         }
       } catch (error) {
-        console.error("Error fetching group:", error);
         setGroupData({
           _id: groupId,
           name: "Unknown Group",
@@ -219,7 +215,6 @@ const Messages = () => {
         }, 100);
       },
       (error) => {
-        console.error("Error fetching messages:", error);
         setIsLoading(false);
       }
     );
@@ -261,7 +256,6 @@ const Messages = () => {
        return { url: "", type: "" };
 
     }catch(err){
-      console.log(err.message);
       return { url: "", type: "" };
     }
   }
@@ -294,7 +288,6 @@ const Messages = () => {
     const databasePath = getDatabasePath();
 
     if (!senderFirebaseUid || !chatId) {
-      console.error("❌ Missing required data for sending message");
       setIsSending(false);
       return;
     }
@@ -337,7 +330,6 @@ const Messages = () => {
         setIsSending(true);
         fileUrlData = await GetFileUrlfromBackend();
         if (!fileUrlData.url) {
-          console.error("Failed to upload file");
           setMessages(prev => prev.map(msg => 
             msg.id === tempId ? { ...msg, status: 'failed' } : msg
           ));
@@ -346,7 +338,6 @@ const Messages = () => {
           return;
         }
       } catch (error) {
-        console.error("File upload error:", error);
         setMessages(prev => prev.map(msg => 
           msg.id === tempId ? { ...msg, status: 'failed' } : msg
         ));
@@ -400,16 +391,13 @@ const Messages = () => {
         });
       }
       
-      console.log("✅ Chat metadata updated");
     } catch (err) {
-      console.error("❌ Failed to update chat metadata:", err);
     }
 
     try {
       const messagesRef = ref(database, `${databasePath}/messages`);
       const newMsgRef = push(messagesRef);
       await set(newMsgRef, messageData);
-      console.log("✅ Message saved");
       
       // Update local message status to sent
       setMessages(prev => prev.map(msg => 
@@ -417,7 +405,6 @@ const Messages = () => {
       ));
       
     } catch (err) {
-      console.error("❌ Failed to save message:", err);
       // Update message status to failed
       setMessages(prev => prev.map(msg => 
         msg.id === tempId ? { ...msg, status: 'failed' } : msg
@@ -454,9 +441,7 @@ const Messages = () => {
         const User1 = ProfileData._id
         const User2 = otherUser._id;   
         Socket.emit("UsersChat", { user1: User1, user2: User2, chatId: chatId})
-        console.log("✅ User chats updated");
       } catch (err) {
-        console.error("❌ Failed to update user chats:", err);
       }
     }
 
@@ -598,7 +583,6 @@ const Messages = () => {
     if(!otherUser && !ProfileData) return;
     const CurrentUserId = ProfileData?._id;
     const OtherUserId = otherUser?._id;
-    console.log("check for frontend data is correct or not" , CurrentUserId, "and", OtherUserId);
     setOnlieStatus('');
     Socket.emit('OnlineStatus', ({ CurrentUserId, OtherUserId }));
 
@@ -634,7 +618,6 @@ const Messages = () => {
     });
   };
 
-  console.log("Group data", groupData);
 
   const handleClosePostModal = () => {
     setOpenPostModel({

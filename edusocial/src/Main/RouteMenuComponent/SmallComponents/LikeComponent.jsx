@@ -97,7 +97,6 @@ const LikeComponent = ({PostId, PostAuthorId , LikeLength, CurrentUserId, isVide
           Socket.emit("Handle-user-like", { postId, userId: UserId, type: "like" , toId: postAuthorId  });
           
         } catch (err) {
-          console.log(err.message);
           setLocalLikedPosts(new Set(localLikedPosts));
           setPendingLikes(prev => {
             const newSet = new Set(prev);

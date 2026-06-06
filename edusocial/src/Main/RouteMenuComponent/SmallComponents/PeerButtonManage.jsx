@@ -17,10 +17,8 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
             try {
                 if(!ProfileData._id) return;
                 setIsLoading(true);
-                console.log("Fetching connections for", currentUser, OtherUser , ProfileData?._id);
                 const GetCureentUser = currentUser ? currentUser : ProfileData?._id;
                 const getIds = [GetCureentUser, OtherUser];
-                console.log("Demo Cheakig Ids", getIds);
                 const res = await axios.get(`${import.meta.env.VITE_API_URL}/user/getConnections`, {
                     params: { ids: getIds.join(',') }
                 })
@@ -29,7 +27,6 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
                     setOtherUserConnections(res.data.OtherUserData);
                 }
             } catch (err) {
-                console.log(err?.response?.data?.message || err.message);
             } finally {
                 setIsLoading(false);
             }
@@ -45,10 +42,8 @@ const PeerButtonManage = ({ currentUser, OtherUser, className }) => {
         } else if (OtherUserConnections.connectionRequests?.includes(currentUser)) {
             setPeerStatus({ requested: true })
         } else if(currentUser === OtherUser) {
-            console.log("It's you");
             setPeerStatus({ self: true });
         } else {
-            console.log("No connection");
             setPeerStatus({ peer: true });
         }
     }, [CurrentUserConnections, OtherUserConnections, currentUser])

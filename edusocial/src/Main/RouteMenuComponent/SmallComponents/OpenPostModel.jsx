@@ -100,7 +100,6 @@ const OpenPostModal = ({ open, onClose, Id, posts = [], UpdatePosts, from = '' }
                     setPost(res.data.Post)
                 }
             } catch (err) {
-                console.log(err?.response?.data?.message || err.message)
             } finally {
                 setLoading(false)
             }
@@ -113,7 +112,6 @@ const OpenPostModal = ({ open, onClose, Id, posts = [], UpdatePosts, from = '' }
     }, [Id, open])
 
     const handleCommentSubmit = async () => {
-        console.log("Submitting comment:", commentInput);
         const Result = await AddComment(post?._id, commentInput, post?.author?._id, ProfileData?._id);
 
         if (Result.ok) {
@@ -136,7 +134,6 @@ const OpenPostModal = ({ open, onClose, Id, posts = [], UpdatePosts, from = '' }
                 comments: [AddNewComment, ...(prevPost.comments || [])]
             }));
         } else {
-            console.log(Result.err)
         }
         setCommentInput('');
     };
@@ -177,9 +174,7 @@ const OpenPostModal = ({ open, onClose, Id, posts = [], UpdatePosts, from = '' }
     }
 
     const handleUpdate = (updatedPost) => {
-        console.log(updatedPost, "posts");
         const NewUpdatedPosts = posts.filter(post => post._id === updatedPost._id)
-        console.log("debbugging", NewUpdatedPosts);
         setPost(updatedPost);
         setOpenEditPostModel(false);
     }

@@ -42,8 +42,7 @@ Each quiz item in JSON must include these fields:
   try {
     return JSON.parse(response);
   } catch (err) {
-    console.error("❌ JSON parse error:", err.message);
-    console.error("🔎 Raw response was:", response);
+  
     throw new Error("Failed to parse AI response");
   }
 };

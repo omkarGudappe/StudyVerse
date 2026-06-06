@@ -19,10 +19,8 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
                 if (res.data.ok) {
                     setConnections(res.data.ConnectionNetWork);
                     setConnectionsNetwork(res.data.Connections);
-                    console.log(res.data.Connections);
                 }
             } catch (err) {
-                console.log(err.message);
             } finally {
                 setLoading(false);
             }
@@ -52,7 +50,6 @@ const OpenPeersModel = ({ open, onClose, ProfileData, currentUserData, from }) =
         return fullName.includes(searchTerm) || education.includes(searchTerm);
     });
 
-    console.log(filteredConnections);
 
     const filteredNetwork = ConnectionsNetwork.filter(connection => {
         const fullName = `${connection?.firstName || ''} ${connection?.lastName || ''}`;

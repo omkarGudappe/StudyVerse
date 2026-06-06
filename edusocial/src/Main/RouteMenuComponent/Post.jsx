@@ -169,7 +169,6 @@ const Post = ({ ModelCloseClicked, setPostMinimized }) => {
 // Update your useEffect socket listener
 React.useEffect(() => {
   const handleUploadProgress = (data) => {
-    console.log('📡 Progress update received:', data);
     
     let calculatedPercent = 0;
     
@@ -217,30 +216,26 @@ React.useEffect(() => {
     // Ensure we don't go over 100% and provide minimum progress
     calculatedPercent = Math.max(5, Math.min(Math.round(calculatedPercent), 100));
     
-    console.log(`📡 Mapping: backend ${data.progress} (${data.phase}) → frontend ${calculatedPercent}%`);
     
     setPercent(calculatedPercent);
     setUploadPhase(data.phase);
     
     if (data.message) {
-      console.log('📡 Progress message:', data.message);
     }
   };
 
   const handleUploadError = (error) => {
-    console.error('📡 Upload error received:', error);
     setError(error.message || 'Upload failed');
     setUploadStatus('error');
     setLoading(false);
   };
 
   // Listen for progress updates
-  console.log('📡 Setting up socket listeners for uploadProgress');
   Socket.on('uploadProgress', handleUploadProgress);
   Socket.on('uploadError', handleUploadError);
 
   return () => {
-    console.log('📡 Cleaning up socket listeners');
+    
     Socket.off('uploadProgress', handleUploadProgress);
     Socket.off('uploadError', handleUploadError);
   };
@@ -294,8 +289,6 @@ const handleSubmit = async () => {
     if (result && result.newPost) {
       // Success is now handled by WebSocket 'complete' phase
       addPost(result.newPost);
-      console.log("New post added to store:", result.newPost);
-      console.log(result.uploadFile, "for checking url");
       Socket.emit("NewPostUploded", { upload: true });
       setTimeout(() => ModelCloseClicked(false), 1500);
     } else {

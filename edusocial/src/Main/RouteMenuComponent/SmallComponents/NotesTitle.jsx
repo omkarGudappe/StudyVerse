@@ -22,7 +22,6 @@ const NotesTitle = ({ open, onClose , editor }) => {
     const userId = ProfileData?._id || FirebaseUid || auth.currentUser?.uid || ProfileData?.Uid
     const NoteId = title +"_"+ Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     const content = editor.getJSON();
-    console.log("Form data", title, userId, NoteId, content);
     try{
         const res = await axios.post(`${import.meta.env.VITE_API_URL}/Notes/usernotes`,{ title, NoteId, uid:userId, content } );
         if(res.data.ok){
@@ -35,12 +34,10 @@ const NotesTitle = ({ open, onClose , editor }) => {
             });
             onClose();
         }else {
-            console.log(res.data.message);
             setLoading(false);
         }
         setIsLoading(false);
     }catch(err){
-        console.log(err?.response?.data?.message || err.message);
     }finally{
         setIsLoading(false);
     }

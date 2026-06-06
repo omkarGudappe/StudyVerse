@@ -20,7 +20,6 @@ const SearchResult = ({
   const notesData = searchResults.notes || [];
   const lessonsData = searchResults.lessons || [];
 
-  console.log('Search Results:', notesData);
 
   const getActiveData = () => {
     switch (activeTab) {

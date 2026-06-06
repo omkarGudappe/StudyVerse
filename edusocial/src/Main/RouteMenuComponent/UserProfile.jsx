@@ -45,7 +45,6 @@ const UserProfile = () => {
           }
         }
       } catch (err) {
-        console.error(err?.response?.data?.message);
         setError(err?.response?.data?.message);
       } finally {
         setLoading(false);
