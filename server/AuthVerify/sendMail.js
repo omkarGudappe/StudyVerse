@@ -9,8 +9,9 @@ const initializeTransporter = () => {
 
     transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
-        port: 465,
+        port: 587,
         secure: true,
+        requireTLS: true,
         pool: {
             maxConnections: 10,           // ✅ Connection pooling
             maxMessages: 100,
@@ -21,8 +22,8 @@ const initializeTransporter = () => {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASS,
         },
-        connectionTimeout: 5000,          // ✅ 5 second timeout
-        socketTimeout: 5000,
+        connectionTimeout: 15000,          // ✅ 5 second timeout
+        socketTimeout: 15000,
         logger: false,
         debug: false
     });
