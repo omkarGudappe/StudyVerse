@@ -131,7 +131,7 @@ const UserSchema = new mongoose.Schema({
 
     setting: { type: UserSettingsSchema , default: () => ({})},
 
-    Uid:{type:String, unique:true},
+    Uid:{ type:String },
     firebaseUid:{type:String, unique:true},
 
     email: {

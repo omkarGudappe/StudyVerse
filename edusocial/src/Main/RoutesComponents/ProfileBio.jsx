@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { auth } from "../../Auth/AuthProviders/FirebaseSDK";
+import { UserDataContextExport } from "../RouteMenuComponent/CurrentUserContexProvider";
 
 const ProfileBio = () => {
   const [previewImage, setPreviewImage] = useState(null);
@@ -19,6 +20,7 @@ const ProfileBio = () => {
     username: ""
   });
   const navigate = useNavigate();
+  const { token, setToken, fetchProfile } = UserDataContextExport();
 
   // Clear errors when user starts typing
   useEffect(() => {
@@ -266,6 +268,8 @@ const ProfileBio = () => {
         });
         setPreviewImage(null);
         setCharCount(200);
+        fetchProfile();
+        // setToken(localStorage.getItem("token"));
         navigate('/home');
       } else {
         throw new Error(result.message || "Unexpected response from server");
@@ -304,8 +308,22 @@ const ProfileBio = () => {
   };
 
   return (
-    <div className="bg-neutral-900 text-white min-h-screen flex items-center justify-center px-3 py-8">
-      <div className="border-gray-700 border rounded-xl shadow-2xl shadow-gray-900 h-auto w-full max-w-md mx-auto">
+    <div className="relative bg-neutral-900 text-white min-h-screen flex items-center justify-center overflow-hidden px-3 py-8">
+      <video
+          className="absolute blur-xs top-0 left-0 w-full h-full object-cover opacity-20"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          onError={(e) => console.log('Video error:', e)}
+      >
+          <source src="/Video/Background.mp4" type="video/mp4" />
+      </video>
+       {/* <div className="fixed top-0 right-0 p-2 h-30 w-30">
+            <img src="/LOGO/StudyVerseLogo2.png" className="h-30 w-" alt="" />
+        </div> */}
+      <div className="border-gray-700 border rounded-xl shadow-2xl shadow-gray-900 h-auto w-full max-w-md mx-auto z-30">
         <div className="p-6">
           <div className="flex flex-col gap-y-6 items-center justify-center">
             <h1 className="text-2xl font-bold text-white">Complete Your Profile</h1>
@@ -344,39 +362,41 @@ const ProfileBio = () => {
 
             {/* Profile Image Upload */}
             <div className="flex flex-col items-center gap-y-3">
-              <label
-                htmlFor="profileImage"
-                className="h-32 w-32 rounded-full border-2 border-dashed border-gray-600 cursor-pointer flex items-center justify-center overflow-hidden hover:border-indigo-500 transition-colors duration-200 bg-neutral-800"
-              >
-                {previewImage ? (
-                  <div className="relative h-full w-full">
-                    <img
-                      src={previewImage}
-                      alt="Profile Preview"
-                      className="h-full w-full object-cover rounded-full"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
+              <div className="bg-gradient-to-tl from-indigo-500 cursor-pointer to-purple-500 p-1 rounded-full">
+                <label
+                  htmlFor="profileImage"
+                  className="h-32 w-32 rounded-full cursor-pointer flex items-center justify-center overflow-hidden hover:border-indigo-500 transition-colors duration-200 bg-neutral-800"
+                >
+                  {previewImage ? (
+                    <div className="relative h-full w-full">
+                      <img
+                        src={previewImage}
+                        alt="Profile Preview"
+                        className="h-full w-full object-cover rounded-full"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-12 h-12 text-gray-400"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                )}
-              </label>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-12 h-12 text-gray-400"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  )}
+                </label>
+              </div>
               
               <div className="flex flex-col items-center gap-y-1">
                 <input

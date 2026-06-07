@@ -12,9 +12,7 @@ const LandingHome = () => {
   useEffect(() => {
   const checkSession = async () => {
     const token = localStorage.getItem("token");
-    console.log("Befour getting");
     if (!token) return;
-    console.log("Found token, verifying session...", token);
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-session`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -22,15 +20,12 @@ const LandingHome = () => {
 
       const data = await res.json();
       if (data.ok) {
-        navigate("/home");
-        console.log("Session valid, navigating to home.");
+        navigate(data.route || '/home');
       } else {
         localStorage.removeItem("token");
-        console.log("Session invalid, please log in again.");
       }
     } catch (err) {
       localStorage.removeItem("token");
-      console.log("Session verification error:", err.message);
     }
   };
 
@@ -39,7 +34,6 @@ const LandingHome = () => {
 
 
     const user = auth.currentUser;
-    console.log("Current User:", user);
 
   return (
     <div className='bg-neutral-900 text-white'>

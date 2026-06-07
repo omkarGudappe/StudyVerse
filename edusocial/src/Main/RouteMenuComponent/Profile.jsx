@@ -31,7 +31,6 @@ const Profile = () => {
 
   useEffect(() => {
     if (!FirebaseUid) return;
-    
     const FetchDataFromBackEnd = async () => {
       try {
         setLoading(true);

@@ -37,21 +37,7 @@ const CurrentUserContexProvider = ({ children }) => {
     500: 'Internal Server Error. Please try again later.',
   };
 
-  useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      setError('No session found. Please sign in again.');
-      setProfileData(null);
-      return;
-    }
-
-    if (!navigator.onLine) {
-      setLoading(false);
-      setError('No internet connection. Please check your network.');
-      return;
-    }
-
-    const fetchProfile = async () => {
+  const fetchProfile = async () => {
       try {
         setLoading(true);
         const response = await axios.get(
@@ -75,6 +61,20 @@ const CurrentUserContexProvider = ({ children }) => {
       }
     };
 
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      setError('No session found. Please sign in again.');
+      setProfileData(null);
+      return;
+    }
+
+    if (!navigator.onLine) {
+      setLoading(false);
+      setError('No internet connection. Please check your network.');
+      return;
+    }
+
     fetchProfile();
   }, [token]);
 
@@ -90,6 +90,7 @@ const CurrentUserContexProvider = ({ children }) => {
         setToken,
         userNotes,
         setUserNotes,
+        fetchProfile,
       }}
     >
       {children}

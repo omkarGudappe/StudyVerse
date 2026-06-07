@@ -31,7 +31,6 @@ const ProfileDetail = () => {
     const [popoverTimeouts, setPopoverTimeouts] = useState({});
     const navigate = useNavigate();
     const [debugInfo, setDebugInfo] = useState(null);
-    const { setToken } = UserDataContextExport();
 
     const userId = auth?.currentUser?.uid;
     const userEmail = auth?.currentUser?.email;
@@ -226,6 +225,8 @@ const ProfileDetail = () => {
             return;
         }
         
+        const token = localStorage.getItem("token");
+
         // Validate user authentication
         if (!userId) {
             setError("Authentication error. Please log in again.");
@@ -272,7 +273,7 @@ const ProfileDetail = () => {
                 },
                 FUid: userId,
                 email: userEmail,
-                Uid: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+                // Uid: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
             };
             
             // Additional validation for education years
@@ -290,14 +291,16 @@ const ProfileDetail = () => {
                 timeout: 10000, // 10 second timeout
                 headers: {
                     'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
                 }
             });
             
             const result = res.data;
 
-            if (result.token) {
-                localStorage.setItem("token", result.token);
-                setToken(result.token);
+
+
+            if (result.ok) {
+                // setToken(token);
                 setLoading(false);
                 navigate('/profileBio');
             } else {
@@ -579,182 +582,206 @@ const ProfileDetail = () => {
     };
 
     return (
-        <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-neutral-800 rounded-xl shadow-2xl shadow-gray-900 border border-gray-700 overflow-hidden">
-                <div className="p-6">
-                    <h1 className="text-2xl font-bold text-center mb-6 text-white">Complete Your Profile</h1>
-                    
-                    {error && (
-                        <div className="mb-4 bg-rose-600 text-white p-3 rounded-lg flex items-start ">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                            <div className='w-full break-words'>
-                                <span className="font-medium">{error}</span>
+        <div className="relative min-h-screen bg-neutral-900 h-screen text-white flex flex-col items-center justify-center p-4">
+            <video
+                className="absolute blur-xs top-0 left-0 w-full h-full object-cover opacity-20"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                onError={(e) => console.log('Video error:', e)}
+            >
+                <source src="/Video/Background.mp4" type="video/mp4" />
+            </video>
+            <div className=' flex items-center flex-col justify-center h-full '>
+                <div className="w-full max-w-md bg-neutral-800/50 rounded-xl shadow-2xl shadow-gray-900 border border-gray-700 overflow-hidden z-30 transparent-smoke">
+                    <div className="p-6">
+                        <h1 className="text-2xl font-bold text-center mb-6 text-white">Complete Your Profile</h1>
+                        
+                        {error && (
+                            <div className={`${error === "User created successfully" || error === "Profile updated successfully" ? "bg-green-500/20 border-green-500 text-green-200" : "bg-rose-600 text-rose-200"} mb-4 p-3 rounded-lg flex items-start `}>
+                                {error === "User created successfully" || error === "Profile updated successfully" ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                )}
+                                <div className='w-full break-words'>
+                                    <span className="font-medium">{error}</span>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                    
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Basic Information */}
-                        <div className="grid grid-cols-2 gap-3">
+                        )}
+                        
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            {/* Basic Information */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 rounded-lg text-gray-100 bg-neutral-800 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
+                                        placeholder="First Name"
+                                    />
+                                    {showPopovers.firstName && (
+                                        <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
+                                            <div className="flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                First name is required
+                                            </div>
+                                            <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={formData.lastName}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2 rounded-lg text-gray-100 bg-neutral-800 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
+                                        placeholder="Last Name"
+                                    />
+                                    {showPopovers.lastName && (
+                                        <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
+                                            <div className="flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                                </svg>
+                                                Last name is required
+                                            </div>
+                                            <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            
                             <div className="relative">
-                                <input
-                                    type="text"
-                                    name="firstName"
-                                    value={formData.firstName}
-                                    onChange={handleChange}
+                                <label className="block text-sm font-medium text-gray-300 mb-1">Date of Birth</label>
+                                <DatePicker
+                                    selected={formData.dob}
+                                    onChange={handleDateChange}
+                                    dateFormat="dd/MM/yyyy"
+                                    showYearDropdown
+                                    scrollableYearDropdown
+                                    yearDropdownItemNumber={30}
+                                    maxDate={new Date()}
+                                    minDate={new Date(new Date().getFullYear() - 100, new Date().getMonth(), new Date().getDate())}
+                                    placeholderText="Select your date of birth"
                                     className="w-full px-4 py-2 rounded-lg text-gray-100 bg-neutral-800 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
-                                    placeholder="First Name"
                                 />
-                                {showPopovers.firstName && (
+                                {showPopovers.dob && (
                                     <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
                                         <div className="flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                             </svg>
-                                            First name is required
+                                            Date of birth is required
                                         </div>
                                         <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
                                     </div>
                                 )}
                             </div>
+                            
                             <div className="relative">
-                                <input
-                                    type="text"
-                                    name="lastName"
-                                    value={formData.lastName}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 rounded-lg text-gray-100 bg-neutral-800 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
-                                    placeholder="Last Name"
-                                />
-                                {showPopovers.lastName && (
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Gender</label>
+                                <div className="flex space-x-4">
+                                    {['male', 'female', 'other'].map(gender => (
+                                        <label key={gender} className="flex items-center">
+                                            <input
+                                                type="radio"
+                                                name="gender"
+                                                value={gender}
+                                                checked={formData.gender === gender}
+                                                onChange={handleChange}
+                                                className="mr-2"
+                                            />
+                                            <span className="capitalize">{gender}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {showPopovers.gender && (
                                     <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
                                         <div className="flex items-center">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                             </svg>
-                                            Last name is required
+                                            Please select a gender
                                         </div>
                                         <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
                                     </div>
                                 )}
                             </div>
-                        </div>
-                        
-                        <div className="relative">
-                            <label className="block text-sm font-medium text-gray-300 mb-1">Date of Birth</label>
-                            <DatePicker
-                                selected={formData.dob}
-                                onChange={handleDateChange}
-                                dateFormat="dd/MM/yyyy"
-                                showYearDropdown
-                                scrollableYearDropdown
-                                yearDropdownItemNumber={30}
-                                maxDate={new Date()}
-                                minDate={new Date(new Date().getFullYear() - 100, new Date().getMonth(), new Date().getDate())}
-                                placeholderText="Select your date of birth"
-                                className="w-full px-4 py-2 rounded-lg text-gray-100 bg-neutral-800 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
-                            />
-                            {showPopovers.dob && (
-                                <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
-                                    <div className="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        Date of birth is required
+                            
+                            {/* Education Level */}
+                            <div className="relative">
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Education Level</label>
+                                <select
+                                    name="education.level"
+                                    value={formData.education.level}
+                                    onChange={handleChange}
+                                    className="w-full p-2 bg-neutral-800 rounded-lg text-gray-100 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
+                                >
+                                    <option value="">Select Education Level</option>
+                                    <option value="school">School (up to 10th)</option>
+                                    <option value="higher_secondary">Higher Secondary (11th-12th)</option>
+                                    <option value="undergraduate">Undergraduate</option>
+                                    <option value="postgraduate">Postgraduate</option>
+                                </select>
+                                {showPopovers['education.level'] && (
+                                    <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
+                                        <div className="flex items-center">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            Education level is required
+                                        </div>
+                                        <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
                                     </div>
-                                    <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        <div className="relative">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Gender</label>
-                            <div className="flex space-x-4">
-                                {['male', 'female', 'other'].map(gender => (
-                                    <label key={gender} className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            name="gender"
-                                            value={gender}
-                                            checked={formData.gender === gender}
-                                            onChange={handleChange}
-                                            className="mr-2"
-                                        />
-                                        <span className="capitalize">{gender}</span>
-                                    </label>
-                                ))}
+                                )}
                             </div>
-                            {showPopovers.gender && (
-                                <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
-                                    <div className="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        Please select a gender
-                                    </div>
-                                    <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {/* Education Level */}
-                        <div className="relative">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Education Level</label>
-                            <select
-                                name="education.level"
-                                value={formData.education.level}
-                                onChange={handleChange}
-                                className="w-full p-2 bg-neutral-800 rounded-lg text-gray-100 border border-gray-600 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none transition duration-200"
-                            >
-                                <option value="">Select Education Level</option>
-                                <option value="school">School (up to 10th)</option>
-                                <option value="higher_secondary">Higher Secondary (11th-12th)</option>
-                                <option value="undergraduate">Undergraduate</option>
-                                <option value="postgraduate">Postgraduate</option>
-                            </select>
-                            {showPopovers['education.level'] && (
-                                <div className="popover absolute top-full left-0 mt-1 w-48 bg-rose-600 text-white p-2 rounded-lg shadow-lg z-10">
-                                    <div className="flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                        </svg>
-                                        Education level is required
-                                    </div>
-                                    <div className="absolute -top-1 left-3 w-3 h-3 rotate-45 bg-rose-600"></div>
-                                </div>
-                            )}
-                        </div>
-                        
-                        {renderEducationFields()}
-                        
-                        <div className="flex space-x-3 pt-4">
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-neutral-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? (
-                                    <div className="flex items-center justify-center">
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                        </svg>
-                                        Creating Profile...
-                                    </div>
-                                ) : 'Create Profile'}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={clearForm}
-                                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-neutral-800 transition duration-200"
-                            >
-                                Clear
-                            </button>
-                        </div>
-                    </form>
+                            
+                            {renderEducationFields()}
+                            
+                            <div className="flex space-x-3 pt-4 z-40">
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-neutral-800 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? (
+                                        <div className="flex items-center justify-center">
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Creating Profile...
+                                        </div>
+                                    ) : 'Create Profile'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={clearForm}
+                                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-neutral-800 transition duration-200"
+                                >
+                                    Clear
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
+                {/* <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 z-20">
+                    <div className=" p-2">
+                        <img src="/LOGO/StudyVerseLogo2.png" className="h-16 w-16" alt="" />
+                    </div>
+                </div> */}
             </div>
         </div>
     )

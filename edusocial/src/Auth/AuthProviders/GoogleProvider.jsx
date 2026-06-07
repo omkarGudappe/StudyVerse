@@ -65,6 +65,7 @@ const GoogleProvider = ({ onSignInStatus, onError }) => {
                     navigate(data.route || '/home');
                 }, 100);
             } else {
+                localStorage.setItem("token", data.token);
                 onSignInStatus && onSignInStatus(true);
                 navigate('/fillprofile');
             }

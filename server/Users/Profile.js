@@ -24,12 +24,15 @@ const storage = multer.diskStorage({});
 const upload = multer({ storage });
 
 
-Router.post('/userdetail', upload.none(), async (req, res) => {
-    const { firstName, lastName, dob, gender, education, Uid, FUid, email } = req.body;
+Router.post('/userdetail', authenticate ,upload.none(), async (req, res) => {
+    const { firstName, lastName, dob, gender, education, FUid, email } = req.body;
 
-    if (!firstName || !lastName || !dob || !gender || !education || !Uid || !FUid) {
+    if (!firstName || !lastName || !dob || !gender || !education || !FUid) {
         return res.json({ ok: false, message: "All fields are required" });
     }
+
+    const UserId = req.user._id;
+    console.log("User id is", UserId);
 
     const normalizedEmail = email?.toLowerCase().trim();
     let isEmailExist = false;
@@ -54,31 +57,54 @@ Router.post('/userdetail', upload.none(), async (req, res) => {
             educationData = education;
         }
 
-        const user = new User({
-            firstName: firstName,
-            lastName: lastName,
-            dob,
-            gender,
-            education: educationData,
-            Uid,
-            firebaseUid: FUid,
-            email: emailToSave,
-            UserProfile: {
-                heading: "Hey there! I am using StudyVerse.",
-                description: "",
-                avatar: { url: "", publicId: "" },
+        const user = await User.findByIdAndUpdate(
+            UserId,
+            {
+                firstName,
+                lastName,
+                dob,
+                gender,
+                education: educationData,
+                firebaseUid: FUid,
+                UserProfile: {
+                    heading: "Hey there! I am using StudyVerse.",
+                    description: "",
+                    avatar: {
+                        url: "",
+                        publicId: "",
+                    },
+                },
             },
-        });
+            {
+                new: true,
+                runValidators: true,
+            }
+        );
 
-        const token = jwt.sign(
-            {id : user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: "7d" }
-        )
+        // const user = new User({
+            // firstName: firstName,
+            // lastName: lastName,
+            // dob,
+            // gender,
+            // education: educationData,
+            // firebaseUid: FUid,
+            // email: emailToSave,
+            // UserProfile: {
+            //     heading: "Hey there! I am using StudyVerse.",
+            //     description: "",
+            //     avatar: { url: "", publicId: "" },
+            // },
+        // });
 
-        await user.save();
+        // const token = jwt.sign(
+        //     {id : user._id },
+        //     process.env.JWT_SECRET,
+        //     { expiresIn: "7d" }
+        // )
 
-        res.json({ ok: true, message: "User created successfully", user, token });
+        // await user.save();
+
+        res.json({ ok: true, message: "User created successfully", user });
     } catch (error) {
         res.json({ ok: false, message: error.message || "Internal server error" });
     }

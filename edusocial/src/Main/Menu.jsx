@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Post from './RouteMenuComponent/Post';
 import { motion, AnimatePresence } from 'framer-motion';
 import Search from "./RouteMenuComponent/Search";
-import { UserDataContextExport } from "../Main/RouteMenuComponent/CurrentUserContexProvider";
+import { UserDataContextExport } from "./RouteMenuComponent/CurrentUserContexProvider";
 import Notification from "./RouteMenuComponent/Notification";
 import MessageContact from "./RouteMenuComponent/MessageContact";
 import UsersNotes from "./RouteMenuComponent/UsersNotes";

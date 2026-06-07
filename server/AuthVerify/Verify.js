@@ -27,7 +27,6 @@ Router.post('/verify' , async (req , res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         otpStore[email] = { otp, expires: Date.now() + 5 * 60 * 1000 };
 
-        console.log("📧 Sending OTP to:", email);
 
         // ✅ Try to send email with retry logic (waits for result)
         // If you want non-blocking, use sendMailAsync instead
@@ -35,7 +34,6 @@ Router.post('/verify' , async (req , res) => {
 
         if (!emailResult.status) {
             // Email failed even after retries
-            console.error("❌ Failed to send OTP to:", email, emailResult.userMessage);
             return res.status(500).json({ 
                 ok: false, 
                 message: emailResult.userMessage || "Failed to send verification code",
@@ -73,13 +71,15 @@ Router.post('/verify-otp' , async (req , res) => {
             throw new Error("OTP not found or expired");
         }
 
+
         if(storedOtp.otp !== otp){
             throw new Error("Invalid OTP");
         }
 
         let user = await Auth.findOne({ email });
             if (!user) {
-            user = await Auth.create({ email , password: crypto.createHash('sha256').update(password).digest('hex')});
+            const Uid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            user = await Auth.create({ email , password: crypto.createHash('sha256').update(password).digest('hex'), Uid});
         }
 
         const token = jwt.sign(
@@ -92,24 +92,35 @@ Router.post('/verify-otp' , async (req , res) => {
 
         res.status(200).json({ ok: true , message: "OTP verified successfully", token });
     }catch(err){
-        console.error("❌ OTP verification failed:", err.message);
         res.status(400).json({ ok: false , message: err.message });
     }
 })
 
 Router.post('/google-signin' , async(req , res) => {
     try{
-        const { uid } = req.body;
+        const { uid, email } = req.body;
 
         if(!uid){
             throw new Error("User Id is Required");
         }
-
         
         const check = await User.findOne({ firebaseUid: uid });
         if(!check){
-            return res.json({ exist: false });
+            const Uid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            const user = await User.create({
+                email,
+                Uid
+            });
+
+            const token = jwt.sign(
+                { id: user._id},
+                process.env.JWT_SECRET,
+                { expiresIn: "7d" }
+            );
+
+            return res.json({ exist: false, token });
         }
+
         
         let route = '';
         const UserDetailExist = await User.findOne({ firebaseUid: uid, firstName: { $exists: true, $ne: null } });
@@ -147,17 +158,14 @@ Router.get('/UserDetail', async (req, res) => {
     const { email, uid } = req.query;
 
     if (!email || !uid) {
-        return res.status(400).json({ ok: false, message: "Missing email or uid parameter" });
+        return res.status(400).json({ ok: false, message: "All field's are required" });
     }
-
-    console.log("Email: ", email);
 
     try{
 
         let route = '';
         const check = await Auth.findOne({ email });
         if(!check){
-            console.log("User not found");
             return res.json({ exist: false });
         }else{
             const UserDetailExist = await User.findOne({ firebaseUid: uid, firstName: { $exists: true, $ne: null } });
@@ -173,7 +181,6 @@ Router.get('/UserDetail', async (req, res) => {
             }
         }
 
-        console.log("User Found: ", route);
 
         const token = jwt.sign(
             { id: check._id },
@@ -205,18 +212,27 @@ Router.get('/verify-session', async (req, res) => {
     const id = decoded.id;
 
     if (!id) {
-        console.log("Invalid token: No user ID found");
       return res.status(401).json({ ok: false, message: "Invalid token" });
     }
 
-    const findUser = await User.findById({ id });
+    const findUser = await User.findById(id);
 
     if(!findUser) {
         return res.status(404).json({ ok: false, message: "User Not Exist"});
     }
 
-    console.log("Token verified for user ID:", id);
-    res.json({ ok: true, user: decoded });
+   const missing = (v) => !v || (typeof v === 'string' && v.trim() === '');
+
+    let route = '';
+    if (missing(findUser.firstName) || missing(findUser.lastName)) {
+        route = '/fillprofile';
+    } else if (missing(findUser.username)) {
+        route = '/profileBio';
+    } else {
+        route = '/home';
+    }
+
+    res.json({ ok: true, user: decoded, route });
   } catch (err) {
     res.status(401).json({ ok: false, message: "Invalid or expired token" });
   }
