@@ -45,7 +45,7 @@ Router.post('/verify' , async (req , res) => {
         res.status(200).json({ 
             ok: true, 
             message: "email_sent",
-            userMessage: "Verification code sent! Check your email inbox."
+            userMessage: "Verification code sent! Check your email inbox or spam folder."
         });
 
     }catch(err){
