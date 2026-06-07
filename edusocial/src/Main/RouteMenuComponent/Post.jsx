@@ -112,8 +112,8 @@ const Post = ({ ModelCloseClicked, setPostMinimized }) => {
             // Check file size limits
             const fileSizeInMB = selectedFile.size / (1024 * 1024);
             
-            if (PostContent === 'lesson' && fileSizeInMB > 100) {
-                setError(`Video files must be less than 100MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
+            if (PostContent === 'lesson' && fileSizeInMB > 500) {
+                setError(`Video files must be less than 500MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
                 return;
             }
             
@@ -589,7 +589,7 @@ const handleSubmit = async () => {
                                                 <p className="text-neutral-400 text-sm">or click to browse files</p>
                                                 <p className="text-xs text-neutral-500 mt-2">
                                                     {PostContent === "post" ? "JPG, PNG, GIF, WEBP, MP4 (Max 100MB)" : 
-                                                     PostContent === "lesson" ? "MP4, WEBM, OGG (Max 100MB)" : 
+                                                     PostContent === "lesson" ? "MP4, WEBM, OGG (Max 500MB)" : 
                                                      "PDF, TXT, DOC, DOCX (Max 5MB)"}
                                                 </p>
                                             </div>
