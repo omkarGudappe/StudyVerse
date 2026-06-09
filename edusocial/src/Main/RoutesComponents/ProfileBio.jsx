@@ -253,6 +253,7 @@ const ProfileBio = () => {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
+        withCredentials: true,
         onUploadProgress: (progressEvent) => {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
         }

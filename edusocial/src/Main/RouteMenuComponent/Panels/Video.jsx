@@ -118,7 +118,8 @@ const Video = () => {
     const loadUserNotes = async (lessonId) => {
         try {
             const response = await axios.get(`${import.meta.env.VITE_API_URL}/lessons/notes/${lessonId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                headers: { "Content-Type" : "application/json"},
+                withCredentials: true,
             });
             
             if (response.data.success) {
@@ -136,7 +137,8 @@ const Video = () => {
                 notes: userNotes,
                 timestamps: savedTimestamps
             }, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                headers: { "Content-Type" : "application/json" },
+                withCredentials: true,
             });
         } catch (error) {
         }

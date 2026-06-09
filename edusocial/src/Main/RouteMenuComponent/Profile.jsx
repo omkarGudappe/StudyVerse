@@ -182,13 +182,13 @@ const Profile = () => {
                 className="rounded-full h-full w-full object-cover border-4 border-purple-700/30" 
               /> ) : (
                 <svg className='w-full h-full' viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="100" cy="100" r="95" fill="#1e1d1d" stroke="url(#borderGradient)" stroke-width="10"/>
+                  <circle cx="100" cy="100" r="95" fill="#1e1d1d" stroke="url(#borderGradient)" strokeWidth="10"/>
                   <circle cx="100" cy="80" r="30" fill="#374151"/>
                   <path d="M60 160C60 130 77.5 120 100 120C122.5 120 140 130 140 160V180H60V160Z" fill="#374151"/>
                   <defs>
                     <linearGradient id="borderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#7C3AED"/>
-                      <stop offset="100%" stop-color="#F59E0B"/>
+                      <stop offset="0%" stopColor="#7C3AED"/>
+                      <stop offset="100%" stopColor="#F59E0B"/>
                     </linearGradient>
                   </defs>
                 </svg>

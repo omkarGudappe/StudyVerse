@@ -32,7 +32,6 @@ Router.post('/userdetail', authenticate ,upload.none(), async (req, res) => {
     }
 
     const UserId = req.user._id;
-    console.log("User id is", UserId);
 
     const normalizedEmail = email?.toLowerCase().trim();
     let isEmailExist = false;
@@ -189,141 +188,6 @@ Router.get('/profile', authenticate, async (req , res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 });
-
-
-// Router.post('/posts/:Fid', upload.single('image'), async (req, res) => {
-//     try{
-//         const { Fid } = req.params;
-//         const { heading, description } = req.body;
-
-//         if(!heading || !description || !Fid){
-//             return res.status(400).json({ message: "All fields required"});
-//         }
-
-//         const MongoId = await User.findOne({ firebaseUid: Fid });
-
-//         if(!MongoId){
-//             return res.status(404).json({ message:"User not Found from the user" });
-//         }
-
-//         const uploadFile = await cloudinary.uploader.upload(req.file.path, {
-//             folder: "studyverse/posts",
-//             resource_type: req.file.mimetype === "application/pdf" ? "raw" : "auto",
-//         });
-
-//         const newPost = await Posts.create({
-//             author: MongoId._id,
-//             heading,
-//             description,
-//             files: {
-//                 url: uploadFile.secure_url,
-//                 publicId: uploadFile.public_id,
-//                 type: uploadFile.resource_type,
-//             },
-//         })
-
-//         if(newPost) {
-//             return res.json({ message: "Content Posted Successfully" , newPost });
-//         }
-
-//     }catch(err){
-//         res.status(500).json({ message: "Because of Some reason content is not posted. Please Try again" });
-//         console.log("Error: ", err);
-//     }
-// })
-
-
-// Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
-//   try {
-//     const { Fid } = req.params;
-//     const { heading, description, visibility, contentType } = req.body;
-
-//     if (!heading || !description || !Fid) {
-//       return res.status(400).json({ message: "All fields required" });
-//     }
-
-//     const MongoId = await User.findOne({ firebaseUid: Fid });
-//     if (!MongoId) {
-//       return res.status(404).json({ message: "User not Found from the user" });
-//     }
-
-//     let filePath = req.file.path;
-
-//     const fileSizeInMB = req.file.size / (1024 * 1024);
-//     if (req.file.mimetype.startsWith("video/") && fileSizeInMB > 70) {
-//     console.log("⚡ Large video detected, compressing...");
-//     console.log(`Original size: ${fileSizeInMB.toFixed(2)} MB`);
-
-//     const uploadsDir = path.join(__dirname, "../uploads");
-//     if (!fs.existsSync(uploadsDir)) {
-//         fs.mkdirSync(uploadsDir, { recursive: true });
-//     }
-
-//     const compressedPath = path.join(
-//         uploadsDir,
-//         `compressed-${Date.now()}.mp4`
-//     );
-
-//     await new Promise((resolve, reject) => {
-//         ffmpeg(filePath)
-//         .videoCodec("libx264")
-//         .size("?x720")
-//         .outputOptions(["-crf 28"])
-//         .on("end", () => {
-//             const stats = fs.statSync(compressedPath);
-//             const compressedSizeMB = stats.size / (1024 * 1024);
-
-//             console.log(`✅ Compression finished: ${compressedPath}`);
-//             console.log(
-//             `Compressed size: ${compressedSizeMB.toFixed(
-//                 2
-//             )} MB (Saved: ${(fileSizeInMB - compressedSizeMB).toFixed(2)} MB)`
-//             );
-
-//             filePath = compressedPath;
-//             resolve();
-//         })
-//         .on("error", (err) => reject(err))
-//         .save(compressedPath);
-//     });
-//     }
-
-//     const uploadFile = await cloudinary.uploader.upload(filePath, {
-//       folder: "studyverse/posts",
-//       resource_type:
-//         req.file.mimetype === "application/pdf" ? "raw" : "auto",
-//         use_filename: true,
-//         unique_filename: false
-//     });
-
-//     fs.unlinkSync(filePath);
-
-//     const newPost = await Posts.create({
-//       author: MongoId._id,
-//       heading,
-//       description,
-//       files: {
-//         url: uploadFile.secure_url,
-//         publicId: uploadFile.public_id,
-//         type: uploadFile.resource_type,
-//       },
-//       visibility: visibility,
-//       contentType: contentType,
-//     });
-
-//     return res.json({
-//       message: "Content Posted Successfully",
-//       newPost,
-//     });
-
-//   } catch (err) {
-//     res.status(500).json({
-//       message:
-//         "Because of Some reason content is not posted. Please Try again",
-//     });
-//     console.log("Error: ", err);
-//   }
-// });
 
 
 Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
@@ -567,62 +431,6 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
   }
 });
 
-// Router.get('/search', async (req, res) => {
-//     const { query, uid } = req.query;
-
-//     try {
-//         const user = await User.findById(uid);
-//         if(!user) return res.status(404).json({message: "User Not found"});
-        
-//         const users = await User.find({
-//             $or: [
-//                 { username: { $regex: query, $options: "i" } },
-//             ]
-//         })
-//         .select('firstName lastName education firebaseUid username UserProfile')
-
-//         const Notes = await Posts.find({
-//             contentType: 'note',
-//             $or: [
-//                 { 
-//                     visibility: "public",
-//                     $or: [
-//                         { heading: { $regex: query, $options: "i" } },
-//                         { description: { $regex: query, $options: "i" } }
-//                     ]
-//                 },
-//                 { 
-//                     visibility: "peers", 
-//                     author: { $in: user.connections },
-//                     $or: [
-//                         { heading: { $regex: query, $options: "i" } },
-//                         { description: { $regex: query, $options: "i" } }
-//                     ]
-//                 },
-//                 { 
-//                     author: uid,
-//                     $or: [
-//                         { heading: { $regex: query, $options: "i" } },
-//                         { description: { $regex: query, $options: "i" } }
-//                     ]
-//                 }
-//             ]
-//         })
-
-//         const Lesson = await Posts.find({
-//             contentType: 'lesson',
-//             $or: [
-//                 { heading: { $regex: query, $options: "i" } },
-//                 { description: { $regex: query, $options: "i" } }
-//             ]
-//         })
-
-//         res.json({ message: "Search results", users, Lesson, Notes });
-//     } catch (err) {
-//         console.error("Error searching users:", err);
-//         res.status(500).json({ message: "Internal server error" });
-//     }
-// });
 
 Router.get('/searchUser', authenticate , async (req, res) => {
     const { query } = req.query;
@@ -1327,7 +1135,6 @@ Router.get('/userConnections/:id', async (req, res) => {
 Router.get('/userpeers/:id', async (req, res) => {
 
     const ID = req.params.id;
-    console.log("Founded Id", ID);
 
     if (!ID) {
         return res.status(404).json({ message: "Id Not Foumd"})

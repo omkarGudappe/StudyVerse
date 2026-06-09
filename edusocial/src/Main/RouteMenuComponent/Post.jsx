@@ -282,7 +282,7 @@ const handleSubmit = async () => {
           setPercent(uploadProgress);
         }
       },
-      timeout: 300000,
+      timeout: 600000,
     });
 
     const result = res.data;

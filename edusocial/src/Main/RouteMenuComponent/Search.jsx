@@ -32,16 +32,13 @@ const Search = ({ searchClicked, onClose }) => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No auth token found');
-      }
       const res = await axios.get(
         `${import.meta.env.VITE_API_URL}/user/search?query=${encodeURIComponent(term)}&uid=${uid}&page=${page}`,
         {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
         }
       );
       return res.data;

@@ -455,9 +455,9 @@ const handleSearchQuery = async (query, options = {}) => {
             {
                 params: { query, page, limit, sortBy },
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'X-Request-ID': generateRequestId()
                 },
+                withCredentials: true,
                 signal: controller.signal,
                 timeout: 15000
             }
@@ -632,7 +632,7 @@ const generateRequestId = () => {
                                     className='rounded-full bg-gradient-to-r overflow-hidden from-purple-600 to-amber-500'
                                 >
                                     <div className='h-8 w-8'>
-                                        <img src={ProfileData?.UserProfile?.avatar?.url} alt="" className='object-cover h-8 w-8' />
+                                        <img src={ProfileData?.UserProfile?.avatar?.url || "https://api.iconify.design/mdi/account-circle.svg?color=%238c8c8c"} alt="" className='object-cover h-8 w-8' />
                                     </div>
                                 </Link>
                             </div>

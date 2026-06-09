@@ -24,7 +24,7 @@ const LogIn = () => {
   const navigate = useNavigate();
   const otpInputRefs = useRef([]);
   const { Login, SignUp, NewUser } = EmailContextExport();
-  const { setToken } = UserDataContextExport();
+  const { fetchProfile } = UserDataContextExport();
 
   // Clear errors after 5 seconds
   useEffect(() => {
@@ -117,12 +117,12 @@ const LogIn = () => {
         //   addError("Invalid email or password");
         // }
         try{
-          const res = await axios.get(`${import.meta.env.VITE_API_URL}/Auth/UserDetail?email=${formData.email}&uid=${data.user.uid}`);
+          const res = await axios.get(`
+            ${import.meta.env.VITE_API_URL}/Auth/UserDetail?email=${formData.email}&uid=${data.user.uid}`,
+            { withCredentials: true },
+          );
           if(res.data.exist){
-            if (res.data.token) {
-              localStorage.setItem("token", res.data.token);
-              setToken(res.data.token);
-            }
+            fetchProfile();
             navigate(`${res.data.route}`)
           }
         }catch(err){
@@ -160,6 +160,7 @@ const LogIn = () => {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ otp: otpString, email: formData.email, password: formData.password }),
       });
 
@@ -168,16 +169,11 @@ const LogIn = () => {
       if (result.ok) {
         const data = await NewUser(formData.email, formData.password);
         if (data.ok) {
-          if (result.token) {
-            localStorage.setItem("token", result.token);
-            // setToken(result.token);
-            localStorage.setItem("token", result.token);
-          }
+          
           setFormData({ email: "", password: "", confirmPassword: "" });
           setOtp(new Array(6).fill(""));
           setEnterOtp(false);
           setCheckIsJustSignInByGoogle(false);
-          // ✅ Show success message
           addError("Account created successfully! Redirecting...");
           setTimeout(() => navigate("/fillprofile"), 1500);
         } else {

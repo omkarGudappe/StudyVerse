@@ -11,11 +11,10 @@ const LandingHome = () => {
 
   useEffect(() => {
   const checkSession = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-session`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { "Content-type" : "application/json" },
+          credentials: "include",
       });
 
       const data = await res.json();
@@ -25,6 +24,7 @@ const LandingHome = () => {
         localStorage.removeItem("token");
       }
     } catch (err) {
+      console.log("Error verifying session:", err.message);
       localStorage.removeItem("token");
     }
   };

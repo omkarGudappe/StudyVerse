@@ -40,13 +40,13 @@ const MessageContact = ({ open, onClose }) => {
           setIsLoading(true);
           setError(null);
           setActiveTab('search');
-          const token = localStorage.getItem('token');
           const res = await axios.get(`
             ${import.meta.env.VITE_API_URL}/user/searchUser?query=${searchTerm}`,
             {
               headers: {
-                'Authorization': `Bearer ${token}`,
+                "Content-Type": "application/json",
               },
+              withCredentials: true,
             }
           );
           const Data = res.data;
@@ -90,16 +90,13 @@ const MessageContact = ({ open, onClose }) => {
       const searchInModal = async () => {
         try {
           setIsModalSearching(true);
-          const token = localStorage.getItem('token');
-          if(!token) {
-            throw new Error('No auth token found');
-          }
           const res = await axios.get(
             `${import.meta.env.VITE_API_URL}/user/searchUser?query=${modalSearchTerm}`,
             {
               headers: {
-                'Authorization': `Bearer ${token}`,
+                "Content-Type": "application/json",
               },
+              withCredentials: true,
             }
           );
           const Data = res.data;

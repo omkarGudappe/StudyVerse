@@ -38,6 +38,7 @@ const GoogleProvider = ({ onSignInStatus, onError }) => {
                 headers: {
                     "Content-Type": "application/json",
                 },
+                credentials: "include",
                 body: JSON.stringify({
                     uid: user.uid,
                     email: user.email,

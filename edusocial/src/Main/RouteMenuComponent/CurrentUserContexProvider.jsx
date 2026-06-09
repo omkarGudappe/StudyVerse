@@ -12,25 +12,6 @@ const CurrentUserContexProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [userNotes, setUserNotes] = useState([]);
 
-  useEffect(() => {
-    const handleTokenUpdate = (e) => {
-      const newToken = e.detail?.token || localStorage.getItem('token');
-      setToken(newToken);
-    };
-
-    const handleStorage = () => {
-      const newToken = localStorage.getItem('token');
-      setToken(newToken);
-    };
-
-    window.addEventListener('tokenUpdated', handleTokenUpdate);
-    window.addEventListener('storage', handleStorage);
-
-    return () => {
-      window.removeEventListener('tokenUpdated', handleTokenUpdate);
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, []);
 
   const Errors = {
     401: 'Unauthorized. Please sign in again.',
@@ -42,7 +23,9 @@ const CurrentUserContexProvider = ({ children }) => {
         setLoading(true);
         const response = await axios.get(
           `${import.meta.env.VITE_API_URL}/user/profile`,
-          { headers: { Authorization: `Bearer ${token}` } }
+           {
+             withCredentials: true,
+           }
         );
         setProfileData(response.data.userProfile);
         setError(null);
@@ -51,8 +34,6 @@ const CurrentUserContexProvider = ({ children }) => {
           setError('Network error. Please check your connection.');
         } else if (err.response.status === 401) {
           setError('Session expired. Please sign in again.');
-          localStorage.removeItem('token');
-          setToken(null);
         } else {
           setError(Errors[err.response.status] || 'Failed to load profile data');
         }
@@ -62,12 +43,12 @@ const CurrentUserContexProvider = ({ children }) => {
     };
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      setError('No session found. Please sign in again.');
-      setProfileData(null);
-      return;
-    }
+    // if (!token) {
+    //   setLoading(false);
+    //   setError('No session found. Please sign in again.');
+    //   setProfileData(null);
+    //   return;
+    // }
 
     if (!navigator.onLine) {
       setLoading(false);
@@ -76,7 +57,7 @@ const CurrentUserContexProvider = ({ children }) => {
     }
 
     fetchProfile();
-  }, [token]);
+  }, []);
 
   return (
     <UserDataContext.Provider

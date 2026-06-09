@@ -25,15 +25,14 @@ const FlashcardCreator = ({ onAdd, onClose }) => {
       return;
     }
 
-    const token = localStorage.getItem('token');
-
     const res = await axios.post(`
       ${import.meta.env.VITE_API_URL}/flashcards/create`,
       formData,
       {
         headers: {
-          'Authorization' : `Bearer ${token}`,
-        }
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true
       }
     )
 

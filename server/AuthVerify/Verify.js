@@ -88,9 +88,16 @@ Router.post('/verify-otp' , async (req , res) => {
             { expiresIn: "7d" }
         );
 
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+
         delete otpStore[email];
 
-        res.status(200).json({ ok: true , message: "OTP verified successfully", token });
+        res.status(200).json({ ok: true , message: "OTP verified successfully" });
     }catch(err){
         res.status(400).json({ ok: false , message: err.message });
     }
@@ -118,7 +125,14 @@ Router.post('/google-signin' , async(req , res) => {
                 { expiresIn: "7d" }
             );
 
-            return res.json({ exist: false, token });
+            res.cookie("token", token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: "lax",
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+
+            return res.json({ exist: false });
         }
 
         
@@ -141,10 +155,16 @@ Router.post('/google-signin' , async(req , res) => {
             { expiresIn: "7d" }
         );
 
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+
         return res.json({
             exist: true,
             user: check,
-            token,
             route,
         });
 
@@ -188,9 +208,15 @@ Router.get('/UserDetail', async (req, res) => {
             { expiresIn: "7d" }
         );
 
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            maxAga: 7 * 24 * 60 * 60 * 1000,
+        })
+
         return res.json({
             exist: true,
-            token,
             route,
         });
 
@@ -200,14 +226,36 @@ Router.get('/UserDetail', async (req, res) => {
     }
 });
 
+
+Router.post('/logout', async (req, res) => {
+    try {
+        res.clearCookie("token", {
+            httpOnly: true,
+            sameSite: "lax",
+            secure: false,
+        });
+        
+        return res.status(200).json({
+            ok: true,
+            message: "Logged out successfully"
+        });
+
+    } catch (error) {
+        res.json({message: "Somthing went wrong, Please try again later"});
+    }
+})
+
 Router.get('/verify-session', async (req, res) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ ok: false, message: "No token provided" });
-    }
+    // const authHeader = req.headers.authorization;
+    // if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    //   return res.status(401).json({ ok: false, message: "No token provided" });
+    // }
 
-    const token = authHeader.split(" ")[1];
+    // const token = authHeader.split(" ")[1];
+
+    const token = req.cookies.token;
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const id = decoded.id;
 

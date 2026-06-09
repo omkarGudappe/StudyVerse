@@ -22,8 +22,6 @@ const DailyQuiz = () => {
   const [sessionId, setSessionId] = useState(null);
   const navigate = useNavigate();
 
-  console.log(userAnswers);
-
   useEffect(() => {
     if (!ProfileData || !ProfileData._id) return;
 
@@ -37,7 +35,6 @@ const DailyQuiz = () => {
     const GetQuizFromAI = async () => {
       const ID = ProfileData?._id;
       const level = `${Level}` || 'General knowledge';
-      console.log(ID , "for cheack is exist or not");
       setIsLoading(true);
       setError(null);
       
@@ -61,7 +58,6 @@ const DailyQuiz = () => {
           setUserAnswers(initialAnswers);
           setDailyQuizzes(res.data.quiz);
           setSessionId(res.data.sessionId);
-          console.log("my session", res.data.sessionId );
           const savedStreak = localStorage.getItem('quizStreak');
           if (savedStreak) setStreak(parseInt(savedStreak));
         } else {
@@ -69,7 +65,6 @@ const DailyQuiz = () => {
         }
       } catch (err) {
         setError(err.response?.data?.message || err.message || 'Failed to load quiz');
-        console.error('Quiz loading error:', err);
       } finally {
         setIsLoading(false);
       }
@@ -132,7 +127,6 @@ const DailyQuiz = () => {
   // UPDATED: Add sessionId to answer submission
   const sendIndividualAnswerToBackend = async (questionId, chosenAnswer) => {
     if (!sessionId) {
-      console.error('No sessionId available');
       return;
     }
     
@@ -143,13 +137,10 @@ const DailyQuiz = () => {
         questionId: questionId,
         sessionId: sessionId
       });
-      console.log('Answer submitted successfully');
     } catch (error) {
-      console.error('Error submitting answer:', error);
       
       if (error.response?.status === 400 && 
           error.response?.data?.message?.includes('cannot be modified')) {
-        console.warn('Answer already submitted and cannot be modified');
       }
     }
   };
@@ -157,7 +148,6 @@ const DailyQuiz = () => {
   // NEW FUNCTION: Complete quiz session (replaces sendAnswersToBackend)
   const completeQuizSession = async () => {
     if (!sessionId) {
-      console.error('No sessionId available');
       return;
     }
     
@@ -168,13 +158,7 @@ const DailyQuiz = () => {
         score: score
       });
       
-      if (response.data.ok) {
-        console.log('Quiz completed successfully');
-      } else {
-        console.error('Failed to complete quiz');
-      }
     } catch (error) {
-      console.error('Error completing quiz:', error);
       
       if (error.response?.status === 400 && 
           error.response?.data?.message?.includes('cannot be modified')) {
@@ -211,12 +195,10 @@ const DailyQuiz = () => {
             setDailyQuizzes(quizRes.data.quiz);
             setSessionId(quizRes.data.sessionId);
             if (response.data.hasTodayQuiz) {
-              console.log('Quiz already completed today, loading for review');
             }
           }
         }
       } catch (error) {
-        console.error('Error checking quiz status:', error);
       }
     };
     

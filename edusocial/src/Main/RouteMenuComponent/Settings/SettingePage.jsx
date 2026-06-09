@@ -3,17 +3,34 @@ import SettingsContent from './SettingsContent'
 import { motion, AnimatePresence } from 'framer-motion'
 import { EmailContextExport } from '../../../Auth/AuthProviders/EmailContexProvider'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 const SettingePage = () => {
   const { Logout } = EmailContextExport();
   const Navigate = useNavigate();
   const [IsOpenModel, setIsOpenModel] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogout = () => {
-    Logout();
-    localStorage.removeItem('token');
-    Navigate('/');
-    setIsOpenModel(false);
+  const handleLogout = async () => {
+    console.log("Initiating logout...");
+    try {
+      setLoading(true);
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/Auth/logout`,
+        {},
+        { withCredentials: true }
+      );
+      console.log("Logout response:", res.data);
+      if (res.data.ok) {
+        Logout();
+        Navigate('/');
+        setIsOpenModel(false);
+      }
+    } catch (error) {
+      console.error("Logout error:", error?.response?.data?.message || error.message || "An error occurred during logout.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,12 +89,22 @@ const SettingePage = () => {
                 >
                   Cancel
                 </button>
+               {!loading ? (
                 <button 
                   onClick={handleLogout}
                   className='bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors'
                 >
                   Log Out
                 </button>
+                ) : (
+                  <button 
+                    className='cursor-not-allowed flex items-center gap-3 justify-center bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors'
+                    disabled
+                  >
+                    <p>Logging out...</p>
+                    <span className='inline-block border-2 border-rose-100 rounded-full border-t-transparent p-2 animate animate-spin'></span>
+                  </button>
+                )}
               </div>
             </motion.div>
           </div>
