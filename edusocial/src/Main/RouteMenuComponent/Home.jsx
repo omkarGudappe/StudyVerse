@@ -661,7 +661,7 @@ const StudyVerseMain = () => {
                       >
                         <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-amber-500 rounded-xl overflow-hidden flex items-center justify-center shadow-lg">
                           <img
-                            src={post.author?.UserProfile?.avatar?.url}
+                            src={post.author?.UserProfile?.avatar?.url || "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTq6Sz5Ru2Tg3XKsJO9MksvZVLBDEey9cGjkA&s"}
                             alt={`${post.author?.firstName || ""} ${
                               post.author?.lastName || ""
                             }`}
