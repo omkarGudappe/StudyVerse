@@ -6,6 +6,7 @@ import getFirebaseErrorMessage from '../Auth/AuthProviders/FirebaseError';
 import { auth } from '../Auth/AuthProviders/FirebaseSDK';
 import axios from 'axios';
 import { UserDataContextExport } from "../Main/RouteMenuComponent/CurrentUserContexProvider";
+import { deleteUser } from "firebase/auth";
 
 const LogIn = () => {
   const [formData, setFormData] = useState({
@@ -157,18 +158,20 @@ const LogIn = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-otp`, {
+      const data = await NewUser(formData.email, formData.password);
+
+     if(data.ok) {
+      console.log("my id", data.user.uid);
+       const response = await fetch(`${import.meta.env.VITE_API_URL}/Auth/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ otp: otpString, email: formData.email, password: formData.password }),
+        body: JSON.stringify({ otp: otpString, email: formData.email, password: formData.password, fid: data?.user?.uid }),
       });
 
       const result = await response.json();
 
       if (result.ok) {
-        const data = await NewUser(formData.email, formData.password);
-        if (data.ok) {
           
           setFormData({ email: "", password: "", confirmPassword: "" });
           setOtp(new Array(6).fill(""));
@@ -176,14 +179,13 @@ const LogIn = () => {
           setCheckIsJustSignInByGoogle(false);
           addError("Account created successfully! Redirecting...");
           setTimeout(() => navigate("/fillprofile"), 1500);
-        } else {
-          // ✅ Show user-friendly error from API
-          addError(data.userMessage || data.error || "Failed to create account");
-        }
+
       } else {
         // ✅ Show user-friendly error message
         addError(result.userMessage || result.message || "Invalid or expired OTP code. Please try again.");
+        await deleteUser(auth.currentUser);
       }
+     }
     } catch (err) {
       addError(getFirebaseErrorMessage(err) || err.message || "Failed to verify OTP. Please try again.");
     } finally {

@@ -25,9 +25,9 @@ const upload = multer({ storage });
 
 
 Router.post('/userdetail', authenticate ,upload.none(), async (req, res) => {
-    const { firstName, lastName, dob, gender, education, FUid, email } = req.body;
+    const { firstName, lastName, dob, gender, education, email } = req.body;
 
-    if (!firstName || !lastName || !dob || !gender || !education || !FUid) {
+    if (!firstName || !lastName || !dob || !gender || !education ) {
         return res.json({ ok: false, message: "All fields are required" });
     }
 
@@ -35,12 +35,6 @@ Router.post('/userdetail', authenticate ,upload.none(), async (req, res) => {
 
     const normalizedEmail = email?.toLowerCase().trim();
     let isEmailExist = false;
-
-    await User.findOne({ firebaseUid: FUid }).lean().then((existingUser) => {
-        if (existingUser) {
-            return res.json({ ok: false, message: "User already exists" });
-        }
-    });
 
     const emailExists = await User.findOne({
         email: normalizedEmail
@@ -64,7 +58,6 @@ Router.post('/userdetail', authenticate ,upload.none(), async (req, res) => {
                 dob,
                 gender,
                 education: educationData,
-                firebaseUid: FUid,
                 UserProfile: {
                     heading: "Hey there! I am using StudyVerse.",
                     description: "",

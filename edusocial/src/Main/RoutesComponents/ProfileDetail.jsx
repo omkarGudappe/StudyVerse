@@ -271,7 +271,6 @@ const ProfileDetail = () => {
                     startYear: formData.education.startYear || new Date().getFullYear() - 1,
                     endYear: formData.education.endYear || new Date().getFullYear() + 3
                 },
-                FUid: userId,
                 email: userEmail,
                 // Uid: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
             };

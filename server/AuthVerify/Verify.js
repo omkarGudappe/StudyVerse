@@ -59,7 +59,7 @@ Router.post('/verify' , async (req , res) => {
 
 Router.post('/verify-otp' , async (req , res) => {
     try{
-        const { otp , email, password } = req.body;
+        const { otp , email, password, fid } = req.body;
 
         if(!otp || !email || !password){
             throw new Error("Please provide email, otp and password");
@@ -79,7 +79,7 @@ Router.post('/verify-otp' , async (req , res) => {
         let user = await Auth.findOne({ email });
             if (!user) {
             const Uid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-            user = await Auth.create({ email , password: crypto.createHash('sha256').update(password).digest('hex'), Uid});
+            user = await Auth.create({ email , password: crypto.createHash('sha256').update(password).digest('hex'), Uid, firebaseUid: fid});
         }
 
         const token = jwt.sign(
@@ -90,10 +90,10 @@ Router.post('/verify-otp' , async (req , res) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax",
+            secure: true,
+            sameSite: "none",
             maxAge: 7 * 24 * 60 * 60 * 1000,
-        })
+        });
 
         delete otpStore[email];
 
@@ -107,17 +107,22 @@ Router.post('/google-signin' , async(req , res) => {
     try{
         const { uid, email } = req.body;
 
+        console.log("1")
+
         if(!uid){
             throw new Error("User Id is Required");
         }
-        
+         console.log("1")
         const check = await User.findOne({ firebaseUid: uid });
         if(!check){
             const Uid = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
             const user = await User.create({
                 email,
-                Uid
+                Uid,
+                firebaseUid: uid
             });
+
+            console.log("my data", check);
 
             const token = jwt.sign(
                 { id: user._id},
@@ -127,15 +132,15 @@ Router.post('/google-signin' , async(req , res) => {
 
             res.cookie("token", token, {
                 httpOnly: true,
-                secure: false,
-                sameSite: "lax",
+                secure: true,
+                sameSite: "none",
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
 
             return res.json({ exist: false });
         }
 
-        
+        console.log("1");
         let route = '';
         const UserDetailExist = await User.findOne({ firebaseUid: uid, firstName: { $exists: true, $ne: null } });
         if(!UserDetailExist){
@@ -157,8 +162,8 @@ Router.post('/google-signin' , async(req , res) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax",
+            secure: true,
+            sameSite: "none",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
@@ -210,9 +215,9 @@ Router.get('/UserDetail', async (req, res) => {
 
         res.cookie("token", token, {
             httpOnly: true,
-            secure: false,
-            sameSite: "lax",
-            maxAga: 7 * 24 * 60 * 60 * 1000,
+            secure: true,
+            sameSite: "none",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
         })
 
         return res.json({
