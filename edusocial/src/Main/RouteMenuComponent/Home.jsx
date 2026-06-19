@@ -401,7 +401,7 @@ const StudyVerseMain = () => {
     );
   };
 
-  if (!profileError) {
+  if (profileError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
         <div className="text-center p-8 bg-neutral-800/70 backdrop-blur-sm rounded-2xl border border-neutral-700/50 max-w-md w-full shadow-2xl">
