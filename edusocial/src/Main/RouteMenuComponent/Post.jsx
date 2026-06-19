@@ -117,13 +117,13 @@ const Post = ({ ModelCloseClicked, setPostMinimized }) => {
                 return;
             }
             
-            if (PostContent === 'post' && fileSizeInMB > 100) {
-                setError(`Image files must be less than 10MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
+            if (PostContent === 'post' && fileSizeInMB > 400) {
+                setError(`Image files must be less than 400MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
                 return;
             }
             
-            if (PostContent === 'note' && fileSizeInMB > 50) {
-                setError(`Document files must be less than 50MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
+            if (PostContent === 'note' && fileSizeInMB > 10) {
+                setError(`Document files must be less than 10MB. Your file is ${fileSizeInMB.toFixed(2)}MB.`);
                 return;
             }
 
@@ -590,7 +590,7 @@ const handleSubmit = async () => {
                                                 <p className="text-xs text-neutral-500 mt-2">
                                                     {PostContent === "post" ? "JPG, PNG, GIF, WEBP, MP4 (Max 100MB)" : 
                                                      PostContent === "lesson" ? "MP4, WEBM, OGG (Max 500MB)" : 
-                                                     "PDF, TXT, DOC, DOCX (Max 50MB)"}
+                                                     "PDF, TXT, DOC, DOCX (Max 10MB)"}
                                                 </p>
                                             </div>
                                         </div>

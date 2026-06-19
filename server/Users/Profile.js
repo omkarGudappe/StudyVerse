@@ -229,6 +229,10 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       }
     };
 
+    console.log(process.env.CLOUDINARY_CLOUD_NAME, "and", process.env.CLOUDINARY_API_KEY, "and", process.env.CLOUDINARY_API_SECRET);
+
+    console.log("Here 1");
+
     // Initial processing
     emitProgress(10, 'processing', 'File uploaded, starting processing...');
 
@@ -239,6 +243,8 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
       }
+
+       console.log("Here 2")
 
       const compressedPath = path.join(uploadsDir, `compressed-${Date.now()}-${Fid}.mp4`);
       
@@ -302,6 +308,8 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       emitProgress(50, 'uploading_to_cdn', 'Uploading to CDN...');
     }
 
+     console.log("Here 3")
+
     emitProgress(70, 'uploading_to_cdn', 'Uploading to cloud storage...');
     
     let cloudinaryProgress = 70;
@@ -314,6 +322,8 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       }
     }, 1000);
 
+     console.log("Here 4")
+
     const uploadFile = await cloudinary.uploader.upload(filePath, {
       folder: "studyverse/posts",
       resource_type: req.file.mimetype === "application/pdf" ? "raw" : "auto",
@@ -323,6 +333,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       fetch_format: 'auto'
     });
 
+     console.log("Here 5")
     clearInterval(progressInterval);
 
     // Clean up local files
@@ -333,6 +344,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       fs.unlinkSync(compressionCleanup);
     }
     
+     console.log("Here 6")
     const UserData = await User.findOne({ firebaseUid: Fid })
     .select('firstName lastName username UserProfile.avatar.url')
 
@@ -353,6 +365,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
       contentType: contentType || 'post',
     });
 
+     console.log("Here 7")
     const newPostObj = newPost.toObject();
 
     newPostObj.author = {
@@ -371,7 +384,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
     newPostObj.likes = newPostObj.likes || [];
     newPostObj.share = newPostObj.share || [];
 
-
+     console.log("Here 8")
     // Final success
     emitProgress(100, 'complete', 'Upload completed successfully!');
 
@@ -387,7 +400,7 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
 
   } catch (err) {
     // Comprehensive error handling and cleanup
-    console.error('🚨 Upload error:', err);
+    console.error('🚨 Upload error:', err.message);
     
     // Clean up any temporary files
     try {
@@ -416,12 +429,18 @@ Router.post("/posts/:Fid", upload.single("image"), async (req, res) => {
     }
     
     // Appropriate status codes
-    if (err.message.includes('timeout')) {
-      return res.status(408).json({ message: "Upload timeout - file too large" });
-    } else if (err.message.includes('compression')) {
-      return res.status(422).json({ message: "Video processing failed" });
-    } else if (err.message.includes('User not found')) {
-      return res.status(404).json({ message: "User not found" });
+   const errorMessage = err?.message || '';
+
+    if (errorMessage.includes('timeout')) {
+        return res.status(408).json({ message: "Upload timeout - file too large" });
+    }
+
+    if (errorMessage.includes('compression')) {
+        return res.status(422).json({ message: "Video processing failed" });
+    }
+
+    if (errorMessage.includes('User not found')) {
+        return res.status(404).json({ message: "User not found" });
     }
     
     return res.status(500).json({
