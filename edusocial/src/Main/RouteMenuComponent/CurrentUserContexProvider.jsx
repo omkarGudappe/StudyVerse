@@ -33,7 +33,7 @@ const CurrentUserContexProvider = ({ children }) => {
         if (!err.response) {
           setError('Network error. Please check your connection.');
         } else if (err.response.status === 401) {
-          setError('Session expired. Please sign in again.');
+          setError("Session expired. Please sign in again, or if it's a connection issue, try reloading the page.");
         } else {
           setError(Errors[err.response.status] || 'Failed to load profile data');
         }

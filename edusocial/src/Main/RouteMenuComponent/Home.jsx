@@ -401,7 +401,7 @@ const StudyVerseMain = () => {
     );
   };
 
-  if (profileError) {
+  if (!profileError) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-neutral-900 to-neutral-800 text-white flex items-center justify-center p-4">
         <div className="text-center p-8 bg-neutral-800/70 backdrop-blur-sm rounded-2xl border border-neutral-700/50 max-w-md w-full shadow-2xl">
@@ -422,15 +422,23 @@ const StudyVerseMain = () => {
             </svg>
           </div>
           <h2 className="text-2xl font-bold mb-4">Oops! {profileError}</h2>
-          <button
-            onClick={() => {
-              localStorage.removeItem('token');
-              navigate('/', { replace: true });
-            }}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 rounded-full hover:from-purple-500 hover:to-amber-400"
-          >
-            Sign In Again
-          </button>
+          <div className="flex gap-2 items-center justify-center ">
+            <button
+              onClick={() => {
+                localStorage.removeItem('token');
+                navigate('/', { replace: true });
+              }}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-amber-500 rounded-full hover:from-purple-500 hover:to-amber-400"
+            >
+              Sign In Again
+            </button>
+            <button
+              className="px-6 py-3 bg-neutral-700 rounded-full cursor-pointer"
+              onClick={window.location.reload}
+            >
+              Try to Reload
+            </button>
+          </div>
         </div>
       </div>
     );
